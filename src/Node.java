@@ -1,0 +1,68 @@
+import java.io.*;
+import java.util.Arrays;
+
+public abstract class Node<K extends Comparable<K>> implements Serializable {
+    protected InnerNode<K> parent;
+    protected int order;
+    protected K[] keys;
+    protected int numberOfKeys;
+    protected Node<K> leftSibling, rightSibling;
+
+    public Node(int order, K[] keys) {
+        this.order = order;
+        this.keys = keys;
+    }
+
+    public K[] getKeys() {
+        return keys;
+    }
+
+    protected void sortKeys() {
+        Arrays.sort(keys, (o1, o2) -> {
+            if (o2 == o1 && o1 == null) return 0;
+            if (o1 == null) return 1;
+            if (o2 == null) return -1;
+            return o1.compareTo(o2);
+        });
+    }
+
+    public abstract Node<K>[] getChildren();
+
+    public abstract Node<K> getLeftSibling();
+    public abstract Node<K> getRightSibling();
+    public abstract void setLeftSibling(Node<K> node);
+    public abstract void setRightSibling(Node<K> node);
+
+    public InnerNode<K> getParent() {
+        return parent;
+    }
+
+    public void setParent(InnerNode<K> par) {
+        this.parent = par;
+    }
+
+    public K[] splitKeys(int midPoint) {
+        K[] retArray = (K[]) new Comparable[this.order];
+        this.keys[midPoint] = null;
+        for (int i = midPoint + 1; i < this.keys.length; i++) {
+            retArray[i - midPoint - 1] = this.keys[i];
+            this.keys[i] = null;
+        }
+        this.validateNumOfKeys();
+        return retArray;
+    }
+
+    protected void validateNumOfKeys() {
+        if (this.keys == null) this.numberOfKeys = 0;
+        else {
+            this.numberOfKeys = this.order;
+            for (int i = 0; i < this.keys.length; i++) {
+                if (this.keys[i] == null) {
+                    this.numberOfKeys = i;
+                    break;
+                }
+            }
+        }
+    }
+}
+
