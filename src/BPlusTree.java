@@ -1,13 +1,18 @@
 import java.security.InvalidKeyException;
 import java.util.Arrays;
-import java.util.Random;
 
 public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
     private InnerNode<K> root;
     private LeafNode<K, V> firstLeaf;
     private final int order;
 
-    public BPlusTree(int order) {
+    private static final int DEFAULT_ORDER = 16;
+
+    public BPlusTree() {
+        this(DEFAULT_ORDER);
+    }
+
+    private BPlusTree(int order) {
         this.order = order;
         this.root = null;
     }
@@ -113,7 +118,6 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
 
             this.root = newParent;
         }
-
     }
 
     private Pair<K, V>[] splitPairs(LeafNode<K, V> lf, int mid) {
