@@ -6,7 +6,7 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
     private LeafNode<K, V> firstLeaf;
     private final int order;
 
-    private static final int DEFAULT_ORDER = 16;
+    private static final int DEFAULT_ORDER = 64;
 
     public BPlusTree() {
         this(DEFAULT_ORDER);
@@ -158,18 +158,22 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
     }
 
     public V find(K key) throws InvalidKeyException {
-        LeafNode<K, V> lf = findLeafNode(key);
+        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
         if (lf == null) {
             throw new InvalidKeyException("Key: " + key + " does not exist in the index.");
         }
 
         Pair<K, V>[] pairs = lf.getPairs();
-        for (int i = 0; i < lf.getNumberOfPairs(); i++) {
-            K pKey = pairs[i].getKey();
-            if (pKey.equals(key))
-                return pairs[i].getVal();
-        }
-        throw new InvalidKeyException("Key: " + key + " does not exist in the index.");
+
+        int idx = Arrays.binarySearch(
+                pairs,
+                0,
+                lf.getNumberOfPairs(),
+                new Pair<K, V>(key, null)
+        );
+
+        if (idx >= 0) return pairs[idx].getVal();
+        else throw new InvalidKeyException("Key: " + key + " does not exist in the index.");
     }
 
     public void printDataInOrder() {
