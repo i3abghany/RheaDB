@@ -13,6 +13,11 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
         this.validateNumOfKeys();
     }
 
+    @Override
+    public K[] getKeys() {
+        return this.keys;
+    }
+
     public InnerNode(int order, K[] keys, Node<K>[] ptrs) {
         this(order, keys);
         this.children = ptrs;

@@ -13,9 +13,7 @@ public abstract class Node<K extends Comparable<K>> implements Serializable {
         this.keys = keys;
     }
 
-    public K[] getKeys() {
-        return keys;
-    }
+    public abstract K[] getKeys();
 
     protected void sortKeys() {
         Arrays.sort(keys, (o1, o2) -> {

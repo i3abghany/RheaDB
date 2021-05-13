@@ -2,8 +2,8 @@ import java.util.Arrays;
 
 public class LeafNode<K extends Comparable<K>, V extends Comparable<V>> extends Node<K> {
     private Pair<K, V>[] pairs;
+    private final int maxPairs;
     private int numberOfPairs;
-    private int maxPairs;
     private int minPairs;
 
     public LeafNode(int order) {
@@ -81,8 +81,14 @@ public class LeafNode<K extends Comparable<K>, V extends Comparable<V>> extends 
     }
 
     @Override
+    public K[] getKeys() {
+        return null;
+    }
+
+    @Override
     public Node<K>[] getChildren() {
         return null;
     }
+
 }
 

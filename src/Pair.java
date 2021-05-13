@@ -8,7 +8,7 @@ public class Pair<K extends Comparable<K>, V extends Comparable<V>> implements C
     }
 
     public K getKey() {
-        return key;
+        return this.key;
     }
 
     public void setKey(K key) {

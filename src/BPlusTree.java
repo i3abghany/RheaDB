@@ -1,3 +1,4 @@
+import java.security.InvalidKeyException;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -152,6 +153,21 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
         }
     }
 
+    public V find(K key) throws InvalidKeyException {
+        LeafNode<K, V> lf = findLeafNode(key);
+        if (lf == null) {
+            throw new InvalidKeyException("Key: " + key + " does not exist in the index.");
+        }
+
+        Pair<K, V>[] pairs = lf.getPairs();
+        for (int i = 0; i < lf.getNumberOfPairs(); i++) {
+            K pKey = pairs[i].getKey();
+            if (pKey.equals(key))
+                return pairs[i].getVal();
+        }
+        throw new InvalidKeyException("Key: " + key + " does not exist in the index.");
+    }
+
     public void printDataInOrder() {
         if (this.root == null) {
             printLeafInOrder(this.firstLeaf);
@@ -182,18 +198,6 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
 
     private LeafNode<K, V> findLeafNode(K key) {
         return findLeafNode(this.root, key);
-    }
-
-    public static void main(String[] args) {
-        BPlusTree<Integer, Integer> bp = new BPlusTree<>(3);
-
-        Random rng = new Random();
-
-        for (int i = 0; i < 10000; i++) {
-            bp.insert(rng.nextInt(100000000), 1);
-        }
-
-        bp.printDataInOrder();
     }
 }
 
