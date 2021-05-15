@@ -1,7 +1,7 @@
 import java.util.*;
 import java.lang.*;
 
-public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
+public class BPlusTree<K extends Comparable<K>, V> {
     private InnerNode<K> root;
     private LeafNode<K, V> firstLeaf;
     private final int order;

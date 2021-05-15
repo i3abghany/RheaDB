@@ -1,6 +1,6 @@
 import java.util.Arrays;
 
-public class LeafNode<K extends Comparable<K>, V extends Comparable<V>> extends Node<K> {
+public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
     private Pair<K, V>[] pairs;
     private int numberOfPairs;
     private final int maxPairs;
