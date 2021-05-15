@@ -20,31 +20,31 @@ public class BPlusTreeTest {
         for (char c = 'a'; c <= 'z'; c++)
             tree.insert(i++, c);
 
-        tree.delete(('t' - 'a'));
+        Assertions.assertTrue(tree.delete(('t' - 'a')));
         Assertions.assertNull(tree.find(('t' - 'a')));
 
-        tree.delete(('c' - 'a'));
+        Assertions.assertTrue(tree.delete(('c' - 'a')));
         Assertions.assertNull(tree.find(('c' - 'a')));
 
-        tree.delete(('j' - 'a'));
+        Assertions.assertTrue(tree.delete(('j' - 'a')));
         Assertions.assertNull(tree.find(('j' - 'a')));
 
-        tree.delete(('d' - 'a'));
+        Assertions.assertTrue(tree.delete(('d' - 'a')));
         Assertions.assertNull(tree.find(('d' - 'a')));
 
-        tree.delete(('u' - 'a'));
+        Assertions.assertTrue(tree.delete(('u' - 'a')));
         Assertions.assertNull(tree.find(('u' - 'a')));
 
-        tree.delete(('r' - 'a'));
+        Assertions.assertTrue(tree.delete(('r' - 'a')));
         Assertions.assertNull(tree.find(('r' - 'a')));
 
-        tree.delete(('k' - 'a'));
+        Assertions.assertTrue(tree.delete(('k' - 'a')));
         Assertions.assertNull(tree.find(('k' - 'a')));
 
-        tree.delete(('m' - 'a'));
+        Assertions.assertTrue(tree.delete(('m' - 'a')));
         Assertions.assertNull(tree.find(('m' - 'a')));
 
-        tree.delete(('n' - 'a'));
+        Assertions.assertTrue(tree.delete(('n' - 'a')));
         Assertions.assertNull(tree.find(('n' - 'a')));
     }
 
@@ -76,7 +76,7 @@ public class BPlusTreeTest {
             tree.insert(i++, c);
 
         for (i = 1; i <= 26; i++)
-            tree.delete(i);
+            Assertions.assertTrue(tree.delete(i));
 
         for (i = 1; i <= 26; i++)
             Assertions.assertNull(tree.find(i));
