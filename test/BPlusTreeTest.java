@@ -1,9 +1,11 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.*;
+
 public class BPlusTreeTest {
     @Test
-    void insertionTest() {
+    void searchTest() {
         BPlusTree<Integer, Character> tree = new BPlusTree<>();
         int i = 1;
         for (char c = 'a'; c <= 'z'; c++)
@@ -25,6 +27,7 @@ public class BPlusTreeTest {
 
         Assertions.assertTrue(tree.delete(('c' - 'a')));
         Assertions.assertNull(tree.find(('c' - 'a')));
+
 
         Assertions.assertTrue(tree.delete(('j' - 'a')));
         Assertions.assertNull(tree.find(('j' - 'a')));
@@ -82,5 +85,47 @@ public class BPlusTreeTest {
             Assertions.assertNull(tree.find(i));
 
         Assertions.assertTrue(tree.isEmpty());
+    }
+
+    @Test
+    void millionSearch() {
+        Set<Integer> set = new TreeSet<>();
+        BPlusTree<Integer, Integer> tree = new BPlusTree<>();
+        Random rng = new Random();
+
+        while (set.size() < 1000000) {
+            int r = rng.nextInt();
+            if (set.contains(r))
+                continue;
+            set.add(r);
+            tree.insert(r, r);
+        }
+
+        for (Integer i : set) {
+            Assertions.assertNotNull(tree.find(i));
+        }
+    }
+
+    @Test
+    void millionDeletion() {
+        Set<Integer> set = new TreeSet<>();
+        BPlusTree<Integer, Integer> tree = new BPlusTree<>();
+        Random rng = new Random();
+
+        while (set.size() < 1000000) {
+            int r = rng.nextInt();
+            if (set.contains(r))
+                continue;
+            set.add(r);
+            tree.insert(r, r);
+        }
+
+        for (Integer i : set) {
+            Assertions.assertTrue(tree.delete(i));
+        }
+
+        for (Integer i : set) {
+            Assertions.assertNull(tree.find(i));
+        }
     }
 }
