@@ -2,9 +2,9 @@ import java.util.Arrays;
 
 public class LeafNode<K extends Comparable<K>, V extends Comparable<V>> extends Node<K> {
     private Pair<K, V>[] pairs;
-    private final int maxPairs;
     private int numberOfPairs;
-    private int minPairs;
+    private final int maxPairs;
+    private final int minPairs;
 
     public LeafNode(int order) {
         super(order, null);
@@ -29,6 +29,30 @@ public class LeafNode<K extends Comparable<K>, V extends Comparable<V>> extends 
             this.numberOfPairs++;
             Arrays.sort(pairs, 0, numberOfPairs);
         }
+    }
+
+    public boolean deleteByIndex(int idx) {
+        if (idx < 0 || idx > this.getNumberOfPairs() - 1)
+            return false;
+
+        if (this.numberOfPairs - (idx + 1) >= 0)
+            System.arraycopy(this.pairs, idx + 1, this.pairs, idx, this.numberOfPairs - (idx + 1));
+        this.pairs[this.numberOfPairs - 1] = null;
+        this.numberOfPairs--;
+        Arrays.sort(pairs, 0, numberOfPairs);
+
+        return true;
+    }
+
+    public boolean deleteByKey(K key) {
+        int idx = Arrays.binarySearch(
+                this.pairs,
+                0,
+                this.getNumberOfPairs(),
+                new Pair<K, V>(key, null)
+        );
+
+        return deleteByIndex(idx);
     }
 
     public Pair<K, V>[] getPairs() {
@@ -76,6 +100,16 @@ public class LeafNode<K extends Comparable<K>, V extends Comparable<V>> extends 
         this.rightSibling = rightSibling;
     }
 
+    @Override
+    public boolean isUnderFull() {
+        return this.numberOfPairs < this.minPairs;
+    }
+
+    @Override
+    public boolean canGiveToSibling() {
+        return this.numberOfPairs > this.minPairs;
+    }
+
     public void setNumberOfPairs(int i) {
         this.numberOfPairs = i;
     }
@@ -90,5 +124,17 @@ public class LeafNode<K extends Comparable<K>, V extends Comparable<V>> extends 
         return null;
     }
 
+    @Override
+    public boolean canBeMerged() {
+        return this.numberOfPairs == this.minPairs;
+    }
+
+    @Override
+    public void merge(Node<K> lf) {
+        for (int i = 0; i < ((LeafNode<K, V>) lf).getNumberOfPairs(); i++) {
+            this.pairs[this.numberOfPairs] = ((LeafNode<K, V>) lf).getPairs()[i];
+            this.numberOfPairs++;
+        }
+    }
 }
 

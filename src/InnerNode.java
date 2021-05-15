@@ -1,5 +1,7 @@
+import java.util.Arrays;
+
 public class InnerNode<K extends Comparable<K>> extends Node<K> {
-    private int minKeys;
+     private final int minDegree;
     private int degree;
 
     private Node<K>[] children;
@@ -7,7 +9,7 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
     @SuppressWarnings("unchecked")
     public InnerNode(int order, K[] keys) {
         super(order, keys);
-        minKeys = (int) Math.ceil(this.order / 2.0);
+        this.minDegree = (int) Math.ceil(this.order / 2.0);
         this.children = new Node[this.order + 1];
         this.degree = 0;
         this.validateNumOfKeys();
@@ -29,18 +31,22 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
         this(order, null);
     }
 
-    public int getNumberOfKeys() {
-        return numberOfKeys;
-    }
-
     @Override
     public Node<K>[] getChildren() {
         return children;
     }
 
-    public void addPointer(Node<K> lf) {
+    public void appendPointer(Node<K> lf) {
         children[this.degree] = lf;
         this.degree++;
+    }
+
+    public void removePointer(int idx) {
+        this.children[idx] = null;
+        if (this.degree - (idx + 1) >= 0)
+            System.arraycopy(this.children, idx + 1, this.children, idx + 1 - 1, this.degree - (idx + 1));
+        this.children[this.degree - 1] = null;
+        this.degree--;
     }
 
     public void addKey(K newKey) {
@@ -53,7 +59,7 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
         return degree;
     }
 
-    public int indexOf(Node<K> nd) {
+    public int indexOfPointer(Node<K> nd) {
         for (int i = 0; i < children.length; i++) {
             if (nd == children[i])
                 return i;
@@ -99,13 +105,42 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
     }
 
     @Override
+    public void merge(Node<K> node) {
+        for (int i = 0; i < node.getNumberOfKeys(); i++) {
+            this.keys[this.numberOfKeys] = node.getKeys()[i];
+            this.numberOfKeys++;
+        }
+        for (int i = 0; i < ((InnerNode<K>)node).getDegree(); i++) {
+            this.children[this.degree] = node.getChildren()[i];
+            node.getChildren()[i].setParent(this);
+            this.degree++;
+        }
+    }
+
+    @Override
     public Node<K> getRightSibling() {
         return rightSibling;
     }
 
     @Override
     public void setRightSibling(Node<K> rightSibling) {
-        this.rightSibling = (InnerNode<K>) rightSibling;
+        assert rightSibling == null || rightSibling instanceof InnerNode;
+        this.rightSibling = rightSibling;
+    }
+
+    @Override
+    public boolean canGiveToSibling() {
+        return this.degree > this.minDegree;
+    }
+
+    @Override
+    public boolean canBeMerged() {
+        return this.degree == this.minDegree;
+    }
+
+    @Override
+    public boolean isUnderFull() {
+        return this.degree < this.minDegree;
     }
 
     @Override
@@ -115,7 +150,7 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
 
     @Override
     public void setLeftSibling(Node<K> leftSibling) {
-        assert leftSibling instanceof InnerNode;
-        this.leftSibling = (InnerNode<K>) leftSibling;
+        assert leftSibling == null || leftSibling instanceof InnerNode;
+        this.leftSibling = leftSibling;
     }
 }

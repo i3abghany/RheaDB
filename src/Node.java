@@ -14,6 +14,9 @@ public abstract class Node<K extends Comparable<K>> implements Serializable {
     }
 
     public abstract K[] getKeys();
+    public int getNumberOfKeys() {
+        return this.numberOfKeys;
+    }
 
     protected void sortKeys() {
         Arrays.sort(keys, (o1, o2) -> {
@@ -30,6 +33,12 @@ public abstract class Node<K extends Comparable<K>> implements Serializable {
     public abstract Node<K> getRightSibling();
     public abstract void setLeftSibling(Node<K> node);
     public abstract void setRightSibling(Node<K> node);
+
+    public abstract boolean canGiveToSibling();
+    public abstract boolean canBeMerged();
+    public abstract void merge(Node<K> node);
+
+    public abstract boolean isUnderFull();
 
     public InnerNode<K> getParent() {
         return parent;
@@ -61,6 +70,16 @@ public abstract class Node<K extends Comparable<K>> implements Serializable {
                 }
             }
         }
+    }
+
+    public void setKey(int i, K key) {
+        this.keys[i] = key;
+    }
+
+    public void removeKey(int i) {
+        this.keys[i] = null;
+        this.sortKeys();
+        this.numberOfKeys--;
     }
 }
 
