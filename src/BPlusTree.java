@@ -186,6 +186,7 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
         }
     }
 
+    @SuppressWarnings("unused")
     private void printBFS() {
         Queue<Node<K>> q = new LinkedList<>();
         q.add(this.root);
@@ -211,6 +212,7 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
         }
     }
 
+    @SuppressWarnings("unused")
     public void printTreeInOrder() {
         if (this.root == null) {
             printDataInOrder();
@@ -287,7 +289,7 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
             replaceWithSuccessor(indexNode, key);
             return true;
         }
-        
+
         LeafNode<K, V> rightSib = (LeafNode<K, V>) lf.getRightSibling();
         LeafNode<K, V> leftSib = (LeafNode<K, V>) lf.getLeftSibling();
         InnerNode<K> par = lf.getParent();
@@ -483,15 +485,5 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
 
         return findInnerNode((InnerNode<K>) node.getChildren()[idx], key);
     }
-
-    public static void main(String[] args) {
-        BPlusTree<Integer, Integer> p = new BPlusTree<>(5);
-        p.insert(1, 1);
-        p.insert(2, 2);
-        p.delete(1);
-        p.delete(2);
-        p.delete(3);
-    }
-
 }
 
