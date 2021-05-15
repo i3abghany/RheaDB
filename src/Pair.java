@@ -11,16 +11,8 @@ public class Pair<K extends Comparable<K>, V> implements Comparable<Pair<K, V>> 
         return this.key;
     }
 
-    public void setKey(K key) {
-        this.key = key;
-    }
-
     public V getVal() {
         return val;
-    }
-
-    public void setVal(V val) {
-        this.val = val;
     }
 
     @Override
