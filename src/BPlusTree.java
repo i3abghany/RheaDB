@@ -287,7 +287,7 @@ public class BPlusTree<K extends Comparable<K>, V extends Comparable<V>> {
             replaceWithSuccessor(indexNode, key);
             return true;
         }
-p
+        
         LeafNode<K, V> rightSib = (LeafNode<K, V>) lf.getRightSibling();
         LeafNode<K, V> leftSib = (LeafNode<K, V>) lf.getLeftSibling();
         InnerNode<K> par = lf.getParent();
