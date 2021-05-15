@@ -81,26 +81,6 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
     }
 
     @Override
-    public Node<K> getLeftSibling() {
-        return leftSibling;
-    }
-
-    @Override
-    public void setLeftSibling(Node<K> leftSibling) {
-        this.leftSibling = leftSibling;
-    }
-
-    @Override
-    public Node<K> getRightSibling() {
-        return rightSibling;
-    }
-
-    @Override
-    public void setRightSibling(Node<K> rightSibling) {
-        this.rightSibling = rightSibling;
-    }
-
-    @Override
     public boolean isUnderFull() {
         return this.numberOfPairs < this.minPairs;
     }

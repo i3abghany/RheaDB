@@ -29,10 +29,22 @@ public abstract class Node<K extends Comparable<K>> implements Serializable {
 
     public abstract Node<K>[] getChildren();
 
-    public abstract Node<K> getLeftSibling();
-    public abstract Node<K> getRightSibling();
-    public abstract void setLeftSibling(Node<K> node);
-    public abstract void setRightSibling(Node<K> node);
+    public Node<K> getLeftSibling() {
+        return leftSibling;
+    }
+
+    public void setLeftSibling(Node<K> leftSibling) {
+        this.leftSibling = leftSibling;
+    }
+
+    public Node<K> getRightSibling() {
+        return rightSibling;
+    }
+
+    public void setRightSibling(Node<K> rightSibling) {
+        this.rightSibling = rightSibling;
+    }
+
 
     public abstract boolean canGiveToSibling();
     public abstract boolean canBeMerged();

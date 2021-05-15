@@ -116,17 +116,6 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
     }
 
     @Override
-    public Node<K> getRightSibling() {
-        return rightSibling;
-    }
-
-    @Override
-    public void setRightSibling(Node<K> rightSibling) {
-        assert rightSibling == null || rightSibling instanceof InnerNode;
-        this.rightSibling = rightSibling;
-    }
-
-    @Override
     public boolean canGiveToSibling() {
         return this.degree > this.minDegree;
     }
@@ -139,16 +128,5 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
     @Override
     public boolean isUnderFull() {
         return this.degree < this.minDegree;
-    }
-
-    @Override
-    public Node<K> getLeftSibling() {
-        return leftSibling;
-    }
-
-    @Override
-    public void setLeftSibling(Node<K> leftSibling) {
-        assert leftSibling == null || leftSibling instanceof InnerNode;
-        this.leftSibling = leftSibling;
     }
 }
