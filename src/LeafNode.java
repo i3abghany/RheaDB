@@ -24,10 +24,10 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
     }
 
     public void insert(Pair<K, V> kvPair) {
-        if (!isFull()) {
+        if (this.getNumberOfPairs() < this.order) {
             this.pairs[this.numberOfPairs] = kvPair;
             this.numberOfPairs++;
-            Arrays.sort(pairs, 0, numberOfPairs);
+            sortPairs();
         }
     }
 
@@ -115,6 +115,16 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
             this.pairs[this.numberOfPairs] = ((LeafNode<K, V>) lf).getPairs()[i];
             this.numberOfPairs++;
         }
+        this.sortPairs();
+    }
+
+    private void sortPairs() {
+        Arrays.sort(this.pairs, (o1, o2) -> {
+            if (o1 == null && o2 == null) { return 0; }
+            if (o1 == null) { return 1; }
+            if (o2 == null) { return -1; }
+            return o1.compareTo(o2);
+        });
     }
 }
 

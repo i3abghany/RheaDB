@@ -6,7 +6,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
     private LeafNode<K, V> firstLeaf;
     private final int order;
 
-    private static final int DEFAULT_ORDER = 64;
+    private static final int DEFAULT_ORDER = 3;
 
     public BPlusTree() {
         this(DEFAULT_ORDER);
@@ -21,6 +21,10 @@ public class BPlusTree<K extends Comparable<K>, V> {
         return this.firstLeaf == null;
     }
 
+    public void insert(K key) {
+        insert(key, (V)key);
+    }
+
     @SuppressWarnings("unchecked")
     public void insert(K key, V val) {
         if (isEmpty()) {
@@ -29,10 +33,9 @@ public class BPlusTree<K extends Comparable<K>, V> {
         } else {
             LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
             if (lf.isFull()) {
-                Pair<K, V>[] lfPairs = lf.getPairs();
-                lfPairs[lf.getNumberOfPairs()] = new Pair<>(key, val);
-                lf.setNumberOfPairs(lf.getNumberOfPairs() + 1);
-                sortPairs(lfPairs);
+
+                // will insert in the sorted-order position.
+                lf.insert(new Pair<>(key, val));
 
                 int mid = getMidPoint();
                 Pair<K, V>[] rightHalf = splitPairs(lf, mid);
@@ -125,15 +128,6 @@ public class BPlusTree<K extends Comparable<K>, V> {
         return lf.splitPairs(mid);
     }
 
-    private void sortPairs(Pair<K, V>[] pairsArr) {
-        Arrays.sort(pairsArr, (o1, o2) -> {
-            if (o1 == null && o2 == null) { return 0; }
-            if (o1 == null) { return 1; }
-            if (o2 == null) { return -1; }
-            return o1.compareTo(o2);
-        });
-    }
-
     private int getMidPoint() {
         return (int) Math.ceil((this.order + 1) / 2.0) - 1;
     }
@@ -145,8 +139,8 @@ public class BPlusTree<K extends Comparable<K>, V> {
         K[] ks = nod.getKeys();
 
         int idx = 0;
-        for (; idx < ((InnerNode<K>)nod).getDegree() - 1; idx++) {
-            if (key.compareTo(ks[idx]) < 0)
+        for (; idx < nod.getNumberOfKeys(); idx++) {
+            if (ks[idx].compareTo(key) > 0)
                 break;
         }
 
@@ -236,6 +230,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
                 break;
             }
         }
+        System.out.println();
     }
 
     private void printLeafInOrder(LeafNode<K, V> leaf) {
@@ -301,8 +296,9 @@ public class BPlusTree<K extends Comparable<K>, V> {
             Pair<K, V> borrowedPair = leftSib.getPairs()[leftSib.getNumberOfPairs() - 1];
             lf.insert(borrowedPair);
             leftSib.deleteByIndex(leftSib.getNumberOfPairs() - 1);
-            if (par.getKeys()[lfIdx - 1].compareTo(borrowedPair.getKey()) < 0) {
-                par.setKey(lfIdx - 1, lf.getPairs()[0].getKey());
+            if (par.getKeys()[lfIdx - 1].compareTo(borrowedPair.getKey()) > 0) {
+//                par.setKey(lfIdx - 1, lf.getPairs()[0].getKey());
+                par.setKey(lfIdx - 1, borrowedPair.getKey());
             }
             replaceWithSuccessor(indexNode, key);
         } else if (rightSib != null &&
@@ -311,7 +307,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
             Pair<K, V> borrowedPair = rightSib.getPairs()[0];
             lf.insert(borrowedPair);
             rightSib.deleteByIndex(0);
-            if (par.getKeys()[lfIdx].compareTo(borrowedPair.getKey()) >= 0) {
+            if (par.getKeys()[lfIdx].compareTo(borrowedPair.getKey()) <= 0) {
                 par.setKey(lfIdx, rightSib.getPairs()[0].getKey());
             }
             replaceWithSuccessor(indexNode, key);
@@ -319,7 +315,6 @@ public class BPlusTree<K extends Comparable<K>, V> {
                    leftSib.canBeMerged() &&
                    leftSib.getParent() == par) {
             leftSib.merge(lf);
-
             par.removePointer(lfIdx);
             par.removeKey(lfIdx - 1);
 
@@ -401,6 +396,8 @@ public class BPlusTree<K extends Comparable<K>, V> {
         InnerNode<K> par = node.getParent();
 
         if (node == this.root) {
+            if (node.getNumberOfKeys() > 0)
+                return;
             if (node.getChildren()[0] instanceof InnerNode) {
                 this.root = (InnerNode<K>) node.getChildren()[0];
                 this.root.setParent(null);
@@ -408,7 +405,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
                 this.root.setRightSibling(null);
             } else if (node.getChildren()[0] instanceof LeafNode)
                 this.root = null;
-        } else if (leftSib != null && leftSib.canGiveToSibling()) {
+        } else if (leftSib != null && leftSib.canGiveToSibling() && leftSib.getParent() == par) {
             K borrowedKey = leftSib.getKeys()[leftSib.getNumberOfKeys() - 1];
             Node<K> borrowedPtr = leftSib.getChildren()[leftSib.getDegree() - 1];
 
@@ -422,7 +419,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
             leftSib.removeKey(leftSib.getNumberOfKeys() - 1);
             leftSib.removePointer(leftSib.getDegree() - 1);
 
-        } else if (rightSib != null && rightSib.canGiveToSibling()) {
+        } else if (rightSib != null && rightSib.canGiveToSibling() && rightSib.getParent() == par) {
             K borrowedKey = rightSib.getKeys()[0];
             Node<K> borrowedPtr = rightSib.getChildren()[0];
 
@@ -436,7 +433,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
             rightSib.removeKey(0);
             rightSib.removePointer(0);
 
-        } else if (leftSib != null && leftSib.canBeMerged()) {
+        } else if (leftSib != null && leftSib.canBeMerged() && leftSib.getParent() == par) {
             leftSib.addKey(par.getKeys()[par.getNumberOfKeys() - 1]);
             par.removeKey(par.getNumberOfKeys() - 1);
             par.removePointer(par.indexOfPointer(node));
@@ -444,7 +441,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
             leftSib.setRightSibling(node.getRightSibling());
             if (leftSib.getRightSibling() != null)
                 leftSib.getRightSibling().setLeftSibling(leftSib);
-        } else if (rightSib != null && rightSib.canBeMerged()) {
+        } else if (rightSib != null && rightSib.canBeMerged() && rightSib.getParent() == par) {
             node.addKey(par.getKeys()[0]);
             par.removeKey(0);
             par.removePointer(par.indexOfPointer(rightSib));

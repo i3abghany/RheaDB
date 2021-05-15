@@ -86,12 +86,16 @@ public abstract class Node<K extends Comparable<K>> implements Serializable {
 
     public void setKey(int i, K key) {
         this.keys[i] = key;
+        this.sortKeys();
+        this.validateNumOfKeys();
     }
 
     public void removeKey(int i) {
         this.keys[i] = null;
         this.sortKeys();
         this.numberOfKeys--;
+        this.sortKeys();
+        this.validateNumOfKeys();
     }
 }
 
