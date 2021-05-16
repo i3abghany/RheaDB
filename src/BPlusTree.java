@@ -6,7 +6,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
     private LeafNode<K, V> firstLeaf;
     private final int order;
 
-    private static final int DEFAULT_ORDER = 3;
+    private static final int DEFAULT_ORDER = 64;
 
     public BPlusTree() {
         this(DEFAULT_ORDER);
@@ -29,16 +29,19 @@ public class BPlusTree<K extends Comparable<K>, V> {
     public void insert(K key, V val) {
         if (isEmpty()) {
             this.firstLeaf = new LeafNode<>(this.order);
-            this.firstLeaf.insert(new Pair<>(key, val));
+            this.firstLeaf.insert(new Pair<K, V>(key, val));
         } else {
             LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
-            if (lf.isFull()) {
 
-                // will insert in the sorted-order position.
+            if (lf.exists(key) != null) {
                 lf.insert(new Pair<>(key, val));
+                return;
+            }
 
+            if (lf.isFull()) {
+                lf.insert(new Pair<>(key, val));
                 int mid = getMidPoint();
-                Pair<K, V>[] rightHalf = splitPairs(lf, mid);
+                ValueList<K, V>[] rightHalf = splitLists(lf, mid);
 
                 if (lf.getParent() == null) {
                     K[] parentKeys = (K[]) new Comparable[this.order];
@@ -53,7 +56,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
                 }
 
                 LeafNode<K, V> newNode = new LeafNode<>(this.order, lf.getParent());
-                newNode.setPairs(rightHalf, this.order - mid);
+                newNode.setLists(rightHalf, this.order - mid);
 
                 int childIdx = lf.getParent().indexOfPointer(lf);
                 lf.getParent().insertAt(newNode, childIdx + 1);
@@ -74,7 +77,6 @@ public class BPlusTree<K extends Comparable<K>, V> {
                 lf.insert(new Pair<>(key, val));
             }
         }
-
     }
 
     private void correctSiblings(Node<K> lf, Node<K> newNode) {
@@ -124,8 +126,8 @@ public class BPlusTree<K extends Comparable<K>, V> {
         }
     }
 
-    private Pair<K, V>[] splitPairs(LeafNode<K, V> lf, int mid) {
-        return lf.splitPairs(mid);
+    private ValueList<K, V>[] splitLists(LeafNode<K, V> lf, int mid) {
+        return lf.splitLists(mid);
     }
 
     private int getMidPoint() {
@@ -152,22 +154,22 @@ public class BPlusTree<K extends Comparable<K>, V> {
         }
     }
 
-    public V find(K key) {
+    public ValueList<K, V> find(K key) {
         LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
         if (lf == null) {
             return null;
         }
 
-        Pair<K, V>[] pairs = lf.getPairs();
+        ValueList<K, V>[] lists = lf.getLists();
 
         int idx = Arrays.binarySearch(
-                pairs,
+                lists,
                 0,
-                lf.getNumberOfPairs(),
-                new Pair<K, V>(key, null)
+                lf.getNumberOfLists(),
+                new ValueList<K, V>(key, null)
         );
 
-        if (idx >= 0) return pairs[idx].getVal();
+        if (idx >= 0) return lists[idx];
         else return null;
     }
 
@@ -197,8 +199,8 @@ public class BPlusTree<K extends Comparable<K>, V> {
                 }
             } else {
                 System.out.print("{");
-                for (int i = 0; i < ((LeafNode<K, V>) curr).getNumberOfPairs(); i++)
-                    System.out.print(((LeafNode<K, V>) curr).getPairs()[i] + ", ");
+                for (int i = 0; i < ((LeafNode<K, V>) curr).getNumberOfLists(); i++)
+                    System.out.print(((LeafNode<K, V>) curr).getLists()[i] + ", ");
                 System.out.print("}\n");
             }
 
@@ -237,11 +239,11 @@ public class BPlusTree<K extends Comparable<K>, V> {
         LeafNode<K, V> lf = leaf;
         while (lf != null) {
             System.out.print("{");
-            Pair<K, V>[] pairs = lf.getPairs();
-            for (int i = 0; i < lf.getNumberOfPairs(); i++) {
-                Pair<K, V> el = pairs[i];
+            ValueList<K, V>[] lists = lf.getLists();
+            for (int i = 0; i < lf.getNumberOfLists(); i++) {
+                ValueList<K, V> el = lists[i];
                 System.out.print(el);
-                if (i != lf.getNumberOfPairs() - 1)
+                if (i != lf.getNumberOfLists() - 1)
                     System.out.print(", ");
             }
             System.out.print("} ");
@@ -271,7 +273,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
 
         if (this.root == null) {
             boolean ret = lf.deleteByKey(key);
-            if (lf.getNumberOfPairs() == 0)
+            if (lf.getNumberOfLists() == 0)
                 this.firstLeaf = null;
             return ret;
         }
@@ -293,22 +295,21 @@ public class BPlusTree<K extends Comparable<K>, V> {
         if (leftSib != null &&
             leftSib.canGiveToSibling() &&
             leftSib.getParent() == lf.getParent()) {
-            Pair<K, V> borrowedPair = leftSib.getPairs()[leftSib.getNumberOfPairs() - 1];
+            ValueList<K, V> borrowedPair = leftSib.getLists()[leftSib.getNumberOfLists() - 1];
             lf.insert(borrowedPair);
-            leftSib.deleteByIndex(leftSib.getNumberOfPairs() - 1);
+            leftSib.deleteByIndex(leftSib.getNumberOfLists() - 1);
             if (par.getKeys()[lfIdx - 1].compareTo(borrowedPair.getKey()) > 0) {
-//                par.setKey(lfIdx - 1, lf.getPairs()[0].getKey());
                 par.setKey(lfIdx - 1, borrowedPair.getKey());
             }
             replaceWithSuccessor(indexNode, key);
         } else if (rightSib != null &&
                    rightSib.canGiveToSibling() &&
                    rightSib.getParent() == lf.getParent()) {
-            Pair<K, V> borrowedPair = rightSib.getPairs()[0];
+            ValueList<K, V> borrowedPair = rightSib.getLists()[0];
             lf.insert(borrowedPair);
             rightSib.deleteByIndex(0);
             if (par.getKeys()[lfIdx].compareTo(borrowedPair.getKey()) <= 0) {
-                par.setKey(lfIdx, rightSib.getPairs()[0].getKey());
+                par.setKey(lfIdx, rightSib.getLists()[0].getKey());
             }
             replaceWithSuccessor(indexNode, key);
         } else if (leftSib != null &&
@@ -387,7 +388,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
         while (tmp instanceof InnerNode) {
             tmp = tmp.getChildren()[0];
         }
-        return ((LeafNode<K, V>) tmp).getPairs()[0].getKey();
+        return ((LeafNode<K, V>) tmp).getLists()[0].getKey();
     }
 
     private void afterDeleteFix(InnerNode<K> node) {
@@ -483,4 +484,3 @@ public class BPlusTree<K extends Comparable<K>, V> {
         return findInnerNode((InnerNode<K>) node.getChildren()[idx], key);
     }
 }
-

@@ -1,17 +1,17 @@
 import java.util.Arrays;
 
 public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
-    private Pair<K, V>[] pairs;
-    private int numberOfPairs;
-    private final int maxPairs;
-    private final int minPairs;
+    private ValueList<K, V>[] valueLists;
+    private int numberOfLists;
+    private final int maxLists;
+    private final int minLists;
 
     public LeafNode(int order) {
         super(order, null);
         this.order = order;
-        this.maxPairs = order - 1;
-        this.minPairs = (int) Math.ceil(this.order / 2.0) - 1;
-        this.pairs = new Pair[this.order];
+        this.maxLists = order - 1;
+        this.minLists = (int) Math.ceil(this.order / 2.0) - 1;
+        this.valueLists = new ValueList[this.order];
     }
 
     public LeafNode(int order, InnerNode<K> parent) {
@@ -20,78 +20,97 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
     }
 
     public boolean isFull() {
-        return this.numberOfPairs == maxPairs;
+        return this.numberOfLists == maxLists;
     }
 
     public void insert(Pair<K, V> kvPair) {
-        if (this.getNumberOfPairs() < this.order) {
-            this.pairs[this.numberOfPairs] = kvPair;
-            this.numberOfPairs++;
-            sortPairs();
+        ValueList<K, V> existentList = exists(kvPair.getKey());
+        if (existentList != null)
+            insertDuplicate(existentList, kvPair.getVal());
+        else if (this.numberOfLists < this.order) {
+            this.valueLists[this.numberOfLists] = new ValueList<>(kvPair);
+            this.numberOfLists++;
+            sortLists();
         }
     }
 
-    public boolean deleteByIndex(int idx) {
-        if (idx < 0 || idx > this.getNumberOfPairs() - 1)
-            return false;
+    public void insert(ValueList<K, V> list) {
+        if (this.numberOfLists < this.order) {
+            this.valueLists[this.numberOfLists] = list;
+            this.numberOfLists++;
+            sortLists();
+        }
+    }
 
-        if (this.numberOfPairs - (idx + 1) >= 0)
-            System.arraycopy(this.pairs, idx + 1, this.pairs, idx, this.numberOfPairs - (idx + 1));
-        this.pairs[this.numberOfPairs - 1] = null;
-        this.numberOfPairs--;
-        Arrays.sort(pairs, 0, numberOfPairs);
+    private void insertDuplicate(ValueList<K, V> valueList, V val) {
+        valueList.add(val);
+    }
+
+    public ValueList<K, V> exists(K key) {
+        for (int i = 0; i < numberOfLists; i++) {
+            if (this.valueLists[i].getKey().equals(key))
+                return this.valueLists[i];
+        }
+        return null;
+    }
+
+    // DELETES A WHOLE LIST...
+    public boolean deleteByIndex(int idx) {
+        if (idx < 0 || idx > this.numberOfLists - 1)
+            return false;
+        if (this.numberOfLists - (idx + 1) >= 0)
+            System.arraycopy(this.valueLists, idx + 1, this.valueLists, idx, this.numberOfLists - (idx + 1));
+        this.valueLists[this.numberOfLists - 1] = null;
+        this.numberOfLists--;
+        Arrays.sort(valueLists, 0, numberOfLists);
 
         return true;
     }
 
     public boolean deleteByKey(K key) {
         int idx = Arrays.binarySearch(
-                this.pairs,
+                this.valueLists,
                 0,
-                this.getNumberOfPairs(),
-                new Pair<K, V>(key, null)
+                this.numberOfLists,
+                new ValueList<K, V>(key, null)
         );
 
         return deleteByIndex(idx);
     }
 
-    public Pair<K, V>[] getPairs() {
-        return pairs;
+    public ValueList<K, V>[] getLists() {
+        return valueLists;
     }
 
-    public void setPairs(Pair<K, V>[] pairs, int n) {
-        this.pairs = pairs;
-        this.numberOfPairs = n;
+    public void setLists(ValueList<K, V>[] lists, int n) {
+        this.valueLists = lists;
+        this.numberOfLists = n;
     }
 
-    public Pair<K, V>[] splitPairs(int mid) {
-        Pair<K, V>[] rightPairs = new Pair[this.order];
+    public ValueList<K, V>[] splitLists(int mid) {
+        ValueList<K, V>[] rightList = new ValueList[this.order];
 
         for (int i = mid; i < this.order; i++) {
-            rightPairs[i - mid] = this.pairs[i];
-            this.pairs[i] = null;
-            this.numberOfPairs--;
+            rightList[i - mid] = this.valueLists[i];
+            this.valueLists[i] = null;
+            this.numberOfLists--;
         }
 
-        return rightPairs;
+        return rightList;
     }
 
-    public int getNumberOfPairs() {
-        return numberOfPairs;
+    public int getNumberOfLists() {
+        return numberOfLists;
     }
 
     @Override
     public boolean isUnderFull() {
-        return this.numberOfPairs < this.minPairs;
+        return this.numberOfLists < this.minLists;
     }
 
     @Override
     public boolean canGiveToSibling() {
-        return this.numberOfPairs > this.minPairs;
-    }
-
-    public void setNumberOfPairs(int i) {
-        this.numberOfPairs = i;
+        return this.numberOfLists > this.minLists;
     }
 
     @Override
@@ -106,20 +125,21 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
 
     @Override
     public boolean canBeMerged() {
-        return this.numberOfPairs == this.minPairs;
+        return this.numberOfLists == this.minLists;
     }
 
     @Override
     public void merge(Node<K> lf) {
-        for (int i = 0; i < ((LeafNode<K, V>) lf).getNumberOfPairs(); i++) {
-            this.pairs[this.numberOfPairs] = ((LeafNode<K, V>) lf).getPairs()[i];
-            this.numberOfPairs++;
+        LeafNode<K, V> leaf = (LeafNode<K, V>) lf;
+        for (int i = 0; i < leaf.getNumberOfLists(); i++) {
+            this.valueLists[this.numberOfLists] = leaf.getLists()[i];
+            this.numberOfLists++;
         }
-        this.sortPairs();
+        this.sortLists();
     }
 
-    private void sortPairs() {
-        Arrays.sort(this.pairs, (o1, o2) -> {
+    private void sortLists() {
+        Arrays.sort(this.valueLists, (o1, o2) -> {
             if (o1 == null && o2 == null) { return 0; }
             if (o1 == null) { return 1; }
             if (o2 == null) { return -1; }
