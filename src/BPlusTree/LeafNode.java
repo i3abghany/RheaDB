@@ -23,12 +23,12 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
         return this.numberOfLists == maxLists;
     }
 
-    public void insert(Pair<K, V> kvPair) {
-        ValueList<K, V> existentList = exists(kvPair.getKey());
+    public void insert(K key, V val) {
+        ValueList<K, V> existentList = exists(key);
         if (existentList != null)
-            insertDuplicate(existentList, kvPair.getVal());
+            insertDuplicate(existentList, val);
         else if (this.numberOfLists < this.order) {
-            this.valueLists[this.numberOfLists] = new ValueList<>(kvPair);
+            this.valueLists[this.numberOfLists] = new ValueList<>(key, val);
             this.numberOfLists++;
             sortLists();
         }

@@ -7,10 +7,6 @@ public class ValueList<K extends Comparable<K>, V> extends Vector<V> implements 
         this.add(initialValue);
     }
 
-    public ValueList(Pair<K, V> kvPair) {
-        this(kvPair.getKey(), kvPair.getVal());
-    }
-
     public V getOneValue() {
         return this.elementAt(0);
     }

@@ -1,3 +1,4 @@
+import BPlusTree.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -6,7 +7,7 @@ import java.util.*;
 public class BPlusTreeTest {
     @Test
     void searchTest() {
-        BPlusTree<Integer, Character> tree = new BPlusTree<>();
+        BPlusTree<Integer, Character> tree = new BPlusTree<Integer, Character>();
         int i = 1;
         for (char c = 'a'; c <= 'z'; c++)
             tree.insert(i++, c);
@@ -20,7 +21,7 @@ public class BPlusTreeTest {
 
     @Test
     void duplicateInsertions() {
-        BPlusTree<Integer, Character> tree = new BPlusTree<>();
+        BPlusTree<Integer, Character> tree = new BPlusTree<Integer, Character>();
 
         int i = 1;
         for (char c = 'a'; c <= 'z'; c++)
@@ -42,7 +43,7 @@ public class BPlusTreeTest {
 
     @Test
     void randomDeletionTest() {
-        BPlusTree<Integer, Character> tree = new BPlusTree<>();
+        BPlusTree<Integer, Character> tree = new BPlusTree<Integer, Character>();
         int i = 1;
         for (char c = 'a'; c <= 'z'; c++)
             tree.insert(i++, c);
@@ -78,7 +79,7 @@ public class BPlusTreeTest {
 
     @Test
     void findAfterDelete() {
-        BPlusTree<Integer, Character> tree = new BPlusTree<>();
+        BPlusTree<Integer, Character> tree = new BPlusTree<Integer, Character>();
         int i = 1;
         for (char c = 'a'; c <= 'z'; c++)
             tree.insert(i++, c);
@@ -98,7 +99,7 @@ public class BPlusTreeTest {
 
     @Test
     void fullDeletionTest() {
-        BPlusTree<Integer, Character> tree = new BPlusTree<>();
+        BPlusTree<Integer, Character> tree = new BPlusTree<Integer, Character>();
         int i = 1;
         for (char c = 'a'; c <= 'z'; c++)
             tree.insert(i++, c);
@@ -115,7 +116,7 @@ public class BPlusTreeTest {
     @Test
     void millionUniqueSearch() {
         Set<Integer> set = new TreeSet<>();
-        BPlusTree<Integer, Integer> tree = new BPlusTree<>();
+        BPlusTree<Integer, Integer> tree = new BPlusTree<Integer, Integer>();
         Random rng = new Random();
 
         while (set.size() < 1000000) {
@@ -135,7 +136,7 @@ public class BPlusTreeTest {
 
     @Test
     void millionSearchWithDuplicates() {
-        BPlusTree<Integer, Integer> tree = new BPlusTree<>();
+        BPlusTree<Integer, Integer> tree = new BPlusTree<Integer, Integer>();
         ArrayList<Integer> keys = new ArrayList<>();
         Random rng = new Random();
 
@@ -155,7 +156,7 @@ public class BPlusTreeTest {
     @Test
     void millionUniqueDeletion() {
         Set<Integer> set = new TreeSet<>();
-        BPlusTree<Integer, Integer> tree = new BPlusTree<>();
+        BPlusTree<Integer, Integer> tree = new BPlusTree<Integer, Integer>();
         Random rng = new Random();
 
         while (set.size() < 1000000) {
@@ -177,7 +178,7 @@ public class BPlusTreeTest {
 
     @Test
     void deletionFromEmptyTree() {
-        BPlusTree<Integer, Integer> tree = new BPlusTree<>();
+        BPlusTree<Integer, Integer> tree = new BPlusTree<Integer, Integer>();
         Assertions.assertFalse(tree.delete(0));
     }
 }

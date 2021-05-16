@@ -21,25 +21,21 @@ public class BPlusTree<K extends Comparable<K>, V> {
         return this.firstLeaf == null;
     }
 
-    public void insert(K key) {
-        insert(key, (V)key);
-    }
-
     @SuppressWarnings("unchecked")
     public void insert(K key, V val) {
         if (isEmpty()) {
             this.firstLeaf = new LeafNode<>(this.order);
-            this.firstLeaf.insert(new Pair<K, V>(key, val));
+            this.firstLeaf.insert(key, val);
         } else {
             LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
 
             if (lf.exists(key) != null) {
-                lf.insert(new Pair<>(key, val));
+                lf.insert(key, val);
                 return;
             }
 
             if (lf.isFull()) {
-                lf.insert(new Pair<>(key, val));
+                lf.insert(key, val);
                 int mid = getMidPoint();
                 ValueList<K, V>[] rightHalf = splitLists(lf, mid);
 
@@ -74,7 +70,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
                     }
                 }
             } else {
-                lf.insert(new Pair<>(key, val));
+                lf.insert(key, val);
             }
         }
     }
