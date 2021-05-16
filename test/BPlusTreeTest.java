@@ -11,8 +11,33 @@ public class BPlusTreeTest {
         for (char c = 'a'; c <= 'z'; c++)
             tree.insert(i++, c);
 
-        for (i = 1; i <= 26; i++)
-            Assertions.assertEquals(tree.find(i), (char)('a' + i - 1));
+        for (i = 1; i <= 26; i++) {
+            int finalI = i;
+            Assertions.assertTrue(tree.find(i).stream().findAny().isPresent() &&
+                    tree.find(i).stream().findFirst().stream().allMatch((x) -> x == ((char)('a' + finalI - 1))));
+        }
+    }
+
+    @Test
+    void duplicateInsertions() {
+        BPlusTree<Integer, Character> tree = new BPlusTree<>();
+
+        int i = 1;
+        for (char c = 'a'; c <= 'z'; c++)
+            tree.insert(i++, c);
+
+        for (char c = 'a'; c <= 'z'; c++)
+            tree.insert(i++, c);
+
+        for (char c = 'a'; c <= 'z'; c++)
+            tree.insert(i++, c);
+
+        for (i = 1; i <= 26; i++) {
+            int finalI = i;
+            Assertions.assertTrue(tree.find(i).stream().findAny().isPresent() &&
+                    tree.find(i).stream().allMatch((x) -> x == ((char)('a' + finalI - 1))));
+        }
+
     }
 
     @Test
@@ -52,7 +77,7 @@ public class BPlusTreeTest {
     }
 
     @Test
-    void insertionAfterDeletionTest() {
+    void findAfterDelete() {
         BPlusTree<Integer, Character> tree = new BPlusTree<>();
         int i = 1;
         for (char c = 'a'; c <= 'z'; c++)
@@ -88,7 +113,7 @@ public class BPlusTreeTest {
     }
 
     @Test
-    void millionSearch() {
+    void millionUniqueSearch() {
         Set<Integer> set = new TreeSet<>();
         BPlusTree<Integer, Integer> tree = new BPlusTree<>();
         Random rng = new Random();
@@ -102,12 +127,33 @@ public class BPlusTreeTest {
         }
 
         for (Integer i : set) {
-            Assertions.assertNotNull(tree.find(i));
+            ValueList<Integer, Integer> valueList = tree.find(i);
+            Assertions.assertNotNull(valueList);
+            Assertions.assertTrue(valueList.stream().allMatch((x) -> x.equals(i)));
         }
     }
 
     @Test
-    void millionDeletion() {
+    void millionSearchWithDuplicates() {
+        BPlusTree<Integer, Integer> tree = new BPlusTree<>();
+        ArrayList<Integer> keys = new ArrayList<>();
+        Random rng = new Random();
+
+        for (int i = 0; i < 1000000; i++) {
+            int r = rng.nextInt();
+            keys.add(r);
+            tree.insert(r, r);
+        }
+
+        for (Integer a : keys) {
+            ValueList<Integer, Integer> valueList = tree.find(a);
+            Assertions.assertNotNull(valueList);
+            Assertions.assertTrue(valueList.stream().allMatch((x) -> x.equals(a)));
+        }
+    }
+
+    @Test
+    void millionUniqueDeletion() {
         Set<Integer> set = new TreeSet<>();
         BPlusTree<Integer, Integer> tree = new BPlusTree<>();
         Random rng = new Random();
@@ -127,5 +173,11 @@ public class BPlusTreeTest {
         for (Integer i : set) {
             Assertions.assertNull(tree.find(i));
         }
+    }
+
+    @Test
+    void deletionFromEmptyTree() {
+        BPlusTree<Integer, Integer> tree = new BPlusTree<>();
+        Assertions.assertFalse(tree.delete(0));
     }
 }
