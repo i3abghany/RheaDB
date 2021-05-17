@@ -1,3 +1,5 @@
+package BPlusTree;
+
 public class InnerNode<K extends Comparable<K>> extends Node<K> {
      private final int minDegree;
     private int degree;

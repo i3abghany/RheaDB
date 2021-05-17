@@ -1,3 +1,5 @@
+package BPlusTree;
+
 import java.util.*;
 import java.lang.*;
 
@@ -24,7 +26,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
     @SuppressWarnings("unchecked")
     public void insert(K key, V val) {
         if (isEmpty()) {
-            this.firstLeaf = new LeafNode<>(this.order);
+            this.firstLeaf = new LeafNode<K, V>(this.order);
             this.firstLeaf.insert(key, val);
         } else {
             LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
@@ -51,7 +53,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
                     lf.getParent().addKey(parentNewKey);
                 }
 
-                LeafNode<K, V> newNode = new LeafNode<>(this.order, lf.getParent());
+                LeafNode<K, V> newNode = new LeafNode<K, V>(this.order, lf.getParent());
                 newNode.setLists(rightHalf, this.order - mid);
 
                 int childIdx = lf.getParent().indexOfPointer(lf);
@@ -94,7 +96,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
         K[] halfKeys = node.splitKeys(midPoint);
         Node<K>[] halfPointers = node.splitPointers(midPoint);
 
-        InnerNode<K> sib = new InnerNode<>(this.order, halfKeys, halfPointers);
+        InnerNode<K> sib = new InnerNode<K>(this.order, halfKeys, halfPointers);
 
         for (var ch : halfPointers) {
             if (ch != null) ch.setParent(sib);
