@@ -87,7 +87,7 @@ public class DiskManager {
     }
 
     public static void saveMetadata(HashMap<String, Table> map) {
-        File file = new File(".\\data\\metadata.db");
+        File file = new File("." + File.separator + "data" + File.separator + "metadata.db");
         if (!file.exists()) {
             file.getParentFile().mkdirs();
             boolean fileCreated = false;

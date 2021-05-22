@@ -7,15 +7,15 @@ import java.util.*;
 public class RheaDB {
     static final int maxTuplesPerPage = 32;
 
-    private final String rootDirectory = ".\\data";
+    private final String rootDirectory = "." + File.separator + "data";
     private final HashMap<String, Table> createdTables;
 
     public RheaDB() throws IOException {
-        File file = new File(rootDirectory + "\\metadata.db");
+        File file = new File(rootDirectory + File.separator + "metadata.db");
         if (!file.exists()) {
-            file.getParentFile().mkdirs();
+            boolean parentsCreated = file.getParentFile().mkdirs();
             boolean fileCreated = file.createNewFile();
-            if (!fileCreated) {
+            if (!fileCreated || ! parentsCreated) {
                 System.out.println("Could not instantiate a metadata file... Exiting.");
                 System.exit(1);
             }
@@ -29,7 +29,7 @@ public class RheaDB {
         if (createdTables.containsKey(tableName))
             return false;
 
-        String pageDirectory = this.rootDirectory + "\\" + tableName;
+        String pageDirectory = this.rootDirectory + File.separator + tableName;
         Table newTable = new Table(tableName, attributeList, pageDirectory, maxTuplesPerPage);
         createdTables.put(tableName, newTable);
 
