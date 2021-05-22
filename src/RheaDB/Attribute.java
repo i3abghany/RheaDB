@@ -1,5 +1,7 @@
 package RheaDB;
 
+import org.w3c.dom.Attr;
+
 import java.io.Serial;
 import java.io.Serializable;
 
@@ -16,6 +18,19 @@ public class Attribute implements Serializable {
         this.name = name;
         this.isPrimaryKey = isPrimaryKey;
         this.size = size;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+        if (!(obj instanceof Attribute other))
+            return false;
+
+        return this.type.equals(other.type) &&
+               this.name.equals(other.name) &&
+               this.isPrimaryKey == other.isPrimaryKey &&
+               this.size == other.size;
     }
 
     public String getName() {

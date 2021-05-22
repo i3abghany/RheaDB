@@ -18,12 +18,14 @@ public class QueryResult {
         for (int i = 0; i < attributes.size(); i++) {
             lengths.add(-1);
             for (RowRecord rowRecord : rows) {
-                lengths.set(i, Math.max(lengths.get(i), rowRecord.getValueOf(attributes.get(i)).toString().length()));
+                String strVal = rowRecord.getValueOf(attributes.get(i)).toString();
+                lengths.set(i, Math.max(lengths.get(i), strVal.length()));
             }
         }
 
         for (int i = 0; i < attributes.size(); i++) {
-            lengths.set(i, Math.max(lengths.get(i), attributes.get(i).getName().length()));
+            String attributeName = attributes.get(i).getName();
+            lengths.set(i, Math.max(lengths.get(i), attributeName.length()));
         }
 
         for (int i = 0; i < attributes.size(); i++) {
@@ -32,8 +34,10 @@ public class QueryResult {
         System.out.println();
         for (RowRecord rowRecord : rows) {
             StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < rowRecord.getAttributeValues().size(); i++)
-                builder.append(String.format("%-" + lengths.get(i) +"s ", rowRecord.getAttributeValues().get(i)));
+            for (int i = 0; i < rowRecord.getAttributeValues().size(); i++) {
+                Object attributeVal = rowRecord.getAttributeValues().get(i);
+                builder.append(String.format("%-" + lengths.get(i) + "s ", attributeVal));
+            }
             System.out.println(builder);
         }
     }

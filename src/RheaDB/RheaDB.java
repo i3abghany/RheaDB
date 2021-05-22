@@ -1,5 +1,7 @@
 package RheaDB;
 
+import Predicate.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -13,9 +15,9 @@ public class RheaDB {
     public RheaDB() throws IOException {
         File file = new File(rootDirectory + File.separator + "metadata.db");
         if (!file.exists()) {
-            boolean parentsCreated = file.getParentFile().mkdirs();
+            file.getParentFile().mkdirs();
             boolean fileCreated = file.createNewFile();
-            if (!fileCreated || ! parentsCreated) {
+            if (!fileCreated) {
                 System.out.println("Could not instantiate a metadata file... Exiting.");
                 System.exit(1);
             }
@@ -34,6 +36,25 @@ public class RheaDB {
         createdTables.put(tableName, newTable);
 
         return true;
+    }
+
+    public QueryResult selectFrom(String tableName, List<Predicate> predicateList) {
+        Table table = createdTables.get(tableName);
+        Vector<RowRecord> result = new Vector<>();
+        for (int i = 1; i <= table.getNumPages(); i++) {
+            Page page = DiskManager.getPage(table, i);
+            page.getRecords().forEach(
+                (r) -> {
+                    boolean ret = true;
+                    for (Predicate p : predicateList) {
+                        Attribute attribute = p.getAttribute();
+                        ret &= p.doesSatisfy(r.getValueOf(attribute));
+                    }
+                    if (ret) result.add(r);
+                }
+            );
+        }
+        return new QueryResult(result, table.getAttributeList());
     }
 
     public void insertInto(String tableName, RowRecord record) {
@@ -71,9 +92,14 @@ public class RheaDB {
             System.exit(1);
         }
         for (int i = 0; i < 33; i++) {
-            Object[] arr1 = {i, "A", 42};
-            rheaDB.insertInto("MyTable", new RowRecord(attributeList, Arrays.asList(arr1)));
+            Object[] objects = {i, "A", 42};
+            rheaDB.insertInto("MyTable", new RowRecord(attributeList, Arrays.asList(objects)));
         }
+
+        List<Predicate> predicateList = new ArrayList<>();
+        predicateList.add(new EqualsPredicate(new Attribute(AttributeType.INT, "ID", true, -1), 10));
+        var res = rheaDB.selectFrom("MyTable", predicateList);
+        res.print();
 
         rheaDB.saveMetadata();
     }

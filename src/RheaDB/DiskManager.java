@@ -13,7 +13,7 @@ public class DiskManager {
     }
 
     private static String getFullPath(Table table, int idx) {
-        return table.getPageDirectory() + "\\" + table.getName() + "_" + idx + ".db";
+        return table.getPageDirectory() + File.separator + table.getName() + "_" + idx + ".db";
     }
 
     public static void savePage(Table table, Page page) {
@@ -36,7 +36,7 @@ public class DiskManager {
             ois.close();
             fis.close();
         } catch (IOException e) {
-            System.out.println("An error occurred while serializing a page... Exiting.");
+            LOGGER.log(Level.SEVERE, "An error occurred while serializing a page... Exiting.");
             System.exit(1);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -45,6 +45,7 @@ public class DiskManager {
         return page;
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private static void serializePage(Page page, String fullPath) {
         try {
             File file = new File(fullPath);
@@ -52,7 +53,7 @@ public class DiskManager {
                 file.getParentFile().mkdirs();
                 boolean fileCreated = file.createNewFile();
                 if (!fileCreated) {
-                    System.out.println("Could not create page file... Exiting.");
+                    LOGGER.log(Level.SEVERE, "Could not create page file... Exiting.");
                     System.exit(1);
                 }
             }
@@ -64,14 +65,14 @@ public class DiskManager {
             oos.close();
             fos.close();
         } catch (IOException e) {
-            System.out.println("An error occurred while serializing a page... Exiting.");
+            LOGGER.log(Level.SEVERE, "An error occurred while serializing a page... Exiting.", e);
             System.exit(1);
         }
     }
 
     public static HashMap<String, Table> readMetadata() throws IOException {
         HashMap<String, Table> map = new HashMap<>();
-        File file = new File(".\\data\\metadata.db");
+        File file = new File("." + File.separator + "data" + File.separator + "metadata.db");
         if (file.length() == 0)
             return new HashMap<>();
         FileInputStream fis = new FileInputStream(file);
@@ -80,17 +81,18 @@ public class DiskManager {
         try {
             map = (HashMap<String, Table>) ois.readObject();
         } catch (ClassNotFoundException e) {
-            System.out.println("Corrupted metadate file... Exiting.");
+            LOGGER.log(Level.SEVERE, "Corrupted metadata file... Exiting.", e);
             System.exit(1);
         }
         return map;
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void saveMetadata(HashMap<String, Table> map) {
         File file = new File("." + File.separator + "data" + File.separator + "metadata.db");
         if (!file.exists()) {
-            file.getParentFile().mkdirs();
             boolean fileCreated = false;
+            file.getParentFile().mkdirs();
             try {
                 fileCreated = file.createNewFile();
             } catch (IOException ioException) {
@@ -98,7 +100,7 @@ public class DiskManager {
                 System.exit(1);
             }
             if (!fileCreated) {
-                System.out.println("Could not instantiate metadata file... Exiting.");
+                LOGGER.log(Level.SEVERE, "Could not instantiate metadata file... Exiting.");
                 System.exit(1);
             }
         }

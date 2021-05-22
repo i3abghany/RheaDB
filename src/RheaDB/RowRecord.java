@@ -1,5 +1,7 @@
 package RheaDB;
 
+import org.w3c.dom.Attr;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -12,7 +14,7 @@ public class RowRecord implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private List<Object> attributeValues;
-    private List<Attribute> attributeList;
+    private final List<Attribute> attributeList;
 
     private int pageId, rowId;
 
@@ -51,5 +53,22 @@ public class RowRecord implements Serializable {
 
     public void setRowId(int rowId) {
         this.rowId = rowId;
+    }
+
+    public Object getValueOf(Attribute attribute) {
+        for (int i = 0; i < attributeList.size(); i++) {
+            if (attribute.equals(attributeList.get(i)))
+                return attributeValues.get(i);
+        }
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        for (Object o : this.attributeValues)
+            builder.append(o).append(", ");
+        builder.setLength(builder.length() - 2);
+        return builder.toString();
     }
 }
