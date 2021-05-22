@@ -1,22 +1,27 @@
 package BPlusTree;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.*;
 import java.lang.*;
 
-public class BPlusTree<K extends Comparable<K>, V> {
+public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private InnerNode<K> root;
     private LeafNode<K, V> firstLeaf;
     private final int order;
 
     private static final int DEFAULT_ORDER = 64;
 
-    public BPlusTree() {
-        this(DEFAULT_ORDER);
-    }
-
     private BPlusTree(int order) {
         this.order = order;
         this.root = null;
+    }
+
+    public BPlusTree() {
+        this(DEFAULT_ORDER);
     }
 
     public boolean isEmpty() {
