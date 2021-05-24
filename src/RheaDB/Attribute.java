@@ -10,14 +10,12 @@ public class Attribute implements Serializable {
     private static final long serialVersionUID = 1L;
     private final AttributeType type;
     private final String name;
-    private final boolean isPrimaryKey;
-    private final int size; // only applicable for data types with non-fixed-size, e.g., strings.
+    private boolean isPrimaryKey;
 
-    public Attribute(AttributeType type, String name, boolean isPrimaryKey, int size) {
+    public Attribute(AttributeType type, String name, boolean isPrimaryKey) {
         this.type = type;
         this.name = name;
         this.isPrimaryKey = isPrimaryKey;
-        this.size = size;
     }
 
     @Override
@@ -29,28 +27,27 @@ public class Attribute implements Serializable {
 
         return this.type.equals(other.type) &&
                this.name.equals(other.name) &&
-               this.isPrimaryKey == other.isPrimaryKey &&
-               this.size == other.size;
+               this.isPrimaryKey == other.isPrimaryKey;
     }
 
     public String getName() {
         return name;
     }
 
-    public int getSize() {
-        return size;
-    }
-
     public AttributeType getType() {
         return type;
     }
 
-    public static AttributeType getAttributeFromString(String attributeName) {
+    public void setPrimaryKey(boolean val) {
+        this.isPrimaryKey = val;
+    }
+
+    public static AttributeType getAttributeTypeFromString(String attributeName) {
         return switch (attributeName) {
             case "STRING" -> AttributeType.STRING;
             case "INT" -> AttributeType.INT;
             case "FLOAT" -> AttributeType.FLOAT;
-            default -> throw new IllegalArgumentException("Invalid data type.");
+            default -> throw new IllegalArgumentException("Invalid data type <" + attributeName + ">.");
         };
     }
 }

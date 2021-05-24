@@ -1,7 +1,5 @@
 package RheaDB;
 
-import org.w3c.dom.Attr;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -9,7 +7,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RowRecord implements Serializable {
-
     @Serial
     private static final long serialVersionUID = 1L;
 
