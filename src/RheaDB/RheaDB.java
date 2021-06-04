@@ -99,12 +99,12 @@ public class RheaDB {
             Page page = DiskManager.getPage(table, i);
             page.getRecords().forEach(
                     (r) -> {
-                        boolean ret = true;
+                        boolean ret = false;
                         for (Predicate p : selectStatement.getPredicates()) {
                             Attribute attribute = table
                                     .getAttributeWithName(p.getAttributeName());
                             p.setAttribute(attribute);
-                            ret &= p.doesSatisfy(r.getValueOf(attribute));
+                            ret |= p.doesSatisfy(r.getValueOf(attribute));
                         }
                         if (ret) result.add(r);
                     }
