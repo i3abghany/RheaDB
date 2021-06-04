@@ -5,8 +5,8 @@ import RheaDB.AttributeType;
 
 public class LessThanPredicate extends Predicate {
 
-    public LessThanPredicate(Attribute attribute, Object value) {
-        super(attribute, value);
+    public LessThanPredicate(String attributeName, Object value) {
+        super(attributeName, value);
     }
 
     @Override

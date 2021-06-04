@@ -4,8 +4,8 @@ import RheaDB.Attribute;
 
 public class EqualsPredicate extends Predicate {
 
-    public EqualsPredicate(Attribute attribute, Object value) {
-        super(attribute, value);
+    public EqualsPredicate(String attributeName, Object value) {
+        super(attributeName, value);
     }
 
     @Override

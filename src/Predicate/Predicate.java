@@ -1,9 +1,11 @@
 package Predicate;
 
 import RheaDB.Attribute;
+import org.w3c.dom.Attr;
 
 public abstract class Predicate {
-    protected final Attribute attribute;
+    protected Attribute attribute;
+    protected final String attributeName;
     protected final Object value;
 
     public enum Operation {
@@ -15,13 +17,22 @@ public abstract class Predicate {
         LESS_THAN_EQUAL,
     }
 
-    public Predicate(Attribute attribute, Object value) {
-        this.attribute = attribute;
+    public Predicate(String attributeName, Object value) {
+        this.attribute = null;
+        this.attributeName = attributeName;
         this.value = value;
     }
 
     public Attribute getAttribute() {
         return this.attribute;
+    }
+
+    public void setAttribute(Attribute attribute) {
+        this.attribute = attribute;
+    }
+
+    public String getAttributeName() {
+        return this.attributeName;
     }
 
     public abstract boolean doesSatisfy(Object comp);

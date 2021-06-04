@@ -4,8 +4,8 @@ import RheaDB.Attribute;
 
 public class NotEqualsPredicate extends Predicate {
 
-    public NotEqualsPredicate(Attribute attribute, Object value) {
-        super(attribute, value);
+    public NotEqualsPredicate(String attributeName, Object value) {
+        super(attributeName, value);
     }
 
     @Override

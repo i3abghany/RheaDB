@@ -1,12 +1,9 @@
 package Predicate;
 
-import RheaDB.Attribute;
-import RheaDB.AttributeType;
-
 public class GreaterThanPredicate extends Predicate {
 
-    public GreaterThanPredicate(Attribute attribute, Object value) {
-        super(attribute, value);
+    public GreaterThanPredicate(String attributeName, Object value) {
+        super(attributeName, value);
     }
 
     @Override
