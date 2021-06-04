@@ -7,6 +7,7 @@ import QueryProcessor.DDLStatement.CreateIndexStatement;
 import QueryProcessor.DDLStatement.CreateTableStatement;
 import QueryProcessor.Parser;
 import QueryProcessor.SQLStatement;
+import org.w3c.dom.Attr;
 
 import java.io.File;
 import java.io.IOException;
@@ -122,6 +123,11 @@ public class RheaDB {
         record.setRowId(lastPage.getLastRowIndex());
         lastPage.addRecord(record);
         DiskManager.savePage(table, lastPage);
+
+        for (Attribute attribute : table.getAttributeList()) {
+            if (attribute.getIsIndexed())
+                updateIndex(tableName, attribute.getName());
+        }
     }
 
     public boolean createIndex(String tableName, String attributeName) {
@@ -155,6 +161,8 @@ public class RheaDB {
 
         DiskManager.saveIndex(table.getPageDirectory() + File.separator +
                 "index" + File.separator + attributeName + ".idx", bPlusTree);
+
+        attribute.setIsIndexed(true);
         return true;
     }
 
