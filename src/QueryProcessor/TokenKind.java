@@ -9,7 +9,12 @@ public enum TokenKind {
     IntegralToken,
     FloatingPointToken,
     StringLiteralToken,
+    DataTypeToken,
     EqualsToken,
-    ANDToken,
-    ORToken,
+    NotEqualsToken,
+    GreaterEqualsToken,
+    LessEqualsToken,
+    GreaterToken,
+    LessToken,
+    CommaToken
 }

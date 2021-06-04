@@ -1,8 +1,6 @@
 package QueryProcessor;
 
 import RheaDB.Attribute;
-import org.w3c.dom.Attr;
-
 import java.util.Vector;
 
 public abstract class DDLStatement extends SQLStatement {

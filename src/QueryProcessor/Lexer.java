@@ -3,17 +3,26 @@ package QueryProcessor;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 public class Lexer {
     private final String text;
     private int position;
 
     private final HashSet<String> keywordSet = new HashSet<>();
+    private final HashSet<String> dataTypeSet = new HashSet<>();
 
     public Lexer(String input) {
         this.text = input;
         this.position = 0;
         populateKeywordSet();
+        populateDataTypeSet();
+    }
+
+    private void populateDataTypeSet() {
+        keywordSet.add("int");
+        keywordSet.add("string");
+        keywordSet.add("float");
     }
 
     private void populateKeywordSet() {
@@ -62,14 +71,52 @@ public class Lexer {
                             tokenText.toLowerCase(Locale.ROOT),
                             tokenText.toLowerCase(Locale.ROOT),
                             TokenKind.KeywordToken));
+                else if (isDataType(tokenText))
+                    tokens.add(new Token(tokenPosition,
+                            tokenText.toLowerCase(Locale.ROOT),
+                            tokenText.toLowerCase(Locale.ROOT),
+                            TokenKind.DataTypeToken));
                 else
                     tokens.add(new Token(tokenPosition, tokenText, tokenText,
                             TokenKind.IdentifierToken));
-            } else if (getCurr() == '=') {
+            } else if (inBounds() && getCurr() == '=') {
                 advance();
                 tokens.add(new Token(tokenPosition, "=", "=",
                         TokenKind.EqualsToken));
-            } else if (getCurr() == '"') {
+            } else if (inBounds() && getCurr() == '!') {
+                advance();
+                if (!inBounds() || getCurr() != '=') {
+                    tokenText = "!";
+                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
+                            TokenKind.BadToken));
+                } else {
+                    tokenText = "!=";
+                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
+                            TokenKind.NotEqualsToken));
+                }
+            } else if (inBounds() && getCurr() == '>') {
+                advance();
+                if (!inBounds() || getCurr() != '=') {
+                    tokenText = "!";
+                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
+                            TokenKind.GreaterToken));
+                } else {
+                    tokenText = "!=";
+                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
+                            TokenKind.GreaterEqualsToken));
+                }
+            } else if (inBounds() && getCurr() == '<') {
+                advance();
+                if (!inBounds() || getCurr() != '=') {
+                    tokenText = "<";
+                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
+                            TokenKind.LessToken));
+                } else {
+                    tokenText = "!=";
+                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
+                            TokenKind.LessEqualsToken));
+                }
+            } else if (inBounds() && getCurr() == '"') {
                 advance();
                 while (inBounds() && getCurr() != '"')
                     advance();
@@ -79,32 +126,15 @@ public class Lexer {
                     tokens.add(new Token(tokenPosition, tokenText, tokenText,
                             TokenKind.BadToken));
                 } else {
-                    tokenText = text.substring(tokenPosition, position);
+                    tokenText = text.substring(tokenPosition + 1, position - 1);
                     tokens.add(new Token(tokenPosition, tokenText, tokenText,
                             TokenKind.StringLiteralToken));
                 }
-            } else if (inBounds() && getCurr() == '&') {
+            } else if (getCurr() == ',') {
                 advance();
-                if (!inBounds() || getCurr() != '&') {
-                    tokenText = Character.toString('&');
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.BadToken));
-                } else {
-                    advance();
-                    tokens.add(new Token(tokenPosition, "&&", "&&",
-                            TokenKind.ANDToken));
-                }
-            } else if (inBounds() && getCurr() == '|') {
-                advance();
-                if (!inBounds() || getCurr() != '|') {
-                    tokenText = Character.toString('|');
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.BadToken));
-                } else {
-                    advance();
-                    tokens.add(new Token(tokenPosition, "&&", "&&",
-                            TokenKind.ORToken));
-                }
+                tokenText = ",";
+                tokens.add(new Token(tokenPosition, tokenText, tokenText,
+                        TokenKind.CommaToken));
             } else {
                 tokens.add(new Token(tokenPosition,
                         Character.toString(getCurr()),
@@ -114,6 +144,10 @@ public class Lexer {
         }
         tokens.add(new Token(this.position, null, "\0", TokenKind.EOFToken));
         return tokens;
+    }
+
+    private boolean isDataType(String tokenText) {
+        return this.dataTypeSet.contains(tokenText.toLowerCase(Locale.ROOT));
     }
 
     private boolean isKeyword(String tokenText) {
@@ -133,12 +167,6 @@ public class Lexer {
     private void advance() {
         if (this.position != this.text.length())
             this.position++;
-    }
-
-    public static void main(String[] args) {
-        for (var t : new Lexer("SELECT xx from TableName WHERE a = 1z1 && b =" +
-                " 2").lex())
-            System.out.println(t.getKind() + " " + t.getTokenText());
     }
 }
 

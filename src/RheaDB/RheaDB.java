@@ -3,11 +3,10 @@ package RheaDB;
 import BPlusTree.BPlusTree;
 import Predicate.Predicate;
 import QueryProcessor.DDLStatement;
-import QueryProcessor.DDLStatement.CreateIndexStatement;
-import QueryProcessor.DDLStatement.CreateTableStatement;
+import QueryProcessor.DDLStatement.*;
+import QueryProcessor.DMLStatement;
 import QueryProcessor.Parser;
 import QueryProcessor.SQLStatement;
-import org.w3c.dom.Attr;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +30,7 @@ public class RheaDB {
 
             SQLStatement sqlStatement = new Parser(statementStr).parse();
             if (sqlStatement == null)
-                continue;
+                System.out.println("Error parsing the statement.");
 
             executeStatement(sqlStatement);
             if (sqlStatement.getKind() == SQLStatement.SQLStatementKind.DDL)
@@ -54,7 +53,10 @@ public class RheaDB {
                         statement.getIndexAttribute());
             }
         } else {
-            assert false; // handling DML -- not implemented yet.
+            DMLStatement dmlStatement = (DMLStatement) sqlStatement;
+            if (dmlStatement.getDMLKind() == DMLStatement.DMLStatementKind.SELECT) {
+                return selectFrom((DMLStatement.SelectStatement) dmlStatement);
+            }
         }
 
         return null;
@@ -89,9 +91,8 @@ public class RheaDB {
         return true;
     }
 
-    public QueryResult selectFrom(String tableName,
-                                  List<Predicate> predicateList) {
-        Table table = createdTables.get(tableName);
+    public QueryResult selectFrom(DMLStatement.SelectStatement selectStatement) {
+        Table table = createdTables.get(selectStatement.getTableName());
         Vector<RowRecord> result = new Vector<>();
 
         for (int i = 1; i <= table.getNumPages(); i++) {
@@ -99,8 +100,10 @@ public class RheaDB {
             page.getRecords().forEach(
                     (r) -> {
                         boolean ret = true;
-                        for (Predicate p : predicateList) {
-                            Attribute attribute = p.getAttribute();
+                        for (Predicate p : selectStatement.getPredicates()) {
+                            Attribute attribute = table
+                                    .getAttributeWithName(p.getAttributeName());
+                            p.setAttribute(attribute);
                             ret &= p.doesSatisfy(r.getValueOf(attribute));
                         }
                         if (ret) result.add(r);
