@@ -25,7 +25,7 @@ public abstract class DDLStatement extends SQLStatement {
 
         public CreateTableStatement(String tableName, Vector<Attribute> attributeVector) {
             this.attributeVector = attributeVector;
-            this.attributeVector.elementAt(0).setPrimaryKey(true);
+            this.attributeVector.elementAt(0).setIsPrimaryKey(true);
             this.tableName = tableName;
         }
 

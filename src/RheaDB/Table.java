@@ -51,4 +51,13 @@ public class Table implements Serializable {
         this.numPages++;
         return new Page(this.maxTuplesPerPage, this.numPages);
     }
+
+    public Attribute getAttributeWithName(String name) {
+        for (Attribute attribute : attributeList) {
+            if (attribute.getName().equals(name))
+                return attribute;
+        }
+
+        return null;
+    }
 }

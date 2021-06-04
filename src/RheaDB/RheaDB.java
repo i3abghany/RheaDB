@@ -1,9 +1,12 @@
 package RheaDB;
 
-import Predicate.EqualsPredicate;
+import BPlusTree.BPlusTree;
 import Predicate.Predicate;
-import QueryProcessor.*;
-import QueryProcessor.DDLStatement.*;
+import QueryProcessor.DDLStatement;
+import QueryProcessor.DDLStatement.CreateIndexStatement;
+import QueryProcessor.DDLStatement.CreateTableStatement;
+import QueryProcessor.Parser;
+import QueryProcessor.SQLStatement;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +17,7 @@ public class RheaDB {
 
     private final String rootDirectory = "." + File.separator + "data";
     private final HashMap<String, Table> createdTables;
+
     public void run() {
         String statementStr;
         Scanner scanner = new Scanner(System.in);
@@ -36,12 +40,17 @@ public class RheaDB {
 
     private QueryResult executeStatement(SQLStatement sqlStatement) {
         if (sqlStatement.getKind() == SQLStatement.SQLStatementKind.DDL) {
-            if (((DDLStatement) sqlStatement).getDDLKind() == DDLStatement.DDLKind.CreateTable) {
-                CreateTableStatement statement = (CreateTableStatement) sqlStatement;
+            if (((DDLStatement) sqlStatement).getDDLKind() ==
+                    DDLStatement.DDLKind.CreateTable) {
+                CreateTableStatement statement =
+                        (CreateTableStatement) sqlStatement;
                 boolean wasCreated = createTable(statement.getTableName(),
                         statement.getAttributeVector());
             } else {
-                assert false; // handling create index -- not implemented yet.
+                CreateIndexStatement statement =
+                        (CreateIndexStatement) sqlStatement;
+                boolean indexCreated = createIndex(statement.getTableName(),
+                        statement.getIndexAttribute());
             }
         } else {
             assert false; // handling DML -- not implemented yet.
@@ -51,7 +60,8 @@ public class RheaDB {
     }
 
     public RheaDB() throws IOException {
-        File file = new File(rootDirectory + File.separator + "metadata.db");
+        File file = new File(rootDirectory + File.separator +
+                "metadata.db");
         if (!file.exists()) {
             file.getParentFile().mkdirs();
             boolean fileCreated = file.createNewFile();
@@ -82,6 +92,7 @@ public class RheaDB {
                                   List<Predicate> predicateList) {
         Table table = createdTables.get(tableName);
         Vector<RowRecord> result = new Vector<>();
+
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = DiskManager.getPage(table, i);
             page.getRecords().forEach(
@@ -111,6 +122,47 @@ public class RheaDB {
         record.setRowId(lastPage.getLastRowIndex());
         lastPage.addRecord(record);
         DiskManager.savePage(table, lastPage);
+    }
+
+    public boolean createIndex(String tableName, String attributeName) {
+        Table table = getTable(tableName);
+        if (table == null)
+            return false;
+
+        Attribute attribute = table.getAttributeWithName(attributeName);
+        if (attribute == null)
+            return false;
+
+        BPlusTree bPlusTree;
+        AttributeType type = attribute.getType();
+
+        switch (type) {
+            case INT -> bPlusTree = new BPlusTree<Integer, RowRecord>();
+            case STRING -> bPlusTree = new BPlusTree<String, RowRecord>();
+            case FLOAT -> bPlusTree = new BPlusTree<Float, RowRecord>();
+            default -> bPlusTree = null;
+        }
+
+        if (bPlusTree == null)
+            return false;
+
+        for (int i = 1; i <= table.getNumPages(); i++) {
+            Page page = DiskManager.getPage(table, i);
+            page.getRecords().forEach(
+                r -> bPlusTree.insert((Comparable) r.getValueOf(attribute), r)
+            );
+        }
+
+        DiskManager.saveIndex(table.getPageDirectory() + File.separator +
+                "index" + File.separator + attributeName + ".idx", bPlusTree);
+        return true;
+    }
+
+    public void updateIndex(String tableName, String attributeName) {
+        Table table = getTable(tableName);
+        DiskManager.deleteIndex(table.getPageDirectory() + File.separator +
+                "index" + File.separator + attributeName + ".idx");
+        createIndex(tableName, attributeName);
     }
 
     private Table getTable(String name) {

@@ -1,9 +1,12 @@
 package BPlusTree;
 
+import QueryProcessor.Lexer;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 import java.lang.*;
+import java.util.function.Predicate;
 
 public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     @Serial
@@ -13,7 +16,7 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     private LeafNode<K, V> firstLeaf;
     private final int order;
 
-    private static final int DEFAULT_ORDER = 64;
+    private static final int DEFAULT_ORDER = 16;
 
     private BPlusTree(int order) {
         this.order = order;
@@ -137,19 +140,19 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         return (int) Math.ceil((this.order + 1) / 2.0) - 1;
     }
 
-    private LeafNode<K, V> findLeafNode(Node<K> nod, K key) {
-        if (nod == null)
+    private LeafNode<K, V> findLeafNode(Node<K> node, K key) {
+        if (node == null)
             return null;
 
-        K[] ks = nod.getKeys();
+        K[] ks = node.getKeys();
 
         int idx = 0;
-        for (; idx < nod.getNumberOfKeys(); idx++) {
+        for (; idx < node.getNumberOfKeys(); idx++) {
             if (ks[idx].compareTo(key) > 0)
                 break;
         }
 
-        Node<K> child = nod.getChildren()[idx];
+        Node<K> child = node.getChildren()[idx];
         if (child instanceof LeafNode) {
             return (LeafNode<K, V>) child;
         } else {
@@ -174,6 +177,25 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
 
         if (idx >= 0) return lists[idx];
         else return null;
+    }
+
+    public Vector<V> findRange(K lowerBound, K upperBound) {
+        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(lowerBound);
+
+        Vector<V> allRecords = new Vector<>();
+        loop: while (lf != null) {
+            for (int i = 0; i < lf.getNumberOfLists(); i++) {
+                ValueList<K, V> valueList = lf.getLists()[i];
+                if (valueList.getKey().compareTo(upperBound) >= 0)
+                    break loop;
+                if (valueList.getKey().compareTo(lowerBound) < 0)
+                    continue;
+                allRecords.addAll(valueList);
+            }
+            lf = (LeafNode<K, V>)lf.getRightSibling();
+        }
+
+        return allRecords;
     }
 
     @SuppressWarnings("unused")

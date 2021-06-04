@@ -11,6 +11,7 @@ public class Attribute implements Serializable {
     private final AttributeType type;
     private final String name;
     private boolean isPrimaryKey;
+    private boolean isIndexed;
 
     public Attribute(AttributeType type, String name, boolean isPrimaryKey) {
         this.type = type;
@@ -38,8 +39,20 @@ public class Attribute implements Serializable {
         return type;
     }
 
-    public void setPrimaryKey(boolean val) {
+    public void setIsPrimaryKey(boolean val) {
         this.isPrimaryKey = val;
+    }
+
+    public boolean getIsPrimaryKey() {
+        return this.isPrimaryKey;
+    }
+
+    public void setIsIndexed(boolean val) {
+        this.isIndexed = val;
+    }
+
+    public boolean getIsIndexed() {
+        return this.isIndexed;
     }
 
     public static AttributeType getAttributeTypeFromString(String attributeName) {

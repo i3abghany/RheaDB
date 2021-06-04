@@ -1,5 +1,7 @@
 package RheaDB;
 
+import BPlusTree.BPlusTree;
+
 import java.io.*;
 import java.util.HashMap;
 import java.util.logging.*;
@@ -85,6 +87,69 @@ public class DiskManager {
             System.exit(1);
         }
         return map;
+    }
+
+    public static void saveIndex(String fullPath, BPlusTree tree) {
+        try {
+            File file = new File(fullPath);
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+                boolean fileCreated = file.createNewFile();
+                if (!fileCreated) {
+                    LOGGER.log(Level.SEVERE, "Could not create index file... Exiting.");
+                    System.exit(1);
+                }
+            }
+            FileOutputStream fos = new FileOutputStream(file);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+
+            oos.writeObject(tree);
+
+            oos.close();
+            fos.close();
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "An error occurred while serializing index... Exiting.", e);
+            System.exit(1);
+        }
+    }
+
+    public static void deleteIndex(String fullPath) {
+        File file = new File(fullPath);
+        if (!file.exists()) {
+            LOGGER.log(Level.SEVERE, "Could not find the index to delete.");
+            System.exit(1);
+        }
+
+        if (!file.delete()) {
+            LOGGER.log(Level.SEVERE, "Could not delete the index.");
+            System.exit(1);
+        }
+    }
+
+    public BPlusTree deserializeIndex(String fullPath) {
+        BPlusTree tree = null;
+        try {
+            File file = new File(fullPath);
+            if (!file.exists()) {
+                return null;
+            }
+
+            FileInputStream fis = new FileInputStream(file);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+
+            tree = (BPlusTree) ois.readObject();
+
+            ois.close();
+            fis.close();
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "An error occurred while deserializing"
+                    + " index... Exiting.");
+            System.exit(1);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        return tree;
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
