@@ -141,7 +141,6 @@ public class Lexer {
                 advance();
             }
         }
-        tokens.add(new Token(this.position, null, "\0", TokenKind.EOFToken));
         return tokens;
     }
 

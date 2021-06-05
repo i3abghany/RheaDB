@@ -1,7 +1,6 @@
 package QueryProcessor;
 
 public enum TokenKind {
-    EOFToken,
     BadToken,
     WhiteSpaceToken,
     KeywordToken,
