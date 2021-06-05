@@ -31,6 +31,9 @@ public class RheaDB {
             if (statementStr.equals("@exit"))
                 return;
 
+            if (statementStr.isEmpty())
+                continue;
+
             SQLStatement sqlStatement;
             QueryResult queryResult;
 
@@ -115,8 +118,7 @@ public class RheaDB {
             createdTables = DiskManager.readMetadata();
     }
 
-    public boolean createTable(String tableName,
-                               Vector<Attribute> attributeList) {
+    public boolean createTable(String tableName, Vector<Attribute> attributeList) {
         if (createdTables.containsKey(tableName))
             return false;
 
@@ -130,15 +132,18 @@ public class RheaDB {
     @SuppressWarnings("unchecked")
     public QueryResult selectFrom(SelectStatement selectStatement) throws SQLException {
         Table table = getTable(selectStatement.getTableName());
+        Vector<String> selectedAttributes = selectStatement.getSelectedAttributes();
         if (table == null) {
             throw new SQLException("The name " + selectStatement.getTableName()
                     + " does not resolve to a table in the database.");
         }
-        Vector<RowRecord> result = new Vector<>();
+        HashSet<RowRecord> result = new HashSet<>();
         Vector<Predicate> predicates = selectStatement.getPredicates();
 
+        verifySelectedAttributesExist(table, selectedAttributes);
+
         if (predicates.isEmpty()) {
-            return getAllRows(table, selectStatement.getSelectedAttributes());
+            return getAllRows(table, selectedAttributes);
         }
         for (Predicate predicate : predicates) {
             Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
@@ -180,11 +185,19 @@ public class RheaDB {
         }
         return result.size() == 0 ? null :
             new QueryResult(result, table.getAttributeList(),
-                selectStatement.getSelectedAttributes());
+                selectedAttributes);
+    }
+
+    private void verifySelectedAttributesExist(Table table, Vector<String> selectedAttributes) throws SQLException {
+        for (String attributeName : selectedAttributes) {
+            if (table.getAttributeWithName(attributeName) == null) {
+                throw new SQLException("Invalid attribute name " + attributeName);
+            }
+        }
     }
 
     private QueryResult getAllRows(Table table, Vector<String> selectedAttributes) {
-        Vector<RowRecord> result = new Vector<>();
+        HashSet<RowRecord> result = new HashSet<>();
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = DiskManager.getPage(table, i);
             result.addAll(page.getRecords());

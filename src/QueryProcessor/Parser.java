@@ -75,7 +75,7 @@ public class Parser {
         return new DDLStatement.CreateIndexStatement(tableName, attributeName);
     }
 
-    private SQLStatement parseDML() {
+    private SQLStatement parseDML() throws SQLException {
         if (tokenVector.size() == 1)
             return null;
         if (tokenVector.get(0).getTokenText().equals("select"))
@@ -102,7 +102,7 @@ public class Parser {
         return new DMLStatement.InsertStatement(tableName, objectList);
     }
 
-    private SQLStatement parseSelect() {
+    private SQLStatement parseSelect() throws SQLException {
         Vector<String> attributeNames = new Vector<>();
         Vector<Predicate> predicates = new Vector<>();
         Token token;
@@ -143,7 +143,7 @@ public class Parser {
                 }
                 predicates.add(parsePredicate(attributeNameToken, operatorToken, valueToken));
             } catch (Exception e) {
-                System.out.println("Error parsing SELECT statement.");
+                throw new SQLException("Error parsing SELECT statement.");
             }
         }
 

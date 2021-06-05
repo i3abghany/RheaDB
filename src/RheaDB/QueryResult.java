@@ -1,13 +1,14 @@
 package RheaDB;
 
+import java.util.HashSet;
 import java.util.Vector;
 
 public class QueryResult {
-    private final Vector<RowRecord> rows;
+    private final HashSet<RowRecord> rows;
     private final Vector<Attribute> allAttributes;
     private final Vector<String> selectedAttributes;
 
-    QueryResult(Vector<RowRecord> rows, Vector<Attribute> attributes,
+    QueryResult(HashSet<RowRecord> rows, Vector<Attribute> attributes,
                 Vector<String> selectedAttributes) {
         this.rows = rows;
         this.allAttributes = attributes;
