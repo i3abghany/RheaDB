@@ -3,28 +3,28 @@ package RheaDB;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class RowRecord implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private List<Object> attributeValues;
-    private final List<Attribute> attributeList;
+    private Vector<Object> attributeValues;
+    private final Vector<Attribute> attributeList;
 
     private int pageId, rowId;
 
-    RowRecord(List<Attribute> attributeList, List<Object> attributeValues) {
+    RowRecord(Vector<Attribute> attributeList, Vector<Object> attributeValues) {
         this.attributeValues = attributeValues;
         this.attributeList = attributeList;
     }
 
-    public List<Object> getAttributeValues() {
+    public Vector<Object> getAttributeValues() {
         return attributeValues;
     }
 
-    public List<Attribute> getAttributeTypes() {
+    public Vector<Attribute> getAttributeTypes() {
         return attributeList;
     }
 
@@ -33,7 +33,8 @@ public class RowRecord implements Serializable {
     }
 
     public void setAttributeValues(Object[] values) {
-        this.attributeValues = Arrays.stream(values).collect(Collectors.toList());
+        this.attributeValues = Arrays.stream(values)
+                .collect(Collectors.toCollection(Vector::new));
     }
 
     public int getPageId() {

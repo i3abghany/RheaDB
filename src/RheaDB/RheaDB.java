@@ -64,12 +64,22 @@ public class RheaDB {
             } else {
                 CreateIndexStatement statement =
                         (CreateIndexStatement) sqlStatement;
-                if (getTable(statement.getTableName()) == null) {
+                Table table = getTable(statement.getTableName());
+                String indexAttributeName = statement.getIndexAttribute();
+                Attribute indexAttribute =
+                        table.getAttributeWithName(indexAttributeName);
+                if (table.getName() == null) {
                     throw new SQLException("Name " + statement.getTableName() +
                             " Does not resolve to a table.");
                 }
+
+                if (indexAttribute.getIsIndexed()) {
+                    throw new SQLException("There already exists an index for the" +
+                            "provided attribute.");
+                }
+
                 boolean indexCreated = createIndex(statement.getTableName(),
-                        statement.getIndexAttribute());
+                        indexAttributeName);
                 if (!indexCreated) {
                     throw new SQLException("Could not create the index.");
                 }
@@ -118,11 +128,18 @@ public class RheaDB {
         return true;
     }
     @SuppressWarnings("unchecked")
-    public QueryResult selectFrom(SelectStatement selectStatement) {
-        Table table = createdTables.get(selectStatement.getTableName());
+    public QueryResult selectFrom(SelectStatement selectStatement) throws SQLException {
+        Table table = getTable(selectStatement.getTableName());
+        if (table == null) {
+            throw new SQLException("The name " + selectStatement.getTableName()
+                    + " does not resolve to a table in the database.");
+        }
         Vector<RowRecord> result = new Vector<>();
         Predicate[] predicates = selectStatement.getPredicates();
-        
+
+        if (predicates.length == 0) {
+            return getAllRows(table, selectStatement.getSelectedAttributes());
+        }
         for (Predicate predicate : predicates) {
             Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
             if (attribute == null) {
@@ -162,7 +179,22 @@ public class RheaDB {
             );
         }
         return result.size() == 0 ? null :
-            new QueryResult(result, table.getAttributeList());
+            new QueryResult(result, table.getAttributeList(),
+                Arrays.stream(selectStatement.getSelectedAttributes())
+                      .collect(Collectors.toCollection(Vector::new)));
+    }
+
+    private QueryResult getAllRows(Table table, String[] selectedAttributes) {
+        Vector<RowRecord> result = new Vector<>();
+        for (int i = 1; i <= table.getNumPages(); i++) {
+            Page page = DiskManager.getPage(table, i);
+            result.addAll(page.getRecords());
+        }
+
+        return result.size() == 0 ? null :
+            new QueryResult(result, table.getAttributeList(),
+                Arrays.stream(selectedAttributes)
+                    .collect(Collectors.toCollection(Vector::new)));
     }
 
     public void insertInto(InsertStatement insertStatement) throws SQLException {

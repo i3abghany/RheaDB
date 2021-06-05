@@ -10,7 +10,8 @@ public class Table implements Serializable {
     private int numPages;
     private final int maxTuplesPerPage;
 
-    public Table(String name, Vector<Attribute> attributeList, String pageDirectory, int maxTuplesPerPage) {
+    public Table(String name, Vector<Attribute> attributeList,
+                 String pageDirectory, int maxTuplesPerPage) {
         this.name = name;
         this.attributeList = attributeList;
         this.pageDirectory = pageDirectory;
@@ -52,11 +53,10 @@ public class Table implements Serializable {
     }
 
     public Attribute getAttributeWithName(String name) {
-        for (Attribute attribute : attributeList) {
-            if (attribute.getName().equals(name))
-                return attribute;
-        }
-
-        return null;
+        return attributeList
+                .stream()
+                .filter(a -> a.getName().equals(name))
+                .findAny()
+                .orElse(null);
     }
 }
