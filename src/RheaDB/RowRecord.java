@@ -3,6 +3,7 @@ package RheaDB;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
@@ -68,5 +69,39 @@ public class RowRecord implements Serializable {
             builder.append(o).append(", ");
         builder.setLength(builder.length() - 2);
         return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+
+        if (obj.getClass() != this.getClass())
+            return false;
+
+        final RowRecord other = (RowRecord) obj;
+
+        if (this.pageId != other.pageId || this.rowId != other.rowId)
+            return false;
+
+        if (this.attributeValues.size() != other.attributeValues.size() ||
+            this.attributeList.size() != other.attributeList.size())
+            return false;
+
+        for (int i = 0; i < attributeList.size(); i++) {
+            if (!this.attributeList.get(i).equals(other.attributeList.get(i)))
+                return false;
+        }
+
+        for (int i = 0; i < attributeValues.size(); i++) {
+            if (!this.attributeValues.get(i).equals(other.attributeValues.get(i)))
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pageId, rowId);
     }
 }
