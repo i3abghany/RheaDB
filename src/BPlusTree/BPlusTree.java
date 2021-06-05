@@ -1,12 +1,10 @@
 package BPlusTree;
 
-import QueryProcessor.Lexer;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 import java.lang.*;
-import java.util.function.Predicate;
+import Predicate.*;
 
 public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     @Serial
@@ -179,23 +177,39 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         else return null;
     }
 
-    public Vector<V> findRange(K lowerBound, K upperBound) {
-        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(lowerBound);
+    @SuppressWarnings("unchecked")
+    public Vector<V> findWithPredicate(Predicate predicate) {
+        if (predicate.getOperation() == Predicate.Operation.EQUALS)
+            return find((K) predicate.getValue());
+        else if (predicate.getOperation() == Predicate.Operation.LESS_THAN)
+            return findLessThan((K) predicate.getValue());
+        else if (predicate.getOperation() == Predicate.Operation.LESS_THAN_EQUAL)
+            return findLessEquals((K) predicate.getValue());
+        else
+            return null;
+    }
 
+    public Vector<V> findLessThan(K key) {
+        LeafNode<K, V> lf = firstLeaf;
         Vector<V> allRecords = new Vector<>();
+
         loop: while (lf != null) {
             for (int i = 0; i < lf.getNumberOfLists(); i++) {
                 ValueList<K, V> valueList = lf.getLists()[i];
-                if (valueList.getKey().compareTo(upperBound) >= 0)
+                if (valueList.getKey().compareTo(key) >= 0)
                     break loop;
-                if (valueList.getKey().compareTo(lowerBound) < 0)
-                    continue;
                 allRecords.addAll(valueList);
             }
             lf = (LeafNode<K, V>)lf.getRightSibling();
         }
-
         return allRecords;
+    }
+
+    public Vector<V> findLessEquals(K key) {
+        Vector<V> result = findLessThan(key);
+        result.addAll(find(key));
+
+        return result;
     }
 
     @SuppressWarnings("unused")
