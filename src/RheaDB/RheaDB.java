@@ -135,9 +135,9 @@ public class RheaDB {
                     + " does not resolve to a table in the database.");
         }
         Vector<RowRecord> result = new Vector<>();
-        Predicate[] predicates = selectStatement.getPredicates();
+        Vector<Predicate> predicates = selectStatement.getPredicates();
 
-        if (predicates.length == 0) {
+        if (predicates.isEmpty()) {
             return getAllRows(table, selectStatement.getSelectedAttributes());
         }
         for (Predicate predicate : predicates) {
@@ -159,10 +159,10 @@ public class RheaDB {
             }
         }
 
-        predicates = Arrays.stream(predicates).filter(
+        predicates = predicates.stream().filter(
             p -> !table.getAttributeWithName(p.getAttributeName()).getIsIndexed()
-        ).toArray((IntFunction<Predicate[]>) Predicate[]::new);
-        final Predicate[] finalPredicates = predicates;
+        ).collect(Collectors.toCollection(Vector::new));
+        final Vector<Predicate> finalPredicates = predicates;
 
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = DiskManager.getPage(table, i);
@@ -180,11 +180,10 @@ public class RheaDB {
         }
         return result.size() == 0 ? null :
             new QueryResult(result, table.getAttributeList(),
-                Arrays.stream(selectStatement.getSelectedAttributes())
-                      .collect(Collectors.toCollection(Vector::new)));
+                selectStatement.getSelectedAttributes());
     }
 
-    private QueryResult getAllRows(Table table, String[] selectedAttributes) {
+    private QueryResult getAllRows(Table table, Vector<String> selectedAttributes) {
         Vector<RowRecord> result = new Vector<>();
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = DiskManager.getPage(table, i);
@@ -192,9 +191,7 @@ public class RheaDB {
         }
 
         return result.size() == 0 ? null :
-            new QueryResult(result, table.getAttributeList(),
-                Arrays.stream(selectedAttributes)
-                    .collect(Collectors.toCollection(Vector::new)));
+            new QueryResult(result, table.getAttributeList(), selectedAttributes);
     }
 
     public void insertInto(InsertStatement insertStatement) throws SQLException {
@@ -202,8 +199,7 @@ public class RheaDB {
         Table table = getTable(tableName);
 
         Vector<Attribute> attributes = table.getAttributeList();
-        Vector<Object> values = Arrays.stream(insertStatement.getValues())
-                .collect(Collectors.toCollection(Vector::new));
+        Vector<Object> values = insertStatement.getValues();
 
         for (int i = 0; i < attributes.size(); i++) {
             Attribute attribute = attributes.elementAt(i);

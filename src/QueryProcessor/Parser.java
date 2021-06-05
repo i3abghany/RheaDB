@@ -96,10 +96,10 @@ public class Parser {
         String tableName = tokenVector.elementAt(2).getTokenText();
         Vector<Object> objectList = new Vector<>();
 
-        for (int i = 3; i < tokenVector.size() - 1; i++)
+        for (int i = 3; i < tokenVector.size(); i++)
             objectList.add(tokenVector.elementAt(i).getValue());
 
-        return new DMLStatement.InsertStatement(tableName, objectList.toArray());
+        return new DMLStatement.InsertStatement(tableName, objectList);
     }
 
     private SQLStatement parseSelect() {
@@ -117,21 +117,15 @@ public class Parser {
             attributeNames.add(token.getTokenText());
         }
 
-        if (i == tokenVector.size() - 1)
-            return null;
-
-        if (!tokenVector.elementAt(i).getTokenText().equals("from"))
+        if (i == tokenVector.size() - 3 ||
+            !tokenVector.elementAt(i).getTokenText().equals("from"))
             return null;
         i++;
 
-        if (i == tokenVector.size() - 1)
-            return null;
-
         String tableName = tokenVector.elementAt(i).getTokenText();
         if (i == tokenVector.size() - 1) {
-            return new DMLStatement.SelectStatement(tableName,
-                    (String[]) attributeNames.toArray(),
-                    null);
+            return new DMLStatement.SelectStatement(tableName, attributeNames,
+                    new Vector<>());
         }
         i++;
         token = tokenVector.elementAt(i);
@@ -154,8 +148,7 @@ public class Parser {
         }
 
         return new DMLStatement.SelectStatement(tableName,
-                 attributeNames.toArray(new String[0]),
-                 predicates.toArray(new Predicate[0]));
+                 attributeNames, predicates);
     }
 
     private boolean matchToken(int i, TokenKind tokenKind) {

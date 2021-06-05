@@ -2,6 +2,8 @@ package QueryProcessor;
 
 import Predicate.Predicate;
 
+import java.util.Vector;
+
 public abstract class DMLStatement extends SQLStatement {
     public enum DMLStatementKind {
         SELECT,
@@ -16,10 +18,10 @@ public abstract class DMLStatement extends SQLStatement {
 
     public static class SelectStatement extends DMLStatement {
         private final String tableName;
-        private final String[] selectedAttributes;
-        private final Predicate[] predicates;
+        private final Vector<String> selectedAttributes;
+        private final Vector<Predicate> predicates;
 
-        public SelectStatement(String tableName, String[] attributes, Predicate[] predicates) {
+        public SelectStatement(String tableName, Vector<String> attributes, Vector<Predicate> predicates) {
             this.tableName = tableName;
             this.selectedAttributes = attributes;
             this.predicates = predicates;
@@ -29,11 +31,11 @@ public abstract class DMLStatement extends SQLStatement {
             return tableName;
         }
 
-        public String[] getSelectedAttributes() {
+        public Vector<String> getSelectedAttributes() {
             return selectedAttributes;
         }
 
-        public Predicate[] getPredicates() {
+        public Vector<Predicate> getPredicates() {
             return predicates;
         }
 
@@ -45,9 +47,9 @@ public abstract class DMLStatement extends SQLStatement {
 
     public static class InsertStatement extends DMLStatement {
         private final String tableName;
-        private final Object[] values;
+        private final Vector<Object> values;
 
-        public InsertStatement(String tableName, Object[] values) {
+        public InsertStatement(String tableName, Vector<Object> values) {
             this.tableName = tableName;
             this.values = values;
         }
@@ -56,7 +58,7 @@ public abstract class DMLStatement extends SQLStatement {
             return tableName;
         }
 
-        public Object[] getValues() {
+        public Vector<Object> getValues() {
             return values;
         }
 
