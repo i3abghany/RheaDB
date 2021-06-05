@@ -126,7 +126,7 @@ public class Lexer {
                     tokens.add(new Token(tokenPosition, tokenText, tokenText,
                             TokenKind.BadToken));
                 } else {
-                    tokenText = text.substring(tokenPosition + 1, position - 1);
+                    tokenText = text.substring(tokenPosition + 1, position - 2);
                     tokens.add(new Token(tokenPosition, tokenText, tokenText,
                             TokenKind.StringLiteralToken));
                 }

@@ -3,15 +3,16 @@ package RheaDB;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 public class Table implements Serializable {
     private final String name;
-    private final List<Attribute> attributeList;
+    private final Vector<Attribute> attributeList;
     private final String pageDirectory;
     private int numPages;
     private final int maxTuplesPerPage;
 
-    public Table(String name, List<Attribute> attributeList, String pageDirectory, int maxTuplesPerPage) {
+    public Table(String name, Vector<Attribute> attributeList, String pageDirectory, int maxTuplesPerPage) {
         this.name = name;
         this.attributeList = attributeList;
         this.pageDirectory = pageDirectory;
@@ -20,10 +21,10 @@ public class Table implements Serializable {
     }
 
     public Table(String name, String pageDirectory, int maxTuplesPerPage) {
-        this(name, new ArrayList<>(), pageDirectory, maxTuplesPerPage);
+        this(name, new Vector<>(), pageDirectory, maxTuplesPerPage);
     }
 
-    public List<Attribute> getAttributeList() {
+    public Vector<Attribute> getAttributeList() {
         return attributeList;
     }
 

@@ -126,7 +126,7 @@ public class DiskManager {
         }
     }
 
-    public BPlusTree deserializeIndex(String fullPath) {
+    public static BPlusTree deserializeIndex(String fullPath) {
         BPlusTree tree = null;
         try {
             File file = new File(fullPath);

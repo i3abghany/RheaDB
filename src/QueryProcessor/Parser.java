@@ -4,6 +4,7 @@ import Predicate.*;
 import Predicate.Predicate;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
+import RheaDB.SQLException;
 
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -25,7 +26,7 @@ public class Parser {
                 .collect(Collectors.toCollection(Vector::new));
     }
 
-    public SQLStatement parse() {
+    public SQLStatement parse() throws SQLException {
         if (tokenVector.isEmpty())
             return null;
 
@@ -34,7 +35,7 @@ public class Parser {
         else if (SQLStatement.isDMLKeyword(tokenVector.get(0)))
             return parseDML();
         else
-            return null;
+            throw new SQLException("Could not identify the statement.");
     }
 
     private SQLStatement parseDDL() {
@@ -86,10 +87,25 @@ public class Parser {
         if (tokenVector.get(0).getTokenText().equals("select"))
             return parseSelect();
         else if (tokenVector.get(0).getTokenText().equals("insert"))
-            assert false;
-            // return parseInsert();
+            return parseInsert();
 
         return null;
+    }
+
+    // insert into myTableName 10 "John Doe" 3.14
+    private SQLStatement parseInsert() {
+        assert tokenVector.size() > 3;
+        assert tokenVector.elementAt(0).getTokenText().equals("insert");
+        assert tokenVector.elementAt(1).getTokenText().equals("into");
+        assert tokenVector.elementAt(2).getKind() == TokenKind.IdentifierToken;
+
+        String tableName = tokenVector.elementAt(2).getTokenText();
+        Vector<Object> objectList = new Vector<>();
+
+        for (int i = 3; i < tokenVector.size() - 1; i++)
+            objectList.add(tokenVector.elementAt(i).getValue());
+
+        return new DMLStatement.InsertStatement(tableName, objectList.toArray());
     }
 
     private SQLStatement parseSelect() {

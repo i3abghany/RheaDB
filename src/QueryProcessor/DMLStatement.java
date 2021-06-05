@@ -43,4 +43,27 @@ public abstract class DMLStatement extends SQLStatement {
             return DMLStatementKind.SELECT;
         }
     }
+
+    public static class InsertStatement extends DMLStatement {
+        private final String tableName;
+        private final Object[] values;
+
+        public InsertStatement(String tableName, Object[] values) {
+            this.tableName = tableName;
+            this.values = values;
+        }
+
+        public String getTableName() {
+            return tableName;
+        }
+
+        public Object[] getValues() {
+            return values;
+        }
+
+        @Override
+        public DMLStatementKind getDMLKind() {
+            return DMLStatementKind.INSERT;
+        }
+    }
 }

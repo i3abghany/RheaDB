@@ -35,6 +35,10 @@ public abstract class Predicate {
         return this.attributeName;
     }
 
+    public Object getValue() {
+        return value;
+    }
+
     public abstract boolean doesSatisfy(Object comp);
     public abstract Operation getOperation();
 }

@@ -57,9 +57,9 @@ public class Attribute implements Serializable {
 
     public static AttributeType getAttributeTypeFromString(String attributeName) {
         return switch (attributeName) {
-            case "STRING" -> AttributeType.STRING;
-            case "INT" -> AttributeType.INT;
-            case "FLOAT" -> AttributeType.FLOAT;
+            case "string" -> AttributeType.STRING;
+            case "int" -> AttributeType.INT;
+            case "float" -> AttributeType.FLOAT;
             default -> throw new IllegalArgumentException("Invalid data type <" + attributeName + ">.");
         };
     }
