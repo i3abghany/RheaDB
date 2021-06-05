@@ -1,7 +1,6 @@
 package Predicate;
 
 import RheaDB.Attribute;
-import org.w3c.dom.Attr;
 
 public abstract class Predicate {
     protected Attribute attribute;

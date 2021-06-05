@@ -1,7 +1,5 @@
 package RheaDB;
 
-import org.w3c.dom.Attr;
-
 import java.io.Serial;
 import java.io.Serializable;
 

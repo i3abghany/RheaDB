@@ -1,8 +1,6 @@
 package RheaDB;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
 
 public class Table implements Serializable {

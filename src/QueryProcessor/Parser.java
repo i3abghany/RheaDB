@@ -9,12 +9,6 @@ import RheaDB.SQLException;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-/*
-* CREATE TABLE tableName col1 DTYPE, col2 DTYPE, ...
-* SELECT col1, col2, col3, col4 FROM tableName WHERE colN = xxx && colK = yyy || colM = zzz
-* INSERT INTO tableName VAL1 VAL2 VAL3 VAL4 VAL5
-* */
-
 public class Parser {
     private final Vector<Token> tokenVector;
 

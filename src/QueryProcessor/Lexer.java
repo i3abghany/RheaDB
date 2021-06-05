@@ -3,7 +3,6 @@ package QueryProcessor;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
-import java.util.stream.Collectors;
 
 public class Lexer {
     private final String text;

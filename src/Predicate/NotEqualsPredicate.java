@@ -1,7 +1,5 @@
 package Predicate;
 
-import RheaDB.Attribute;
-
 public class NotEqualsPredicate extends Predicate {
 
     public NotEqualsPredicate(String attributeName, Object value) {

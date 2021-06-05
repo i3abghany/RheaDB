@@ -1,8 +1,5 @@
 package Predicate;
 
-import RheaDB.Attribute;
-import RheaDB.AttributeType;
-
 public class LessThanEqualPredicate extends Predicate {
 
     public LessThanEqualPredicate(String attributeName, Object value) {

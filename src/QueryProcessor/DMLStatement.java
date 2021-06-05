@@ -1,7 +1,6 @@
 package QueryProcessor;
 
 import Predicate.Predicate;
-import RheaDB.Attribute;
 
 public abstract class DMLStatement extends SQLStatement {
     public enum DMLStatementKind {

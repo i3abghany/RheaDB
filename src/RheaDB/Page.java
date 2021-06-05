@@ -1,7 +1,6 @@
 package RheaDB;
 
 import java.io.*;
-import java.util.List;
 import java.util.Vector;
 
 public class Page implements Serializable {
