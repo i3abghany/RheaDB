@@ -179,7 +179,7 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public Vector<V> findWithPredicate(Predicate predicate) throws SQLException {
+    public Vector<V> findWithPredicate(Predicate predicate) {
         return switch (predicate.getOperation()) {
             case EQUALS -> find((K) predicate.getValue());
             case LESS_THAN -> findLessThan((K) predicate.getValue());
