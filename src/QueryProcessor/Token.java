@@ -13,6 +13,12 @@ public class Token {
         this.kind = kind;
     }
 
+    public boolean isLiteral() {
+        return kind == TokenKind.StringLiteralToken ||
+               kind == TokenKind.FloatingPointToken ||
+               kind == TokenKind.IntegralToken;
+    }
+
     public int getPosition() {
         return position;
     }

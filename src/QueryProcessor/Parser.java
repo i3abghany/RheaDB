@@ -24,6 +24,17 @@ public class Parser {
         if (tokenVector.isEmpty())
             return null;
 
+        Token badToken = tokenVector
+                .stream()
+                .filter(tok -> tok.getKind() == TokenKind.BadToken)
+                .findAny()
+                .orElse(null);
+
+        if (badToken != null) {
+            throw new SQLException("Bad token: \"" + badToken.getTokenText() +
+                    "\" at position: " + badToken.getPosition());
+        }
+
         if (SQLStatement.isDDLKeyword(tokenVector.get(0)))
             return parseDDL();
         else if (SQLStatement.isDMLKeyword(tokenVector.get(0)))
@@ -87,7 +98,7 @@ public class Parser {
     }
 
     // insert into myTableName 10 "John Doe" 3.14
-    private SQLStatement parseInsert() {
+    private SQLStatement parseInsert() throws SQLException {
         assert tokenVector.size() > 3;
         assert tokenVector.elementAt(0).getTokenText().equals("insert");
         assert tokenVector.elementAt(1).getTokenText().equals("into");
@@ -96,8 +107,13 @@ public class Parser {
         String tableName = tokenVector.elementAt(2).getTokenText();
         Vector<Object> objectList = new Vector<>();
 
-        for (int i = 3; i < tokenVector.size(); i++)
+        for (int i = 3; i < tokenVector.size(); i++) {
+            Token t = tokenVector.elementAt(i);
+            if (!t.isLiteral()) {
+                throw new SQLException("Invalid token: " + t.getTokenText() + ". Expected a literal.");
+            }
             objectList.add(tokenVector.elementAt(i).getValue());
+        }
 
         return new DMLStatement.InsertStatement(tableName, objectList);
     }
@@ -111,15 +127,22 @@ public class Parser {
             token = tokenVector.elementAt(i);
             if (token.getTokenText().equals("from")) {
                 break;
-            } else if (token.getKind() == TokenKind.KeywordToken) {
-                return null;
+            } else if (token.getKind() != TokenKind.IdentifierToken) {
+                throw new SQLException("Unexpected token: \"" + token.getTokenText()
+                    + "\" at position: " + token.getPosition());
             }
             attributeNames.add(token.getTokenText());
         }
 
-        if (i == tokenVector.size() - 3 ||
-            !tokenVector.elementAt(i).getTokenText().equals("from"))
-            return null;
+        if (i > tokenVector.size() - 2) {
+            throw new SQLException("Error parsing the statement.");
+        }
+
+        if (!tokenVector.elementAt(i).getTokenText().equals("from")) {
+            token = tokenVector.elementAt(i);
+            throw new SQLException("Unexpected token: \"" + token.getTokenText() +
+                "\" at position: " + token.getPosition());
+        }
         i++;
 
         String tableName = tokenVector.elementAt(i).getTokenText();
@@ -129,8 +152,10 @@ public class Parser {
         }
         i++;
         token = tokenVector.elementAt(i);
-        if (!token.getTokenText().equals("where"))
-            return null;
+        if (!token.getTokenText().equals("where")) {
+            throw new SQLException("Unexpected token: \"" + token.getTokenText() +
+                    "\" at position: " + token.getPosition());
+        }
 
         i++;
         for (; i < tokenVector.size(); i += 4) {
