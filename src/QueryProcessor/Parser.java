@@ -73,8 +73,12 @@ public class Parser {
             );
             attributeVector.add(new Attribute(attributeType, attributeName, false));
         }
-
-        return new DDLStatement.CreateTableStatement(tableName, attributeVector);
+        if (attributeVector.isEmpty()) {
+            throw new SQLException("Error parsing Create Table statement. " +
+                    "Expected a set of attributes.");
+        } else {
+            return new DDLStatement.CreateTableStatement(tableName, attributeVector);
+        }
     }
 
     private SQLStatement parseCreateIndex() throws SQLException {
