@@ -25,7 +25,7 @@ public class RowRecord implements Serializable {
         return attributeValues;
     }
 
-    public Vector<Attribute> getAttributeTypes() {
+    public Vector<Attribute> getAttributes() {
         return attributeList;
     }
 

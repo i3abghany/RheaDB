@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.lang.*;
 import Predicate.*;
+import RheaDB.SQLException;
 
 public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     @Serial
@@ -178,15 +179,32 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public Vector<V> findWithPredicate(Predicate predicate) {
-        if (predicate.getOperation() == Predicate.Operation.EQUALS)
-            return find((K) predicate.getValue());
-        else if (predicate.getOperation() == Predicate.Operation.LESS_THAN)
-            return findLessThan((K) predicate.getValue());
-        else if (predicate.getOperation() == Predicate.Operation.LESS_THAN_EQUAL)
-            return findLessEquals((K) predicate.getValue());
-        else
-            return null;
+    public Vector<V> findWithPredicate(Predicate predicate) throws SQLException {
+        return switch (predicate.getOperation()) {
+            case EQUALS -> find((K) predicate.getValue());
+            case LESS_THAN -> findLessThan((K) predicate.getValue());
+            case LESS_THAN_EQUAL -> findLessEquals((K) predicate.getValue());
+            case GREATER_THAN -> findGreaterThan((K) predicate.getValue());
+            case GREATER_THAN_EQUAL -> findGreaterEquals((K) predicate.getValue());
+            case NOT_EQUALS -> findNotEquals((K) predicate.getValue());
+        };
+    }
+
+    private Vector<V> findNotEquals(K key) {
+        LeafNode<K, V> lf = this.firstLeaf;
+        Vector<V> result = new Vector<>();
+
+        while (lf != null) {
+            for (int i = 0; i < lf.getNumberOfLists(); i++) {
+                ValueList<K, V> valueList = lf.getLists()[i];
+                if (valueList.getKey().compareTo(key) == 0)
+                    continue;
+                result.addAll(valueList);
+            }
+            lf = (LeafNode<K, V>) lf.getRightSibling();
+        }
+
+        return result;
     }
 
     public Vector<V> findLessThan(K key) {
@@ -205,10 +223,38 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         return allRecords;
     }
 
+    public Vector<V> findGreaterThan(K key) {
+        Vector<V> result = new Vector<>();
+        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
+
+        while (lf != null) {
+            for (int i = 0; i < lf.getNumberOfLists(); i++) {
+                ValueList<K, V> valueList = lf.getLists()[i];
+                if (valueList.getKey().compareTo(key) > 0)
+                    result.addAll(valueList);
+            }
+            lf = (LeafNode<K, V>) lf.getRightSibling();
+        }
+
+        return result;
+    }
+
+    public Vector<V> findGreaterEquals(K key) {
+        Vector<V> result = findGreaterThan(key);
+        ValueList<K, V> equalsResult = find(key);
+
+        if (equalsResult != null)
+            result.addAll(equalsResult);
+
+        return result;
+    }
+
     public Vector<V> findLessEquals(K key) {
         Vector<V> result = findLessThan(key);
-        result.addAll(find(key));
+        ValueList<K, V> equalsResult = find(key);
 
+        if (equalsResult != null)
+            result.addAll(equalsResult);
         return result;
     }
 
