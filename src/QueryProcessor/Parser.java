@@ -43,21 +43,27 @@ public class Parser {
             throw new SQLException("Could not identify the statement.");
     }
 
-    private SQLStatement parseDDL() {
-        if (tokenVector.size() == 1)
-            return null;
+    private SQLStatement parseDDL() throws SQLException {
+        if (tokenVector.size() == 1) {
+            throw new SQLException("Error parsing statement.");
+        }
 
-        if (tokenVector.get(1).getTokenText().equals("table"))
+        Token typeToken = tokenVector.elementAt(1);
+
+        if (matchToken(1, TokenKind.KeywordToken, "table"))
             return parseCreateTable();
-        else if (tokenVector.get(1).getTokenText().equals("index"))
+        else if (matchToken(1, TokenKind.KeywordToken, "index"))
             return parseCreateIndex();
         else
-            return null;
+            throw new SQLException("Unexpected token: \"" + typeToken.getTokenText()
+                + "\" at position " + typeToken.getPosition());
     }
 
-    private SQLStatement parseCreateTable() {
-        if (tokenVector.size() == 2)
-            return null;
+    private SQLStatement parseCreateTable() throws SQLException {
+        if (tokenVector.size() < 3) {
+            throw new SQLException("Error parsing Create Table statement.");
+        }
+
         String tableName = tokenVector.get(2).getTokenText();
         Vector<Attribute> attributeVector = new Vector<>();
         for (int i = 3; i < tokenVector.size() - 1; i += 2) {
@@ -71,14 +77,23 @@ public class Parser {
         return new DDLStatement.CreateTableStatement(tableName, attributeVector);
     }
 
-    private SQLStatement parseCreateIndex() {
-        if (tokenVector.size() < 4)
-            return null;
+    private SQLStatement parseCreateIndex() throws SQLException {
+        if (tokenVector.size() < 4) {
+            throw new SQLException("Error parsing Create Index statement.");
+        }
+
         Token tableNameToken = tokenVector.get(2);
         Token attributeNameToken = tokenVector.get(3);
-        if (tableNameToken.getKind() != TokenKind.IdentifierToken ||
-            attributeNameToken.getKind() != TokenKind.IdentifierToken)
-            return null;
+
+        if (!matchToken(2, TokenKind.IdentifierToken)) {
+            throw new SQLException("Unexpected token: \"" + tableNameToken.getTokenText() +
+                    "\" at position " + tableNameToken.getPosition());
+        }
+
+        if (!matchToken(3, TokenKind.IdentifierToken)) {
+            throw new SQLException("Unexpected token: \"" + attributeNameToken.getTokenText() +
+                    "\" at position " + attributeNameToken.getPosition());
+        }
 
         String tableName = tableNameToken.getTokenText();
         String attributeName = attributeNameToken.getTokenText();
@@ -89,20 +104,24 @@ public class Parser {
     private SQLStatement parseDML() throws SQLException {
         if (tokenVector.size() == 1)
             return null;
-        if (tokenVector.get(0).getTokenText().equals("select"))
-            return parseSelect();
-        else if (tokenVector.get(0).getTokenText().equals("insert"))
-            return parseInsert();
 
-        return null;
+        Token typeToken = tokenVector.elementAt(0);
+
+        if (matchToken(0, TokenKind.KeywordToken, "select"))
+            return parseSelect();
+        else if (matchToken(0, TokenKind.KeywordToken, "insert"))
+            return parseInsert();
+        else
+            throw new SQLException("Unexpected token: \"" + typeToken.getTokenText()
+                    + "\" at position " + typeToken.getPosition());
     }
 
-    // insert into myTableName 10 "John Doe" 3.14
     private SQLStatement parseInsert() throws SQLException {
         assert tokenVector.size() > 3;
-        assert tokenVector.elementAt(0).getTokenText().equals("insert");
-        assert tokenVector.elementAt(1).getTokenText().equals("into");
-        assert tokenVector.elementAt(2).getKind() == TokenKind.IdentifierToken;
+
+        assert matchToken(0, TokenKind.KeywordToken, "insert");
+        assert matchToken(1, TokenKind.KeywordToken, "into");
+        assert matchToken(2, TokenKind.IdentifierToken);
 
         String tableName = tokenVector.elementAt(2).getTokenText();
         Vector<Object> objectList = new Vector<>();
@@ -127,7 +146,7 @@ public class Parser {
             token = tokenVector.elementAt(i);
             if (token.getTokenText().equals("from")) {
                 break;
-            } else if (token.getKind() != TokenKind.IdentifierToken) {
+            } else if (!matchToken(i, TokenKind.IdentifierToken)) {
                 throw new SQLException("Unexpected token: \"" + token.getTokenText()
                     + "\" at position: " + token.getPosition());
             }
@@ -138,7 +157,7 @@ public class Parser {
             throw new SQLException("Error parsing the statement.");
         }
 
-        if (!tokenVector.elementAt(i).getTokenText().equals("from")) {
+        if (!matchToken(i, TokenKind.KeywordToken, "from")) {
             token = tokenVector.elementAt(i);
             throw new SQLException("Unexpected token: \"" + token.getTokenText() +
                 "\" at position: " + token.getPosition());
@@ -152,7 +171,7 @@ public class Parser {
         }
         i++;
         token = tokenVector.elementAt(i);
-        if (!token.getTokenText().equals("where")) {
+        if (!matchToken(i, TokenKind.KeywordToken, "where")) {
             throw new SQLException("Unexpected token: \"" + token.getTokenText() +
                     "\" at position: " + token.getPosition());
         }
@@ -164,7 +183,9 @@ public class Parser {
                 Token operatorToken = tokenVector.elementAt(i + 1);
                 Token valueToken = tokenVector.elementAt(i + 2);
                 if (i + 3 < tokenVector.size() - 1 && !matchToken(i + 3, TokenKind.CommaToken)) {
-                    throw new Exception("Love must be forgotten. Life can always start up anew");
+                    Token badToken = tokenVector.elementAt(i + 3);
+                    throw new Exception("Unexpected token: \"" + badToken.getTokenText()
+                        + "\" at position " + badToken.getPosition());
                 }
                 predicates.add(parsePredicate(attributeNameToken, operatorToken, valueToken));
             } catch (Exception e) {
@@ -183,14 +204,22 @@ public class Parser {
         return tokenVector.elementAt(i).getKind() == tokenKind;
     }
 
-    private Predicate parsePredicate(Token attributeName, Token operatorToken, Token valueToken) {
+    private boolean matchToken(int i, TokenKind tokenKind, String tokenText) {
+        if (!matchToken(i, tokenKind))
+            return false;
+        return tokenVector.elementAt(i).getTokenText().equals(tokenText);
+    }
+
+    private Predicate parsePredicate(Token attributeNameToken, Token operatorToken, Token valueToken) {
+        String attributeName = attributeNameToken.getTokenText();
+        Object value = valueToken.getValue();
         return switch (operatorToken.getKind()) {
-            case EqualsToken -> new EqualsPredicate(attributeName.getTokenText(), valueToken.getValue());
-            case NotEqualsToken -> new NotEqualsPredicate(attributeName.getTokenText(), valueToken.getValue());
-            case GreaterToken -> new GreaterThanPredicate(attributeName.getTokenText(), valueToken.getValue());
-            case GreaterEqualsToken -> new GreaterThanEqualPredicate(attributeName.getTokenText(), valueToken.getValue());
-            case LessToken -> new LessThanPredicate(attributeName.getTokenText(), valueToken.getValue());
-            case LessEqualsToken -> new LessThanEqualPredicate(attributeName.getTokenText(), valueToken.getValue());
+            case EqualsToken -> new EqualsPredicate(attributeName, value);
+            case NotEqualsToken -> new NotEqualsPredicate(attributeName, value);
+            case GreaterToken -> new GreaterThanPredicate(attributeName, value);
+            case GreaterEqualsToken -> new GreaterThanEqualPredicate(attributeName, value);
+            case LessToken -> new LessThanPredicate(attributeName, value);
+            case LessEqualsToken -> new LessThanEqualPredicate(attributeName, value);
             default -> null;
         };
     }
