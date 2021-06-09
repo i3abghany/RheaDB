@@ -119,15 +119,15 @@ public class Lexer {
                 advance();
                 while (inBounds() && getCurr() != '"')
                     advance();
-                advance();
                 if (!inBounds()) {
                     tokenText = text.substring(tokenPosition);
                     tokens.add(new Token(tokenPosition, tokenText, tokenText,
                             TokenKind.BadToken));
                 } else {
-                    tokenText = text.substring(tokenPosition + 1, position - 2);
+                    tokenText = text.substring(tokenPosition + 1, position);
                     tokens.add(new Token(tokenPosition, tokenText, tokenText,
                             TokenKind.StringLiteralToken));
+                    advance();
                 }
             } else if (getCurr() == ',') {
                 advance();
