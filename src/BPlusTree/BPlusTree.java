@@ -31,7 +31,8 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public void insert(K key, V val) {
+    public void insert(Object obj, V val) {
+        K key = (K) obj;
         if (isEmpty()) {
             this.firstLeaf = new LeafNode<K, V>(this.order);
             this.firstLeaf.insert(key, val);

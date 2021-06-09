@@ -2,6 +2,7 @@ package RheaDB.StorageManagement;
 
 import BPlusTree.BPlusTree;
 import RheaDB.Page;
+import RheaDB.RowRecord;
 import RheaDB.Table;
 
 import java.io.*;
@@ -74,6 +75,7 @@ public class DiskManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static HashMap<String, Table> readMetadata() throws IOException {
         HashMap<String, Table> map = new HashMap<>();
         File file = new File("." + File.separator + "data" + File.separator + "metadata.db");
@@ -91,7 +93,8 @@ public class DiskManager {
         return map;
     }
 
-    public static void saveIndex(String fullPath, BPlusTree tree) {
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static void saveIndex(String fullPath, BPlusTree<?, RowRecord> tree) {
         try {
             File file = new File(fullPath);
             if (!file.exists()) {
@@ -128,8 +131,9 @@ public class DiskManager {
         }
     }
 
-    public static BPlusTree deserializeIndex(String fullPath) {
-        BPlusTree tree = null;
+    @SuppressWarnings("unchecked")
+    public static BPlusTree<?, RowRecord> deserializeIndex(String fullPath) {
+        BPlusTree<?, RowRecord> tree = null;
         try {
             File file = new File(fullPath);
             if (!file.exists()) {
@@ -139,7 +143,7 @@ public class DiskManager {
             FileInputStream fis = new FileInputStream(file);
             ObjectInputStream ois = new ObjectInputStream(fis);
 
-            tree = (BPlusTree) ois.readObject();
+            tree = (BPlusTree<?, RowRecord>) ois.readObject();
 
             ois.close();
             fis.close();

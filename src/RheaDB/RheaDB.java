@@ -104,6 +104,7 @@ public class RheaDB {
         return null;
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public RheaDB() throws IOException {
         File file = new File(rootDirectory + File.separator +
                 "metadata.db");
@@ -132,7 +133,7 @@ public class RheaDB {
 
         return true;
     }
-    @SuppressWarnings("unchecked")
+
     public QueryResult selectFrom(SelectStatement selectStatement) throws SQLException {
         Table table = getTable(selectStatement.getTableName());
         Vector<String> selectedAttributes = selectStatement.getSelectedAttributes();
@@ -156,7 +157,7 @@ public class RheaDB {
             }
             predicate.setAttribute(attribute);
             if (attribute.getIsIndexed()) {
-                BPlusTree indexTree = bufferPool.getIndex(table, attribute);
+                BPlusTree<?, RowRecord> indexTree = bufferPool.getIndex(table, attribute);
                 if (indexTree == null) {
                     System.out.println("Could not read the index file for attribute: " + attribute.getName());
                     System.exit(1);
@@ -223,12 +224,20 @@ public class RheaDB {
         for (int i = 0; i < attributes.size(); i++) {
             Attribute attribute = attributes.elementAt(i);
             Object value = values.elementAt(i);
-            Object testObject;
             try {
                 switch (attribute.getType()) {
-                    case INT: testObject = (int) value; break;
-                    case FLOAT: testObject = (float) value; break;
-                    case STRING: testObject = (String) value; break;
+                    case INT: {
+                        int testObject = (int) value;
+                        break;
+                    }
+                    case FLOAT:{
+                        float testObject = (float) value;
+                        break;
+                    }
+                    case STRING: {
+                        String testObject = (String) value;
+                        break;
+                    }
                     default: assert false;
                 }
             } catch (Exception e) {
@@ -259,7 +268,6 @@ public class RheaDB {
         }
     }
 
-    @SuppressWarnings({"unchecked", "SwitchLabeledRuleCanBeCodeBlock"})
     public boolean createIndex(Table table, Attribute attribute) {
         if (table == null)
             return false;
@@ -267,7 +275,7 @@ public class RheaDB {
         if (attribute == null)
             return false;
 
-        BPlusTree bPlusTree;
+        BPlusTree<?, RowRecord> bPlusTree;
         AttributeType type = attribute.getType();
 
         switch (type) {
@@ -283,7 +291,7 @@ public class RheaDB {
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
             page.getRecords().forEach(
-                r -> bPlusTree.insert((Comparable) r.getValueOf(attribute), r)
+                r -> bPlusTree.insert(r.getValueOf(attribute), r)
             );
         }
 

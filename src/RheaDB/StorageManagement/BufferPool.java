@@ -3,6 +3,7 @@ package RheaDB.StorageManagement;
 import BPlusTree.BPlusTree;
 import RheaDB.Attribute;
 import RheaDB.Page;
+import RheaDB.RowRecord;
 import RheaDB.Table;
 
 import java.io.File;
@@ -13,7 +14,7 @@ public class BufferPool {
     private final static int maxPagesInCache = 16;
     private final HashMap<PageIdentifier, Page> pageHashMap;
 
-    public BPlusTree getIndex(Table table, Attribute attribute) {
+    public BPlusTree<?, RowRecord> getIndex(Table table, Attribute attribute) {
         String indexFullPath =
                 table.getPageDirectory() + File.separator + "index" +
                 File.separator + attribute.getName() + ".idx";
@@ -25,7 +26,7 @@ public class BufferPool {
         DiskManager.savePage(table, lastPage);
     }
 
-    public void saveIndex(Table table, Attribute attribute, BPlusTree bPlusTree) {
+    public void saveIndex(Table table, Attribute attribute, BPlusTree<?, RowRecord> bPlusTree) {
         String fullIndexPath = table.getPageDirectory() + File.separator +
                 "index" + File.separator + attribute.getName() + ".idx";
 
