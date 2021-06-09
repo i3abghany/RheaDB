@@ -8,11 +8,12 @@ import QueryProcessor.DDLStatement.*;
 import QueryProcessor.DMLStatement.*;
 import QueryProcessor.Parser;
 import QueryProcessor.SQLStatement;
+import RheaDB.StorageManagement.BufferPool;
+import RheaDB.StorageManagement.DiskManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 public class RheaDB {
@@ -20,6 +21,8 @@ public class RheaDB {
 
     private final String rootDirectory = "." + File.separator + "data";
     private final HashMap<String, Table> createdTables;
+
+    private final BufferPool bufferPool;
 
     public void run() {
         String statementStr;
@@ -81,8 +84,7 @@ public class RheaDB {
                             "provided attribute.");
                 }
 
-                boolean indexCreated = createIndex(statement.getTableName(),
-                        indexAttributeName);
+                boolean indexCreated = createIndex(table, indexAttribute);
                 if (!indexCreated) {
                     throw new SQLException("Could not create the index.");
                 }
@@ -116,6 +118,7 @@ public class RheaDB {
             createdTables = new HashMap<>();
         } else
             createdTables = DiskManager.readMetadata();
+        bufferPool = new BufferPool();
     }
 
     public boolean createTable(String tableName, Vector<Attribute> attributeList) {
@@ -153,9 +156,7 @@ public class RheaDB {
             }
             predicate.setAttribute(attribute);
             if (attribute.getIsIndexed()) {
-                BPlusTree indexTree =
-                        DiskManager.deserializeIndex(table.getPageDirectory() + File.separator +
-                                "index" + File.separator + attribute.getName() + ".idx");
+                BPlusTree indexTree = bufferPool.getIndex(table, attribute);
                 if (indexTree == null) {
                     System.out.println("Could not read the index file for attribute: " + attribute.getName());
                     System.exit(1);
@@ -170,7 +171,7 @@ public class RheaDB {
         final Vector<Predicate> finalPredicates = predicates;
 
         for (int i = 1; i <= table.getNumPages(); i++) {
-            Page page = DiskManager.getPage(table, i);
+            Page page = bufferPool.getPage(table, i);
             page.getRecords().forEach(
                     (r) -> {
                         boolean ret = false;
@@ -199,7 +200,7 @@ public class RheaDB {
     private QueryResult getAllRows(Table table, Vector<String> selectedAttributes) {
         HashSet<RowRecord> result = new HashSet<>();
         for (int i = 1; i <= table.getNumPages(); i++) {
-            Page page = DiskManager.getPage(table, i);
+            Page page = bufferPool.getPage(table, i);
             result.addAll(page.getRecords());
         }
 
@@ -210,6 +211,11 @@ public class RheaDB {
     public void insertInto(InsertStatement insertStatement) throws SQLException {
         String tableName = insertStatement.getTableName();
         Table table = getTable(tableName);
+
+        if (table == null) {
+            throw new SQLException("The name\"" + tableName + "\" does not resolve" +
+                    "to a valid table.");
+        }
 
         Vector<Attribute> attributes = table.getAttributeList();
         Vector<Object> values = insertStatement.getValues();
@@ -235,7 +241,7 @@ public class RheaDB {
     }
 
     private void insertInto(Table table, RowRecord record) {
-        Page lastPage = DiskManager.getPage(table, table.getNumPages());
+        Page lastPage = bufferPool.getPage(table, table.getNumPages());
         if (lastPage == null)
             lastPage = table.getNewPage();
 
@@ -245,21 +251,19 @@ public class RheaDB {
         record.setPageId(lastPage.getPageIdx());
         record.setRowId(lastPage.getLastRowIndex());
         lastPage.addRecord(record);
-        DiskManager.savePage(table, lastPage);
+        bufferPool.savePage(table, lastPage);
 
         for (Attribute attribute : table.getAttributeList()) {
             if (attribute.getIsIndexed())
-                updateIndex(table.getName(), attribute.getName());
+                updateIndex(table, attribute);
         }
     }
 
     @SuppressWarnings({"unchecked", "SwitchLabeledRuleCanBeCodeBlock"})
-    public boolean createIndex(String tableName, String attributeName) {
-        Table table = getTable(tableName);
+    public boolean createIndex(Table table, Attribute attribute) {
         if (table == null)
             return false;
 
-        Attribute attribute = table.getAttributeWithName(attributeName);
         if (attribute == null)
             return false;
 
@@ -277,24 +281,21 @@ public class RheaDB {
             return false;
 
         for (int i = 1; i <= table.getNumPages(); i++) {
-            Page page = DiskManager.getPage(table, i);
+            Page page = bufferPool.getPage(table, i);
             page.getRecords().forEach(
                 r -> bPlusTree.insert((Comparable) r.getValueOf(attribute), r)
             );
         }
 
-        DiskManager.saveIndex(table.getPageDirectory() + File.separator +
-                "index" + File.separator + attributeName + ".idx", bPlusTree);
+        bufferPool.saveIndex(table, attribute, bPlusTree);
 
         attribute.setIsIndexed(true);
         return true;
     }
 
-    public void updateIndex(String tableName, String attributeName) {
-        Table table = getTable(tableName);
-        DiskManager.deleteIndex(table.getPageDirectory() + File.separator +
-                "index" + File.separator + attributeName + ".idx");
-        createIndex(tableName, attributeName);
+    public void updateIndex(Table table, Attribute attribute) {
+        bufferPool.deleteIndex(table, attribute);
+        createIndex(table, attribute);
     }
 
     private Table getTable(String name) {

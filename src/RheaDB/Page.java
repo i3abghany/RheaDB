@@ -1,6 +1,7 @@
 package RheaDB;
 
 import java.io.*;
+import java.util.Objects;
 import java.util.Vector;
 
 public class Page implements Serializable {
@@ -10,15 +11,17 @@ public class Page implements Serializable {
     private final int maxTuples;
     private final int pageIdx;
     private final Vector<RowRecord> records;
+    private final String tableName;
 
-    public Page(int maxTuples, int pageIdx) {
+    public Page(String tableName, int maxTuples, int pageIdx) {
+        this.tableName = tableName;
         this.maxTuples = maxTuples;
         this.pageIdx = pageIdx;
         this.records = new Vector<>();
     }
 
     public boolean addRecord(RowRecord record) {
-        if (this.records.size() == maxTuples)
+        if (!hasFreeSpace())
             return false;
 
         this.records.add(record);
@@ -39,5 +42,24 @@ public class Page implements Serializable {
 
     public int getLastRowIndex() {
         return this.records.size();
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Page page = (Page) o;
+        return maxTuples == page.maxTuples &&
+               pageIdx == page.pageIdx &&
+               tableName.equals(page.tableName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(maxTuples, pageIdx, tableName);
     }
 }

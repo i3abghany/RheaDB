@@ -1,6 +1,8 @@
-package RheaDB;
+package RheaDB.StorageManagement;
 
 import BPlusTree.BPlusTree;
+import RheaDB.Page;
+import RheaDB.Table;
 
 import java.io.*;
 import java.util.HashMap;

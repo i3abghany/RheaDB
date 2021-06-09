@@ -36,20 +36,16 @@ public class Table implements Serializable {
     }
 
     public void addAttribute(Attribute attribute) {
-        this.attributeList.add(attribute);
+        attributeList.add(attribute);
     }
 
     public int getNumPages() {
         return numPages;
     }
 
-    public void setNumPages(int numPages) {
-        this.numPages = numPages;
-    }
-
     public Page getNewPage() {
-        this.numPages++;
-        return new Page(this.maxTuplesPerPage, this.numPages);
+        numPages++;
+        return new Page(name, maxTuplesPerPage, numPages);
     }
 
     public Attribute getAttributeWithName(String name) {
