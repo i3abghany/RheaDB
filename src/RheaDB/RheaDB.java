@@ -42,6 +42,8 @@ public class RheaDB {
 
             try {
                 sqlStatement = new Parser(statementStr).parse();
+                if (sqlStatement == null)
+                    continue;
                 queryResult = executeStatement(sqlStatement);
             } catch (SQLException sqlException) {
                 System.out.println(sqlException.getMessage());
@@ -77,6 +79,11 @@ public class RheaDB {
                 if (table.getName() == null) {
                     throw new SQLException("Name " + statement.getTableName() +
                             " Does not resolve to a table.");
+                }
+
+                if (indexAttribute == null) {
+                    throw new SQLException("Invalid attribute: \"" +
+                            statement.getIndexAttribute() + "\"");
                 }
 
                 if (indexAttribute.getIsIndexed()) {
@@ -152,8 +159,8 @@ public class RheaDB {
         for (Predicate predicate : predicates) {
             Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
             if (attribute == null) {
-                System.out.println("Invalid attribute: " + predicate.getAttributeName());
-                System.exit(1);
+                throw new SQLException("Invalid attribute: \"" + predicate.getAttributeName()
+                    + "\"");
             }
             predicate.setAttribute(attribute);
             if (attribute.getIsIndexed()) {
