@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.lang.*;
 import Predicate.*;
-import RheaDB.SQLException;
 
 public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     @Serial
