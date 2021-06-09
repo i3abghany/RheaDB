@@ -40,7 +40,8 @@ public class Parser {
         else if (SQLStatement.isDMLKeyword(tokenVector.get(0)))
             return parseDML();
         else
-            throw new SQLException("Could not identify the statement.");
+            throw new SQLException("Unexpected token: \"" +
+                    tokenVector.get(0).getTokenText() + "\".");
     }
 
     private SQLStatement parseDDL() throws SQLException {
@@ -147,8 +148,8 @@ public class Parser {
         for (int i = 3; i < tokenVector.size(); i++) {
             Token token = tokenVector.elementAt(i);
             if (!token.isLiteral()) {
-                throw new SQLException("Invalid token: " + token.getTokenText()
-                    + ". Expected a literal.");
+                throw new SQLException("Invalid token: \"" + token.getTokenText()
+                    + "\". Expected a literal.");
             }
             objectList.add(token.getValue());
         }
