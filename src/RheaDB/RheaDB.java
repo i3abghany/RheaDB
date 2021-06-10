@@ -58,57 +58,59 @@ public class RheaDB {
         }
     }
 
-    public QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
-        if (sqlStatement.getKind() == SQLStatement.SQLStatementKind.DDL) {
-            if (((DDLStatement) sqlStatement).getDDLKind() ==
-                    DDLKind.CreateTable) {
-                CreateTableStatement statement =
-                        (CreateTableStatement) sqlStatement;
-                boolean wasCreated = createTable(statement.getTableName(),
-                        statement.getAttributeVector());
-                if (!wasCreated) {
-                    throw new DBError("Could not create the table. Table already exists.");
-                }
-            } else {
-                CreateIndexStatement statement =
-                        (CreateIndexStatement) sqlStatement;
-                Table table = getTable(statement.getTableName());
-                String indexAttributeName = statement.getIndexAttribute();
-                Attribute indexAttribute =
-                        table.getAttributeWithName(indexAttributeName);
-                if (table.getName() == null) {
-                    throw new DBError("Name " + statement.getTableName() +
-                            " Does not resolve to a table.");
-                }
-
-                if (indexAttribute == null) {
-                    throw new DBError("Invalid attribute: \"" +
-                            statement.getIndexAttribute() + "\"");
-                }
-
-                if (indexAttribute.getIsIndexed()) {
-                    throw new DBError("There already exists an index for the" +
-                            "provided attribute.");
-                }
-
-                boolean indexCreated = createIndex(table, indexAttribute);
-                if (!indexCreated) {
-                    throw new DBError("Could not create the index.");
-                }
-            }
-        } else if (sqlStatement.getKind() == SQLStatement.SQLStatementKind.DML) {
-            DMLStatement dmlStatement = (DMLStatement) sqlStatement;
-            if (dmlStatement.getDMLKind() == DMLStatementKind.SELECT) {
-                return selectFrom((SelectStatement) dmlStatement);
-            } else if (dmlStatement.getDMLKind() == DMLStatementKind.INSERT) {
-                insertInto((InsertStatement) dmlStatement);
-            } else {
-                throw new DBError("Could not identify and parse the statement");
-            }
-        } else {
-            throw new DBError("Could not identify and parse the statement");
+    public QueryResult executeDML(DMLStatement dmlStatement) throws DBError {
+        switch (dmlStatement.getDMLKind()) {
+            case SELECT: return selectFrom((SelectStatement) dmlStatement);
+            case INSERT: insertInto((InsertStatement) dmlStatement); return null;
+            default: throw new DBError("Could not identify and parse the statement");
         }
-        return null;
+    }
+
+    public void executeCreateTable(CreateTableStatement statement) throws DBError {
+        boolean wasCreated = createTable(statement.getTableName(),
+                statement.getAttributeVector());
+        if (!wasCreated) {
+            throw new DBError("Could not create the table. Table already exists.");
+        }
+    }
+
+    public void executeCreateIndex(CreateIndexStatement statement) throws DBError {
+        Table table = getTable(statement.getTableName());
+        String indexAttributeName = statement.getIndexAttribute();
+        Attribute indexAttribute = table.getAttributeWithName(indexAttributeName);
+
+        if (table.getName() == null) {
+            throw new DBError("Name " + statement.getTableName() +
+                    " Does not resolve to a table.");
+        }
+
+        if (indexAttribute == null) {
+            throw new DBError("Invalid attribute: \"" + statement.getIndexAttribute() + "\"");
+        }
+
+        if (indexAttribute.getIsIndexed()) {
+            return;
+        }
+
+        boolean indexCreated = createIndex(table, indexAttribute);
+        if (!indexCreated) {
+            throw new DBError("Could not create the index.");
+        }
+    }
+
+    public void executeDDL(DDLStatement ddlStatement) throws DBError {
+        switch (ddlStatement.getDDLKind()) {
+            case CreateTable -> executeCreateTable((CreateTableStatement) ddlStatement);
+            case CreateIndex -> executeCreateIndex((CreateIndexStatement) ddlStatement);
+        }
+    }
+
+    public QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
+        switch (sqlStatement.getKind()) {
+            case DDL: executeDDL((DDLStatement) sqlStatement); return null;
+            case DML: return executeDML((DMLStatement) sqlStatement);
+            default: return null;
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -226,7 +228,7 @@ public class RheaDB {
         Table table = getTable(tableName);
 
         if (table == null) {
-            throw new DBError("The name\"" + tableName + "\" does not resolve" +
+            throw new DBError("The name \"" + tableName + "\" does not resolve " +
                     "to a valid table.");
         }
 
