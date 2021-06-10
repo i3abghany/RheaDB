@@ -137,7 +137,20 @@ public class JCResultSet implements ResultSet {
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        return null;
+        Attribute attribute = record.getAttributes()
+                .stream()
+                .filter(a -> a.getName().equals(columnLabel))
+                .findAny()
+                .orElse(null);
+
+        if (attribute == null) {
+            throw new SQLException("Could not find attribute \"" + columnLabel + "\"");
+        }
+
+        if (attribute.getType() != AttributeType.FLOAT)
+            throw new SQLException("Column \"" +
+                    attribute.getName() + "\" is not of STRING type.");
+        return (String) record.getValueOf(attribute);
     }
 
     @Override
@@ -157,7 +170,20 @@ public class JCResultSet implements ResultSet {
 
     @Override
     public int getInt(String columnLabel) throws SQLException {
-        return 0;
+        Attribute attribute = record.getAttributes()
+                .stream()
+                .filter(a -> a.getName().equals(columnLabel))
+                .findAny()
+                .orElse(null);
+
+        if (attribute == null) {
+            throw new SQLException("Could not find attribute \"" + columnLabel + "\"");
+        }
+
+        if (attribute.getType() != AttributeType.FLOAT)
+            throw new SQLException("Column \"" +
+                    attribute.getName() + "\" is not of integral type.");
+        return (Integer) record.getValueOf(attribute);
     }
 
     @Override
@@ -167,7 +193,20 @@ public class JCResultSet implements ResultSet {
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        return 0;
+        Attribute attribute = record.getAttributes()
+                .stream()
+                .filter(a -> a.getName().equals(columnLabel))
+                .findAny()
+                .orElse(null);
+
+        if (attribute == null) {
+            throw new SQLException("Could not find attribute \"" + columnLabel + "\"");
+        }
+
+        if (attribute.getType() != AttributeType.FLOAT)
+            throw new SQLException("Column \"" +
+                    attribute.getName() + "\" is not of floating point type.");
+        return (Float) record.getValueOf(attribute);
     }
 
     @Override
