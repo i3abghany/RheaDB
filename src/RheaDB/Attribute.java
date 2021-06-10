@@ -53,12 +53,12 @@ public class Attribute implements Serializable {
         return this.isIndexed;
     }
 
-    public static AttributeType getAttributeTypeFromString(String attributeName) throws SQLException {
+    public static AttributeType getAttributeTypeFromString(String attributeName) throws DBError {
         return switch (attributeName) {
             case "string" -> AttributeType.STRING;
             case "int" -> AttributeType.INT;
             case "float" -> AttributeType.FLOAT;
-            default -> throw new SQLException("Invalid data type <" + attributeName + ">.");
+            default -> throw new DBError("Invalid data type <" + attributeName + ">.");
         };
     }
 }

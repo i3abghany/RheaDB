@@ -45,8 +45,8 @@ public class RheaDB {
                 if (sqlStatement == null)
                     continue;
                 queryResult = executeStatement(sqlStatement);
-            } catch (SQLException sqlException) {
-                System.out.println(sqlException.getMessage());
+            } catch (DBError DBError) {
+                System.out.println(DBError.getMessage());
                 continue;
             }
 
@@ -58,7 +58,7 @@ public class RheaDB {
         }
     }
 
-    private QueryResult executeStatement(SQLStatement sqlStatement) throws SQLException {
+    private QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
         if (sqlStatement.getKind() == SQLStatement.SQLStatementKind.DDL) {
             if (((DDLStatement) sqlStatement).getDDLKind() ==
                     DDLKind.CreateTable) {
@@ -67,7 +67,7 @@ public class RheaDB {
                 boolean wasCreated = createTable(statement.getTableName(),
                         statement.getAttributeVector());
                 if (!wasCreated) {
-                    throw new SQLException("Could not create the table. Table already exists.");
+                    throw new DBError("Could not create the table. Table already exists.");
                 }
             } else {
                 CreateIndexStatement statement =
@@ -77,23 +77,23 @@ public class RheaDB {
                 Attribute indexAttribute =
                         table.getAttributeWithName(indexAttributeName);
                 if (table.getName() == null) {
-                    throw new SQLException("Name " + statement.getTableName() +
+                    throw new DBError("Name " + statement.getTableName() +
                             " Does not resolve to a table.");
                 }
 
                 if (indexAttribute == null) {
-                    throw new SQLException("Invalid attribute: \"" +
+                    throw new DBError("Invalid attribute: \"" +
                             statement.getIndexAttribute() + "\"");
                 }
 
                 if (indexAttribute.getIsIndexed()) {
-                    throw new SQLException("There already exists an index for the" +
+                    throw new DBError("There already exists an index for the" +
                             "provided attribute.");
                 }
 
                 boolean indexCreated = createIndex(table, indexAttribute);
                 if (!indexCreated) {
-                    throw new SQLException("Could not create the index.");
+                    throw new DBError("Could not create the index.");
                 }
             }
         } else if (sqlStatement.getKind() == SQLStatement.SQLStatementKind.DML) {
@@ -103,10 +103,10 @@ public class RheaDB {
             } else if (dmlStatement.getDMLKind() == DMLStatementKind.INSERT) {
                 insertInto((InsertStatement) dmlStatement);
             } else {
-                throw new SQLException("Could not identify and parse the statement");
+                throw new DBError("Could not identify and parse the statement");
             }
         } else {
-            throw new SQLException("Could not identify and parse the statement");
+            throw new DBError("Could not identify and parse the statement");
         }
         return null;
     }
@@ -141,11 +141,11 @@ public class RheaDB {
         return true;
     }
 
-    public QueryResult selectFrom(SelectStatement selectStatement) throws SQLException {
+    public QueryResult selectFrom(SelectStatement selectStatement) throws DBError {
         Table table = getTable(selectStatement.getTableName());
         Vector<String> selectedAttributes = selectStatement.getSelectedAttributes();
         if (table == null) {
-            throw new SQLException("The name " + selectStatement.getTableName()
+            throw new DBError("The name " + selectStatement.getTableName()
                     + " does not resolve to a table in the database.");
         }
         HashSet<RowRecord> result = new HashSet<>();
@@ -159,7 +159,7 @@ public class RheaDB {
         for (Predicate predicate : predicates) {
             Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
             if (attribute == null) {
-                throw new SQLException("Invalid attribute: \"" + predicate.getAttributeName()
+                throw new DBError("Invalid attribute: \"" + predicate.getAttributeName()
                     + "\"");
             }
             predicate.setAttribute(attribute);
@@ -197,10 +197,10 @@ public class RheaDB {
                 selectedAttributes);
     }
 
-    private void verifySelectedAttributesExist(Table table, Vector<String> selectedAttributes) throws SQLException {
+    private void verifySelectedAttributesExist(Table table, Vector<String> selectedAttributes) throws DBError {
         for (String attributeName : selectedAttributes) {
             if (table.getAttributeWithName(attributeName) == null) {
-                throw new SQLException("Invalid attribute name " + attributeName);
+                throw new DBError("Invalid attribute name " + attributeName);
             }
         }
     }
@@ -216,12 +216,12 @@ public class RheaDB {
             new QueryResult(result, table.getAttributeList(), selectedAttributes);
     }
 
-    public void insertInto(InsertStatement insertStatement) throws SQLException {
+    public void insertInto(InsertStatement insertStatement) throws DBError {
         String tableName = insertStatement.getTableName();
         Table table = getTable(tableName);
 
         if (table == null) {
-            throw new SQLException("The name\"" + tableName + "\" does not resolve" +
+            throw new DBError("The name\"" + tableName + "\" does not resolve" +
                     "to a valid table.");
         }
 
@@ -248,7 +248,7 @@ public class RheaDB {
                     default: assert false;
                 }
             } catch (Exception e) {
-                throw new SQLException("Invalid value(" + value + ") provided " +
+                throw new DBError("Invalid value(" + value + ") provided " +
                         "for attribute: " + attribute.getName());
             }
         }

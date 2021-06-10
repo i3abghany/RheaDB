@@ -4,7 +4,7 @@ import Predicate.*;
 import Predicate.Predicate;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
-import RheaDB.SQLException;
+import RheaDB.DBError;
 
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -20,7 +20,7 @@ public class Parser {
                 .collect(Collectors.toCollection(Vector::new));
     }
 
-    public SQLStatement parse() throws SQLException {
+    public SQLStatement parse() throws DBError {
         if (tokenVector.isEmpty())
             return null;
 
@@ -31,7 +31,7 @@ public class Parser {
                 .orElse(null);
 
         if (badToken != null) {
-            throw new SQLException("Bad token: \"" + badToken.getTokenText() +
+            throw new DBError("Bad token: \"" + badToken.getTokenText() +
                     "\" at position: " + badToken.getPosition());
         }
 
@@ -40,13 +40,13 @@ public class Parser {
         else if (SQLStatement.isDMLKeyword(tokenVector.get(0)))
             return parseDML();
         else
-            throw new SQLException("Unexpected token: \"" +
+            throw new DBError("Unexpected token: \"" +
                     tokenVector.get(0).getTokenText() + "\".");
     }
 
-    private SQLStatement parseDDL() throws SQLException {
+    private SQLStatement parseDDL() throws DBError {
         if (tokenVector.size() == 1) {
-            throw new SQLException("Error parsing statement.");
+            throw new DBError("Error parsing statement.");
         }
 
         Token typeToken = tokenVector.elementAt(1);
@@ -56,13 +56,13 @@ public class Parser {
         else if (matchToken(1, TokenKind.KeywordToken, "index"))
             return parseCreateIndex();
         else
-            throw new SQLException("Unexpected token: \"" + typeToken.getTokenText()
+            throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
                 + "\" at position " + typeToken.getPosition());
     }
 
-    private SQLStatement parseCreateTable() throws SQLException {
+    private SQLStatement parseCreateTable() throws DBError {
         if (tokenVector.size() < 3) {
-            throw new SQLException("Error parsing Create Table statement.");
+            throw new DBError("Error parsing Create Table statement.");
         }
 
         String tableName = tokenVector.get(2).getTokenText();
@@ -75,28 +75,28 @@ public class Parser {
             attributeVector.add(new Attribute(attributeType, attributeName, false));
         }
         if (attributeVector.isEmpty()) {
-            throw new SQLException("Error parsing Create Table statement. " +
+            throw new DBError("Error parsing Create Table statement. " +
                     "Expected a set of attributes.");
         } else {
             return new DDLStatement.CreateTableStatement(tableName, attributeVector);
         }
     }
 
-    private SQLStatement parseCreateIndex() throws SQLException {
+    private SQLStatement parseCreateIndex() throws DBError {
         if (tokenVector.size() < 4) {
-            throw new SQLException("Error parsing Create Index statement.");
+            throw new DBError("Error parsing Create Index statement.");
         }
 
         Token tableNameToken = tokenVector.get(2);
         Token attributeNameToken = tokenVector.get(3);
 
         if (!matchToken(2, TokenKind.IdentifierToken)) {
-            throw new SQLException("Unexpected token: \"" + tableNameToken.getTokenText() +
+            throw new DBError("Unexpected token: \"" + tableNameToken.getTokenText() +
                     "\" at position " + tableNameToken.getPosition());
         }
 
         if (!matchToken(3, TokenKind.IdentifierToken)) {
-            throw new SQLException("Unexpected token: \"" + attributeNameToken.getTokenText() +
+            throw new DBError("Unexpected token: \"" + attributeNameToken.getTokenText() +
                     "\" at position " + attributeNameToken.getPosition());
         }
 
@@ -106,9 +106,9 @@ public class Parser {
         return new DDLStatement.CreateIndexStatement(tableName, attributeName);
     }
 
-    private SQLStatement parseDML() throws SQLException {
+    private SQLStatement parseDML() throws DBError {
         if (tokenVector.size() == 1) {
-            throw new SQLException("Error parsing statement.");
+            throw new DBError("Error parsing statement.");
         }
 
         Token typeToken = tokenVector.elementAt(0);
@@ -118,13 +118,13 @@ public class Parser {
         else if (matchToken(0, TokenKind.KeywordToken, "insert"))
             return parseInsert();
         else
-            throw new SQLException("Unexpected token: \"" + typeToken.getTokenText()
+            throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
                     + "\" at position " + typeToken.getPosition());
     }
 
-    private SQLStatement parseInsert() throws SQLException {
+    private SQLStatement parseInsert() throws DBError {
         if (tokenVector.size() <= 3) {
-            throw new SQLException("Error parsing statement.");
+            throw new DBError("Error parsing statement.");
         }
 
         // As we're here, we're sure that the zeroth token is an INSERT token.
@@ -132,13 +132,13 @@ public class Parser {
 
         if (!matchToken(1, TokenKind.KeywordToken, "into")) {
             Token badToken = tokenVector.elementAt(1);
-            throw new SQLException("Unexpected token: \"" + badToken.getTokenText()
+            throw new DBError("Unexpected token: \"" + badToken.getTokenText()
                 + "\" at position " + badToken.getPosition());
         }
 
         if (!matchToken(2, TokenKind.IdentifierToken)) {
             Token badToken = tokenVector.elementAt(2);
-            throw new SQLException("Unexpected token: \"" + badToken.getTokenText()
+            throw new DBError("Unexpected token: \"" + badToken.getTokenText()
                     + "\" at position " + badToken.getPosition());
         }
 
@@ -148,7 +148,7 @@ public class Parser {
         for (int i = 3; i < tokenVector.size(); i++) {
             Token token = tokenVector.elementAt(i);
             if (!token.isLiteral()) {
-                throw new SQLException("Invalid token: \"" + token.getTokenText()
+                throw new DBError("Invalid token: \"" + token.getTokenText()
                     + "\". Expected a literal.");
             }
             objectList.add(token.getValue());
@@ -157,7 +157,7 @@ public class Parser {
         return new DMLStatement.InsertStatement(tableName, objectList);
     }
 
-    private SQLStatement parseSelect() throws SQLException {
+    private SQLStatement parseSelect() throws DBError {
         Vector<String> attributeNames = new Vector<>();
         Vector<Predicate> predicates = new Vector<>();
         Token token;
@@ -167,7 +167,7 @@ public class Parser {
             if (token.getTokenText().equals("from")) {
                 break;
             } else if (!matchToken(i, TokenKind.IdentifierToken)) {
-                throw new SQLException("Unexpected token: \"" + token.getTokenText()
+                throw new DBError("Unexpected token: \"" + token.getTokenText()
                     + "\" at position: " + token.getPosition());
             }
             attributeNames.add(token.getTokenText());
@@ -175,7 +175,7 @@ public class Parser {
 
         if (!matchToken(i, TokenKind.KeywordToken, "from")) {
             token = tokenVector.elementAt(i);
-            throw new SQLException("Unexpected token: \"" + token.getTokenText() +
+            throw new DBError("Unexpected token: \"" + token.getTokenText() +
                 "\" at position: " + token.getPosition());
         }
         i++;
@@ -188,7 +188,7 @@ public class Parser {
         i++;
         token = tokenVector.elementAt(i);
         if (!matchToken(i, TokenKind.KeywordToken, "where")) {
-            throw new SQLException("Unexpected token: \"" + token.getTokenText() +
+            throw new DBError("Unexpected token: \"" + token.getTokenText() +
                     "\" at position: " + token.getPosition());
         }
 
@@ -205,7 +205,7 @@ public class Parser {
                 }
                 predicates.add(parsePredicate(attributeNameToken, operatorToken, valueToken));
             } catch (Exception e) {
-                throw new SQLException("Error parsing SELECT statement.");
+                throw new DBError("Error parsing SELECT statement.");
             }
         }
 
