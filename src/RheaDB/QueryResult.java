@@ -15,6 +15,10 @@ public class QueryResult {
         this.selectedAttributes = selectedAttributes;
     }
 
+    public HashSet<RowRecord> getRows() {
+        return rows;
+    }
+
     public void print() {
         Vector<Integer> lengths = new Vector<>();
 
