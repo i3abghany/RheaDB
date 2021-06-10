@@ -1,6 +1,8 @@
 package RheaDB;
 
-public class DBError extends Exception {
+import java.sql.SQLException;
+
+public class DBError extends SQLException {
 
     public DBError() {
         super();
