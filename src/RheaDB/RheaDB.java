@@ -58,7 +58,7 @@ public class RheaDB {
         }
     }
 
-    private QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
+    public QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
         if (sqlStatement.getKind() == SQLStatement.SQLStatementKind.DDL) {
             if (((DDLStatement) sqlStatement).getDDLKind() ==
                     DDLKind.CreateTable) {
@@ -322,7 +322,7 @@ public class RheaDB {
         return createdTables.get(name);
     }
 
-    private void saveMetadata() {
+    public void saveMetadata() {
         DiskManager.saveMetadata(createdTables);
     }
 
