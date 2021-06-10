@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class RheaDB {
     static final int maxTuplesPerPage = 32;
 
-    private final String rootDirectory = "." + File.separator + "data";
+    private final String rootDirectory;
     private final HashMap<String, Table> createdTables;
 
     private final BufferPool bufferPool;
@@ -112,7 +112,8 @@ public class RheaDB {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public RheaDB() throws IOException {
+    public RheaDB(String rootDirectory) throws IOException {
+        this.rootDirectory = rootDirectory;
         File file = new File(rootDirectory + File.separator +
                 "metadata.db");
         if (!file.exists()) {
@@ -127,6 +128,10 @@ public class RheaDB {
         } else
             createdTables = DiskManager.readMetadata();
         bufferPool = new BufferPool();
+    }
+
+    public RheaDB() throws IOException {
+        this("." + File.separator + "data");
     }
 
     public boolean createTable(String tableName, Vector<Attribute> attributeList) {
