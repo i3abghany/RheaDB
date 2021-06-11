@@ -9,23 +9,30 @@ import RheaDB.Table;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BufferPool {
     private final static int maxPagesInCache = 16;
-    private final HashMap<PageIdentifier, Page> pageHashMap;
+    private final ConcurrentHashMap<PageIdentifier, Page> pageHashMap;
 
-    private record PageIdentifier(String tableName, int pageIdx) {
+    public void commitAllPages() {
+        pageHashMap.forEach((PageIdentifier pi, Page page) -> {
+            updatePage(pi.table, page);
+        });
+    }
+
+    private record PageIdentifier(Table table, int pageIdx) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PageIdentifier that = (PageIdentifier) o;
-            return pageIdx == that.pageIdx && tableName.equals(that.tableName);
+            return pageIdx == that.pageIdx && table.getName().equals(that.table.getName());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(tableName, pageIdx);
+            return Objects.hash(table.getName(), pageIdx);
         }
     }
 
@@ -56,19 +63,19 @@ public class BufferPool {
     }
 
     public void deletePage(Table table, int pageIdx) {
-        PageIdentifier pageIdentifier = new PageIdentifier(table.getName(), pageIdx);
+        PageIdentifier pageIdentifier = new PageIdentifier(table, pageIdx);
         pageHashMap.remove(pageIdentifier);
         DiskManager.deletePage(table, pageIdx);
     }
 
     public void updatePage(Table table, Page page) {
         deletePage(table, page.getPageIdx());
-        DiskManager.savePage(table, page);
+        savePage(table, page);
         insertPage(table, page);
     }
 
     public BufferPool() {
-        pageHashMap = new HashMap<>();
+        pageHashMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -78,7 +85,7 @@ public class BufferPool {
      * @return The requested page.
      */
     public Page getPage(Table table, int pageIdx) {
-        PageIdentifier pageIdentifier = new PageIdentifier(table.getName(), pageIdx);
+        PageIdentifier pageIdentifier = new PageIdentifier(table, pageIdx);
         if (!pageHashMap.containsKey(pageIdentifier))
             return insertPage(table, pageIdx);
         else
@@ -96,11 +103,13 @@ public class BufferPool {
         return page == null ? null : insertPage(table, page);
     }
 
-    private Page insertPage(Table table, Page page) {
-        PageIdentifier pageIdentifier = new PageIdentifier(table.getName(), page.getPageIdx());
+    public Page insertPage(Table table, Page page) {
+        PageIdentifier pageIdentifier = new PageIdentifier(table, page.getPageIdx());
 
         if (pageHashMap.size() >= maxPagesInCache) {
             PageIdentifier randKey = (PageIdentifier) pageHashMap.keySet().toArray()[0];
+            Page evictedPage = pageHashMap.get(randKey);
+            updatePage(randKey.table, evictedPage);
             pageHashMap.remove(randKey);
         }
 

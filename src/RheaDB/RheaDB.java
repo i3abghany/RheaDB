@@ -24,6 +24,10 @@ public class RheaDB {
 
     private final BufferPool bufferPool;
 
+    public void commitOnExit() {
+        bufferPool.commitAllPages();
+    }
+
     public void run() {
         String statementStr;
         Scanner scanner = new Scanner(System.in);
@@ -31,8 +35,10 @@ public class RheaDB {
             System.out.print("> ");
             statementStr = scanner.nextLine();
 
-            if (statementStr.equals("@exit"))
+            if (statementStr.equals("@exit")) {
+                commitOnExit();
                 return;
+            }
 
             if (statementStr.isEmpty())
                 continue;
@@ -263,7 +269,6 @@ public class RheaDB {
                         }
                         return ret;
                     });
-            bufferPool.updatePage(table, page);
         }
     }
 
@@ -322,7 +327,7 @@ public class RheaDB {
         record.setPageId(lastPage.getPageIdx());
         record.setRowId(lastPage.getLastRowIndex());
         lastPage.addRecord(record);
-        bufferPool.savePage(table, lastPage);
+        bufferPool.insertPage(table, lastPage);
 
         table.getAttributeList()
                 .stream()
@@ -366,4 +371,5 @@ public class RheaDB {
         RheaDB rheaDB = new RheaDB();
         rheaDB.run();
     }
+
 }

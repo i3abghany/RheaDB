@@ -6,7 +6,6 @@ import RheaDB.RowRecord;
 import RheaDB.Table;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.logging.*;
 
@@ -21,6 +20,10 @@ public class DiskManager {
     public static void deletePage(Table table, int idx) {
         String fullPath = getFullPath(table, idx);
         File pageFile = new File(fullPath);
+
+        if (!pageFile.exists())
+            return;
+
         if (!pageFile.delete()) {
             LOGGER.log(Level.SEVERE, "Could not delete database files... Exiting");
         }
