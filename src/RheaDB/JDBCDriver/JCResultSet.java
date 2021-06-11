@@ -22,6 +22,10 @@ public class JCResultSet implements ResultSet {
         this.iterator = stream == null ? null : stream.iterator();
     }
 
+    public Iterator<RowRecord> getIterator() {
+        return iterator;
+    }
+
     @Override
     public boolean next() throws SQLException {
         boolean ret = iterator != null && iterator.hasNext();
@@ -147,7 +151,7 @@ public class JCResultSet implements ResultSet {
             throw new SQLException("Could not find attribute \"" + columnLabel + "\"");
         }
 
-        if (attribute.getType() != AttributeType.FLOAT)
+        if (attribute.getType() != AttributeType.STRING)
             throw new SQLException("Column \"" +
                     attribute.getName() + "\" is not of STRING type.");
         return (String) record.getValueOf(attribute);
@@ -180,7 +184,7 @@ public class JCResultSet implements ResultSet {
             throw new SQLException("Could not find attribute \"" + columnLabel + "\"");
         }
 
-        if (attribute.getType() != AttributeType.FLOAT)
+        if (attribute.getType() != AttributeType.INT)
             throw new SQLException("Column \"" +
                     attribute.getName() + "\" is not of integral type.");
         return (Integer) record.getValueOf(attribute);
