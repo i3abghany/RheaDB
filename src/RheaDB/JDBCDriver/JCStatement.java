@@ -2,7 +2,6 @@ package RheaDB.JDBCDriver;
 
 import QueryProcessor.Parser;
 import QueryProcessor.SQLStatement;
-import RheaDB.DBError;
 import RheaDB.QueryResult;
 import RheaDB.RheaDB;
 
