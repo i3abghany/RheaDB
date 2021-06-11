@@ -14,6 +14,7 @@ public class JCConnection implements Connection {
 
     public JCConnection(Path dataDir) throws IOException {
         this.rheaDB = new RheaDB(dataDir.toString());
+        Runtime.getRuntime().addShutdownHook(new Thread(this.rheaDB::commitOnExit));
     }
 
     @Override
