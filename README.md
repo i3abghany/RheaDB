@@ -15,7 +15,7 @@ database. It must be an existing directory.
 
 `Class.forName("RheaDB.JDBCDriver.JCDriver")` must be used so as to invoke the
 `static` portion of the driver, and (hopefully) successfully connect to a 
-database insance.
+database instance.
 
 
 ```java
