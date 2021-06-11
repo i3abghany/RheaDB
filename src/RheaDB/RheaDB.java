@@ -330,25 +330,12 @@ public class RheaDB {
                 .forEach(attr -> updateIndex(table, attr));
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public boolean createIndex(Table table, Attribute attribute) {
-        if (table == null)
+        if (table == null || attribute == null)
             return false;
 
-        if (attribute == null)
-            return false;
-
-        BPlusTree<?, RowRecord> bPlusTree;
-        AttributeType type = attribute.getType();
-
-        switch (type) {
-            case INT -> bPlusTree = new BPlusTree<Integer, RowRecord>();
-            case STRING -> bPlusTree = new BPlusTree<String, RowRecord>();
-            case FLOAT -> bPlusTree = new BPlusTree<Float, RowRecord>();
-            default -> bPlusTree = null;
-        }
-
-        if (bPlusTree == null)
-            return false;
+        BPlusTree<?, RowRecord> bPlusTree = new BPlusTree();
 
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
