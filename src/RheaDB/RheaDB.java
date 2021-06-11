@@ -37,18 +37,7 @@ public class RheaDB {
             if (statementStr.isEmpty())
                 continue;
 
-            SQLStatement sqlStatement;
-            QueryResult queryResult;
-
-            try {
-                sqlStatement = new Parser(statementStr).parse();
-                if (sqlStatement == null)
-                    continue;
-                queryResult = executeStatement(sqlStatement);
-            } catch (DBError DBError) {
-                System.out.println(DBError.getMessage());
-                continue;
-            }
+            QueryResult queryResult = executeStatement(statementStr);
 
             if (queryResult != null) {
                 queryResult.print();
@@ -56,6 +45,21 @@ public class RheaDB {
 
             saveMetadata();
         }
+    }
+
+    public QueryResult executeStatement(String sql) {
+        SQLStatement sqlStatement;
+        QueryResult queryResult = null;
+
+        try {
+            sqlStatement = new Parser(sql).parse();
+            if (sqlStatement != null)
+                queryResult = executeStatement(sqlStatement);
+        } catch (DBError DBError) {
+            System.out.println(DBError.getMessage());
+        }
+
+        return queryResult;
     }
 
     public QueryResult executeDML(DMLStatement dmlStatement) throws DBError {
