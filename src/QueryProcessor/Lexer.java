@@ -26,6 +26,7 @@ public class Lexer {
 
     private void populateKeywordSet() {
         keywordSet.add("create");
+        keywordSet.add("delete");
         keywordSet.add("from");
         keywordSet.add("index");
         keywordSet.add("insert");

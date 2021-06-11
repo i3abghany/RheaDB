@@ -1,13 +1,15 @@
 package QueryProcessor;
 
 import Predicate.Predicate;
+import RheaDB.Attribute;
 
 import java.util.Vector;
 
 public abstract class DMLStatement extends SQLStatement {
     public enum DMLStatementKind {
         SELECT,
-        INSERT
+        INSERT,
+        DELETE
     }
     @Override
     public SQLStatementKind getKind() {
@@ -65,6 +67,29 @@ public abstract class DMLStatement extends SQLStatement {
         @Override
         public DMLStatementKind getDMLKind() {
             return DMLStatementKind.INSERT;
+        }
+    }
+
+    public static class DeleteStatement extends DMLStatement {
+        private final String tableName;
+        private final Vector<Predicate> predicateVector;
+
+        public DeleteStatement(String tableName, Vector<Predicate> predicates) {
+            this.tableName = tableName;
+            this.predicateVector = predicates;
+        }
+
+        public String getTableName() {
+            return tableName;
+        }
+
+        public Vector<Predicate> getPredicateVector() {
+            return predicateVector;
+        }
+
+        @Override
+        public DMLStatementKind getDMLKind() {
+            return DMLStatementKind.DELETE;
         }
     }
 }

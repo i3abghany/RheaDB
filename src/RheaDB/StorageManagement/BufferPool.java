@@ -14,6 +14,21 @@ public class BufferPool {
     private final static int maxPagesInCache = 16;
     private final HashMap<PageIdentifier, Page> pageHashMap;
 
+    private record PageIdentifier(String tableName, int pageIdx) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PageIdentifier that = (PageIdentifier) o;
+            return pageIdx == that.pageIdx && tableName.equals(that.tableName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(tableName, pageIdx);
+        }
+    }
+
     public BPlusTree<?, RowRecord> getIndex(Table table, Attribute attribute) {
         String indexFullPath =
                 table.getPageDirectory() + File.separator + "index" +
@@ -40,39 +55,52 @@ public class BufferPool {
         DiskManager.deleteIndex(fullIndexPath);
     }
 
-    private record PageIdentifier(String tableName, int pageIdx) {
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            PageIdentifier that = (PageIdentifier) o;
-            return pageIdx == that.pageIdx && tableName.equals(that.tableName);
-        }
+    public void deletePage(Table table, int pageIdx) {
+        PageIdentifier pageIdentifier = new PageIdentifier(table.getName(), pageIdx);
+        pageHashMap.remove(pageIdentifier);
+        DiskManager.deletePage(table, pageIdx);
+    }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(tableName, pageIdx);
-        }
+    public void updatePage(Table table, Page page) {
+        deletePage(table, page.getPageIdx());
+        DiskManager.savePage(table, page);
+        insertPage(table, page);
     }
 
     public BufferPool() {
-        this.pageHashMap = new HashMap<>();
+        pageHashMap = new HashMap<>();
     }
 
+    /**
+     * Searches for the page in the hash table, if not existent, deserialize it.
+     * @param table The table to which the page belong to.
+     * @param pageIdx Page index in table that's used to construct an identifier.
+     * @return The requested page.
+     */
     public Page getPage(Table table, int pageIdx) {
         PageIdentifier pageIdentifier = new PageIdentifier(table.getName(), pageIdx);
-        if (!this.pageHashMap.containsKey(pageIdentifier))
+        if (!pageHashMap.containsKey(pageIdentifier))
             return insertPage(table, pageIdx);
         else
             return pageHashMap.get(pageIdentifier);
     }
 
+    /**
+     * Deserializes the page and inserts it into the hash table.
+     * @param table The table to which the page belong to.
+     * @param pageIdx The index of the page that's use to construct an identifier.
+     * @return Returns the page JIC the caller may want to search for it in the hash table.
+     */
     private Page insertPage(Table table, int pageIdx) {
         Page page = DiskManager.getPage(table, pageIdx);
-        PageIdentifier pageIdentifier = new PageIdentifier(table.getName(), pageIdx);
+        return page == null ? null : insertPage(table, page);
+    }
+
+    private Page insertPage(Table table, Page page) {
+        PageIdentifier pageIdentifier = new PageIdentifier(table.getName(), page.getPageIdx());
 
         if (pageHashMap.size() >= maxPagesInCache) {
-            PageIdentifier randKey = (PageIdentifier) this.pageHashMap.keySet().toArray()[0];
+            PageIdentifier randKey = (PageIdentifier) pageHashMap.keySet().toArray()[0];
             pageHashMap.remove(randKey);
         }
 

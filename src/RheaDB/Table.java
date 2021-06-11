@@ -19,6 +19,11 @@ public class Table implements Serializable {
         this.numPages = 0;
     }
 
+    public void popPage() {
+        assert numPages > 0;
+        this.numPages--;
+    }
+
     public Table(String name, String pageDirectory, int maxTuplesPerPage) {
         this(name, new Vector<>(), pageDirectory, maxTuplesPerPage);
     }

@@ -117,9 +117,43 @@ public class Parser {
             return parseSelect();
         else if (matchToken(0, TokenKind.KeywordToken, "insert"))
             return parseInsert();
+        else if (matchToken(0, TokenKind.KeywordToken, "delete"))
+            return parseDelete();
         else
             throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
                     + "\" at position " + typeToken.getPosition());
+    }
+
+    private SQLStatement parseDelete() throws DBError {
+        if (tokenVector.size() < 3) {
+            throw new DBError("Error parsing statement.");
+        }
+
+        assert matchToken(0, TokenKind.KeywordToken, "delete");
+
+        if (!matchToken(1, TokenKind.KeywordToken, "from")) {
+            throw new DBError("Unexpected token \"" + tokenVector.get(1).getTokenText() +
+                    "\" at position: " + tokenVector.get(1).getPosition());
+        }
+
+        if (!matchToken(2, TokenKind.IdentifierToken)) {
+            throw new DBError("Unexpected token \"" + tokenVector.get(2).getTokenText() +
+                    "\" at position: " + tokenVector.get(2).getPosition());
+        }
+
+        String tableName = tokenVector.get(2).getTokenText();
+
+        if (tokenVector.size() == 3) {
+            return new DMLStatement.DeleteStatement(tableName, new Vector<>());
+        }
+
+        if (!matchToken(3, TokenKind.KeywordToken, "where")) {
+            throw new DBError("Unexpected token \"" + tokenVector.get(3).getTokenText() +
+                    "\" at position: " + tokenVector.get(3).getPosition());
+        }
+        Vector<Predicate> predicates = parsePredicates(4);
+
+        return new DMLStatement.DeleteStatement(tableName, predicates);
     }
 
     private SQLStatement parseInsert() throws DBError {
@@ -159,7 +193,6 @@ public class Parser {
 
     private SQLStatement parseSelect() throws DBError {
         Vector<String> attributeNames = new Vector<>();
-        Vector<Predicate> predicates = new Vector<>();
         Token token;
         int i = 1;
         for (; i < tokenVector.size(); i++) {
@@ -193,6 +226,14 @@ public class Parser {
         }
 
         i++;
+        Vector<Predicate> predicates = parsePredicates(i);
+
+        return new DMLStatement.SelectStatement(tableName,
+                 attributeNames, predicates);
+    }
+
+    private Vector<Predicate> parsePredicates(int i) throws DBError {
+        Vector<Predicate> predicates = new Vector<>();
         for (; i < tokenVector.size(); i += 4) {
             try {
                 Token attributeNameToken = tokenVector.elementAt(i);
@@ -209,8 +250,7 @@ public class Parser {
             }
         }
 
-        return new DMLStatement.SelectStatement(tableName,
-                 attributeNames, predicates);
+        return predicates;
     }
 
     private boolean matchToken(int i, TokenKind tokenKind) {

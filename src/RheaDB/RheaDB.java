@@ -62,6 +62,7 @@ public class RheaDB {
         switch (dmlStatement.getDMLKind()) {
             case SELECT: return selectFrom((SelectStatement) dmlStatement);
             case INSERT: insertInto((InsertStatement) dmlStatement); return null;
+            case DELETE: deleteFrom((DeleteStatement) dmlStatement); return null;
             default: throw new DBError("Could not identify and parse the statement");
         }
     }
@@ -180,9 +181,10 @@ public class RheaDB {
             }
         }
 
-        predicates = predicates.stream().filter(
-            p -> !table.getAttributeWithName(p.getAttributeName()).getIsIndexed()
-        ).collect(Collectors.toCollection(Vector::new));
+        predicates = predicates
+                .stream()
+                .filter(p -> !table.getAttributeWithName(p.getAttributeName()).getIsIndexed())
+                .collect(Collectors.toCollection(Vector::new));
         final Vector<Predicate> finalPredicates = predicates;
 
         for (int i = 1; i <= table.getNumPages(); i++) {
@@ -221,6 +223,51 @@ public class RheaDB {
 
         return result.size() == 0 ? null :
             new QueryResult(result, table.getAttributeList(), selectedAttributes);
+    }
+
+    public void deleteFrom(DeleteStatement deleteStatement) throws DBError {
+        String tableName = deleteStatement.getTableName();
+        Table table = getTable(tableName);
+        if (table == null) {
+            throw new DBError("The name \"" + tableName + "\" does not resolve " +
+                    "to a valid table.");
+        }
+
+        Vector<Predicate> predicates = deleteStatement.getPredicateVector();
+        if (predicates.isEmpty())
+            deleteAllRows(table);
+
+        for (Predicate predicate : predicates) {
+            Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
+            if (attribute == null) {
+                throw new DBError("Invalid attribute: \"" + predicate.getAttributeName()
+                        + "\"");
+            }
+            predicate.setAttribute(attribute);
+        }
+
+        final Vector<Predicate> finalPredicates = predicates;
+
+        for (int i = 1; i <= table.getNumPages(); i++) {
+            Page page = bufferPool.getPage(table, i);
+            page.getRecords()
+                    .removeIf((r) -> {
+                        boolean ret = false;
+                        for (Predicate p : finalPredicates) {
+                            Attribute attribute = table.getAttributeWithName(p.getAttributeName());
+                            ret |= p.doesSatisfy(r.getValueOf(attribute));
+                        }
+                        return ret;
+                    });
+            bufferPool.updatePage(table, page);
+        }
+    }
+
+    private void deleteAllRows(Table table) {
+        for (int i = table.getNumPages(); i > 0; i--) {
+            bufferPool.deletePage(table, i);
+            table.popPage();
+        }
     }
 
     public void insertInto(InsertStatement insertStatement) throws DBError {
@@ -265,10 +312,7 @@ public class RheaDB {
 
     private void insertInto(Table table, RowRecord record) {
         Page lastPage = bufferPool.getPage(table, table.getNumPages());
-        if (lastPage == null)
-            lastPage = table.getNewPage();
-
-        if (!lastPage.hasFreeSpace())
+        if (lastPage == null || !lastPage.hasFreeSpace())
             lastPage = table.getNewPage();
 
         record.setPageId(lastPage.getPageIdx());
@@ -276,10 +320,10 @@ public class RheaDB {
         lastPage.addRecord(record);
         bufferPool.savePage(table, lastPage);
 
-        for (Attribute attribute : table.getAttributeList()) {
-            if (attribute.getIsIndexed())
-                updateIndex(table, attribute);
-        }
+        table.getAttributeList()
+                .stream()
+                .filter(attr -> attr.getIsIndexed())
+                .forEach(attr -> updateIndex(table, attr));
     }
 
     public boolean createIndex(Table table, Attribute attribute) {
