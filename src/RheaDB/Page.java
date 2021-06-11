@@ -21,7 +21,7 @@ public class Page implements Serializable {
     }
 
     public boolean addRecord(RowRecord record) {
-        if (!hasFreeSpace())
+        if (isFull())
             return false;
 
         this.records.add(record);
@@ -36,8 +36,8 @@ public class Page implements Serializable {
         return pageIdx;
     }
 
-    public boolean hasFreeSpace() {
-        return this.records.size() < this.maxTuples;
+    public boolean isFull() {
+        return this.records.size() == this.maxTuples;
     }
 
     public int getLastRowIndex() {

@@ -316,7 +316,7 @@ public class RheaDB {
 
     private void insertInto(Table table, RowRecord record) {
         Page lastPage = bufferPool.getPage(table, table.getNumPages());
-        if (lastPage == null || !lastPage.hasFreeSpace())
+        if (lastPage == null || lastPage.isFull())
             lastPage = table.getNewPage();
 
         record.setPageId(lastPage.getPageIdx());
@@ -358,7 +358,6 @@ public class RheaDB {
         }
 
         bufferPool.saveIndex(table, attribute, bPlusTree);
-
         attribute.setIsIndexed(true);
         return true;
     }
