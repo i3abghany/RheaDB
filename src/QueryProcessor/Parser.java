@@ -195,23 +195,36 @@ public class Parser {
         Vector<String> attributeNames = new Vector<>();
         Token token;
         int i = 1;
-        for (; i < tokenVector.size(); i++) {
+        for (; i < tokenVector.size(); i += 2) {
             token = tokenVector.elementAt(i);
-            if (token.getTokenText().equals("from")) {
+            if (matchToken(i, TokenKind.IdentifierToken) &&
+                matchToken(i + 1, TokenKind.CommaToken)) {
+                attributeNames.add(token.getTokenText());
+            } else if (matchToken(i, TokenKind.IdentifierToken) &&
+                       matchToken(i + 1, TokenKind.KeywordToken, "from")) {
+                attributeNames.add(token.getTokenText());
                 break;
-            } else if (!matchToken(i, TokenKind.IdentifierToken)) {
-                throw new DBError("Unexpected token: \"" + token.getTokenText()
-                    + "\" at position: " + token.getPosition());
+            } else {
+                if (!matchToken(i + 1, TokenKind.KeywordToken, "from") &&
+                    i + 1 < tokenVector.size()) {
+                    token = tokenVector.get(i + 1);
+                    throw new DBError("Unexpected token: \"" + token.getTokenText()
+                            + "\" at position: " + token.getPosition());
+                } else {
+                    throw new DBError("Error parsing SELECT statement. Expected a FROM keyword");
+                }
             }
-            attributeNames.add(token.getTokenText());
         }
 
-        if (!matchToken(i, TokenKind.KeywordToken, "from")) {
-            token = tokenVector.elementAt(i);
-            throw new DBError("Unexpected token: \"" + token.getTokenText() +
-                "\" at position: " + token.getPosition());
-        }
         i++;
+        if (!matchToken(i, TokenKind.KeywordToken, "from")) {
+            throw new DBError("Error parsing SELECT statement. Expected FROM keyword.");
+        }
+
+        i++;
+        if (!matchToken(i, TokenKind.IdentifierToken)) {
+            throw new DBError("Error parsing SELECT statement. Expected a table name.");
+        }
 
         String tableName = tokenVector.elementAt(i).getTokenText();
         if (i == tokenVector.size() - 1) {
