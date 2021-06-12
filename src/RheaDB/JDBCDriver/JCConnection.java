@@ -39,22 +39,22 @@ public class JCConnection implements Connection {
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-
+        this.rheaDB.setLazyCommit(!autoCommit);
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        return false;
+        return !this.rheaDB.getLazyCommit();
     }
 
     @Override
     public void commit() throws SQLException {
-
+        this.rheaDB.commitOnExit();
     }
 
     @Override
     public void rollback() throws SQLException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override

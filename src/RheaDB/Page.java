@@ -20,6 +20,10 @@ public class Page implements Serializable {
         this.records = new Vector<>();
     }
 
+    public int getNumberOfRows() {
+        return records.size();
+    }
+
     public boolean addRecord(RowRecord record) {
         if (isFull())
             return false;

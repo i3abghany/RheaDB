@@ -106,6 +106,11 @@ public class BufferPool {
     public Page insertPage(Table table, Page page) {
         PageIdentifier pageIdentifier = new PageIdentifier(table, page.getPageIdx());
 
+        if (pageHashMap.containsKey(pageIdentifier)) {
+            pageHashMap.put(pageIdentifier, page);
+            return page;
+        }
+
         if (pageHashMap.size() >= maxPagesInCache) {
             PageIdentifier randKey = (PageIdentifier) pageHashMap.keySet().toArray()[0];
             Page evictedPage = pageHashMap.get(randKey);

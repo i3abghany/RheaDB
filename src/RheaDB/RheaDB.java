@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class RheaDB {
     static final int maxTuplesPerPage = 32;
 
+    private boolean lazyCommit;
     private final String rootDirectory;
     private final HashMap<String, Table> createdTables;
 
@@ -36,7 +37,9 @@ public class RheaDB {
             statementStr = scanner.nextLine();
 
             if (statementStr.equals("@exit")) {
-                commitOnExit();
+                if (lazyCommit) {
+                    commitOnExit();
+                }
                 return;
             }
 
@@ -141,6 +144,8 @@ public class RheaDB {
         } else
             createdTables = DiskManager.readMetadata();
         bufferPool = new BufferPool();
+        lazyCommit = true;
+        Runtime.getRuntime().addShutdownHook(new Thread(this::commitOnExit));
     }
 
     public RheaDB() throws IOException {
@@ -151,7 +156,7 @@ public class RheaDB {
         if (createdTables.containsKey(tableName))
             return false;
 
-        String pageDirectory = this.rootDirectory + File.separator + tableName;
+        String pageDirectory = rootDirectory + File.separator + tableName;
         Table newTable = new Table(tableName, attributeList, pageDirectory,
                 maxTuplesPerPage);
         createdTables.put(tableName, newTable);
@@ -260,6 +265,7 @@ public class RheaDB {
 
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
+            int rowsBeforeDelete = page.getNumberOfRows();
             page.getRecords()
                     .removeIf((r) -> {
                         boolean ret = false;
@@ -269,6 +275,9 @@ public class RheaDB {
                         }
                         return ret;
                     });
+            if (!lazyCommit && page.getNumberOfRows() != rowsBeforeDelete) {
+                bufferPool.updatePage(table, page);
+            }
         }
     }
 
@@ -322,12 +331,15 @@ public class RheaDB {
     private void insertInto(Table table, RowRecord record) {
         Page lastPage = bufferPool.getPage(table, table.getNumPages());
         if (lastPage == null || lastPage.isFull())
-            lastPage = table.getNewPage();
+            lastPage = bufferPool.insertPage(table, table.getNewPage());
 
         record.setPageId(lastPage.getPageIdx());
         record.setRowId(lastPage.getLastRowIndex());
         lastPage.addRecord(record);
-        bufferPool.insertPage(table, lastPage);
+
+        if (!lazyCommit) {
+            bufferPool.updatePage(table, lastPage);
+        }
 
         table.getAttributeList()
                 .stream()
@@ -367,9 +379,16 @@ public class RheaDB {
         DiskManager.saveMetadata(createdTables);
     }
 
+    public void setLazyCommit(boolean b) {
+        lazyCommit = b;
+    }
+
+    public boolean getLazyCommit() {
+        return lazyCommit;
+    }
+
     public static void main(String[] args) throws IOException {
         RheaDB rheaDB = new RheaDB();
         rheaDB.run();
     }
-
 }

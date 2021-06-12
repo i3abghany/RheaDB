@@ -66,7 +66,14 @@ public class DiskManager {
     private static void serializePage(Page page, String fullPath) {
         try {
             File file = new File(fullPath);
-            if (!file.exists()) {
+
+            if (file.exists()) {
+                boolean wasDeleted = file.delete();
+                if (!wasDeleted) {
+                    LOGGER.log(Level.SEVERE, "Could not access a page for deletion... Exiting.");
+                    System.exit(1);
+                }
+            } else {
                 file.getParentFile().mkdirs();
                 boolean fileCreated = file.createNewFile();
                 if (!fileCreated) {
