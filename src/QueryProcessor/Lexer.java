@@ -46,7 +46,7 @@ public class Lexer {
     }
 
     private Token lexWhiteSpaceToken(int tokenPosition) {
-        while (inBounds() && Character.isWhitespace(getCurr()))
+        while (Character.isWhitespace(getCurr()))
             advance();
         String tokenText = text.substring(tokenPosition, position);
         return new Token(tokenPosition, tokenText, null,
@@ -54,7 +54,7 @@ public class Lexer {
     }
 
     private Token lexNumericLiteral(int tokenPosition) {
-        while (inBounds() && (Character.isDigit(getCurr()) || getCurr() == '.'))
+        while ((Character.isDigit(getCurr()) || getCurr() == '.'))
             advance();
 
         String tokenText = text.substring(tokenPosition, position);
@@ -68,7 +68,7 @@ public class Lexer {
     }
 
     private Token lexAlphabeticalToken(int tokenPosition) {
-        while (inBounds() && (Character.isAlphabetic(getCurr()) || getCurr() == '_'))
+        while (Character.isAlphabetic(getCurr()) || getCurr() == '_')
             advance();
         String tokenText = text.substring(tokenPosition, position);
         if (isKeyword(tokenText))
@@ -83,15 +83,15 @@ public class Lexer {
 
     private Token lexStringLiteral(int tokenPosition) {
         advance();
-        while (inBounds() && getCurr() != '"')
+        while (getCurr() != '"')
             advance();
-        if (!inBounds()) {
-            String tokenText = text.substring(tokenPosition);
-            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
-        } else {
+        if (inBounds()) {
             String tokenText = text.substring(tokenPosition + 1, position);
             advance();
             return new Token(tokenPosition, tokenText, tokenText, TokenKind.StringLiteralToken);
+        } else {
+            String tokenText = text.substring(tokenPosition);
+            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
         }
     }
 
@@ -103,7 +103,7 @@ public class Lexer {
 
     private Token lexBeginningWithBang(int tokenPosition) {
         advance();
-        if (!inBounds() || getCurr() != '=') {
+        if (getCurr() != '=') {
             String tokenText = "!";
             return new Token(tokenPosition, tokenText, tokenText,
                     TokenKind.BadToken);
@@ -131,7 +131,7 @@ public class Lexer {
 
     private Token lexLessThan(int tokenPosition) {
         advance();
-        if (!inBounds() || getCurr() != '=') {
+        if (getCurr() != '=') {
             String tokenText = "<";
             return new Token(tokenPosition, tokenText, tokenText,
                     TokenKind.LessToken);
