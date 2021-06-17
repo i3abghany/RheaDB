@@ -10,12 +10,21 @@ public class Lexer {
 
     private final HashSet<String> keywordSet = new HashSet<>();
     private final HashSet<String> dataTypeSet = new HashSet<>();
+    private final HashSet<Character> operatorSet = new HashSet<>();
 
     public Lexer(String input) {
         this.text = input;
         this.position = 0;
         populateKeywordSet();
         populateDataTypeSet();
+        populateOperatorSet();
+    }
+
+    private void populateOperatorSet() {
+        operatorSet.add('=');
+        operatorSet.add('>');
+        operatorSet.add('<');
+        operatorSet.add('!');
     }
 
     private void populateDataTypeSet() {
@@ -36,113 +45,156 @@ public class Lexer {
         keywordSet.add("where");
     }
 
-    public Vector<Token> lex() {
-        Vector<Token> tokens = new Vector<>();
-        while (position < text.length()) {
-            int tokenPosition = position;
-            String tokenText;
+    public Token lexWhiteSpaceToken(int tokenPosition) {
+        while (inBounds() && Character.isWhitespace(getCurr()))
+            advance();
+        String tokenText = text.substring(tokenPosition, position);
+        return new Token(tokenPosition, tokenText, null,
+                TokenKind.WhiteSpaceToken);
+    }
 
-            if (Character.isWhitespace(getCurr())) {
-                while (inBounds() && Character.isWhitespace(getCurr()))
-                    advance();
-                tokenText = text.substring(tokenPosition, position);
-                tokens.add(new Token(tokenPosition, tokenText, null,
-                        TokenKind.WhiteSpaceToken));
-            } else if (Character.isDigit(getCurr())) {
-                while (inBounds() && (Character.isDigit(getCurr()) || getCurr() == '.'))
-                    advance();
+    public Token lexNumericLiteral(int tokenPosition) {
+        while (inBounds() && (Character.isDigit(getCurr()) || getCurr() == '.'))
+            advance();
 
-                tokenText = text.substring(tokenPosition, position);
-                if (tokenText.contains(".")) {
-                    tokens.add(new Token(tokenPosition, tokenText,
-                            Float.parseFloat(tokenText),
-                            TokenKind.FloatingPointToken));
-                } else {
-                    tokens.add(new Token(tokenPosition, tokenText,
-                            Integer.parseInt(tokenText),
-                            TokenKind.IntegralToken));
-                }
-            } else if (Character.isAlphabetic(getCurr()) || getCurr() == '_') {
-                while (inBounds() && (Character.isAlphabetic(getCurr()) || getCurr() == '_'))
-                    advance();
-                tokenText = text.substring(tokenPosition, position);
-                if (isKeyword(tokenText))
-                    tokens.add(new Token(tokenPosition,
-                            tokenText.toLowerCase(Locale.ROOT),
-                            tokenText.toLowerCase(Locale.ROOT),
-                            TokenKind.KeywordToken));
-                else if (isDataType(tokenText))
-                    tokens.add(new Token(tokenPosition,
-                            tokenText.toLowerCase(Locale.ROOT),
-                            tokenText.toLowerCase(Locale.ROOT),
-                            TokenKind.DataTypeToken));
-                else
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.IdentifierToken));
-            } else if (inBounds() && getCurr() == '=') {
-                advance();
-                tokens.add(new Token(tokenPosition, "=", "=",
-                        TokenKind.EqualsToken));
-            } else if (inBounds() && getCurr() == '!') {
-                advance();
-                if (!inBounds() || getCurr() != '=') {
-                    tokenText = "!";
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.BadToken));
-                } else {
-                    tokenText = "!=";
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.NotEqualsToken));
-                }
-            } else if (inBounds() && getCurr() == '>') {
-                advance();
-                if (!inBounds() || getCurr() != '=') {
-                    tokenText = "!";
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.GreaterToken));
-                } else {
-                    tokenText = "!=";
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.GreaterEqualsToken));
-                }
-            } else if (inBounds() && getCurr() == '<') {
-                advance();
-                if (!inBounds() || getCurr() != '=') {
-                    tokenText = "<";
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.LessToken));
-                } else {
-                    tokenText = "!=";
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.LessEqualsToken));
-                }
-            } else if (inBounds() && getCurr() == '"') {
-                advance();
-                while (inBounds() && getCurr() != '"')
-                    advance();
-                if (!inBounds()) {
-                    tokenText = text.substring(tokenPosition);
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.BadToken));
-                } else {
-                    tokenText = text.substring(tokenPosition + 1, position);
-                    tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                            TokenKind.StringLiteralToken));
-                    advance();
-                }
-            } else if (getCurr() == ',') {
-                advance();
-                tokenText = ",";
-                tokens.add(new Token(tokenPosition, tokenText, tokenText,
-                        TokenKind.CommaToken));
-            } else {
-                tokens.add(new Token(tokenPosition,
-                        Character.toString(getCurr()),
-                        Character.toString(getCurr()), TokenKind.BadToken));
-                advance();
-            }
+        String tokenText = text.substring(tokenPosition, position);
+        if (tokenText.contains(".")) {
+            return new Token(tokenPosition, tokenText, Float.parseFloat(tokenText),
+                    TokenKind.FloatingPointToken);
+        } else {
+            return new Token(tokenPosition, tokenText, Integer.parseInt(tokenText),
+                    TokenKind.IntegralToken);
         }
+    }
+
+    public Token lexAlphabeticalToken(int tokenPosition) {
+        while (inBounds() && (Character.isAlphabetic(getCurr()) || getCurr() == '_'))
+            advance();
+        String tokenText = text.substring(tokenPosition, position);
+        if (isKeyword(tokenText))
+            return new Token(tokenPosition, tokenText.toLowerCase(Locale.ROOT),
+                    tokenText.toLowerCase(Locale.ROOT),  TokenKind.KeywordToken);
+        else if (isDataType(tokenText))
+            return new Token(tokenPosition, tokenText.toLowerCase(Locale.ROOT),
+                    tokenText.toLowerCase(Locale.ROOT), TokenKind.DataTypeToken);
+        else
+            return new Token(tokenPosition, tokenText, tokenText, TokenKind.IdentifierToken);
+    }
+
+    private Token lexStringLiteral(int tokenPosition) {
+        advance();
+        while (inBounds() && getCurr() != '"')
+            advance();
+        if (!inBounds()) {
+            String tokenText = text.substring(tokenPosition);
+            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+        } else {
+            String tokenText = text.substring(tokenPosition + 1, position);
+            advance();
+            return new Token(tokenPosition, tokenText, tokenText, TokenKind.StringLiteralToken);
+        }
+    }
+
+    public Token lexBeginningWithEquals(int tokenPosition) {
+        advance();
+        return new Token(tokenPosition, "=", "=",
+                TokenKind.EqualsToken);
+    }
+
+    public Token lexBeginningWithBang(int tokenPosition) {
+        advance();
+        if (!inBounds() || getCurr() != '=') {
+            String tokenText = "!";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.BadToken);
+        } else {
+            advance();
+            String tokenText = "!=";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.NotEqualsToken);
+        }
+    }
+
+    private Token lexGreaterThan(int tokenPosition) {
+        advance();
+        if (getCurr() != '=') {
+            String tokenText = ">";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.GreaterToken);
+        } else {
+            advance();
+            String tokenText = ">=";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.GreaterEqualsToken);
+        }
+    }
+
+    private Token lexLessThan(int tokenPosition) {
+        advance();
+        if (!inBounds() || getCurr() != '=') {
+            String tokenText = "<";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.LessToken);
+        } else {
+            advance();
+            String tokenText = "<=";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.LessEqualsToken);
+        }
+    }
+
+    public Token lexOperatorToken(int tokenPosition) {
+        return switch (getCurr()) {
+            case '=' -> lexBeginningWithEquals(tokenPosition);
+            case '!' -> lexBeginningWithBang(tokenPosition);
+            case '>' -> lexGreaterThan(tokenPosition);
+            case '<' -> lexLessThan(tokenPosition);
+            default -> null;
+        };
+    }
+
+    public Token lexCommaToken(int tokenPosition) {
+        advance();
+        String tokenText = ",";
+        return new Token(tokenPosition, tokenText, tokenText,
+                TokenKind.CommaToken);
+    }
+
+    public Token lexBadToken(int tokenPosition) {
+        advance();
+        return new Token(tokenPosition, Character.toString(getCurr()),
+                Character.toString(getCurr()), TokenKind.BadToken);
+    }
+
+    public Vector<Token> lex() {
+            Vector<Token> tokens = new Vector<>();
+
+            while (position < text.length()) {
+                int tokenPosition = position;
+
+                if (Character.isWhitespace(getCurr()))
+                    tokens.add(lexWhiteSpaceToken(tokenPosition));
+                else if (Character.isDigit(getCurr()))
+                    tokens.add(lexNumericLiteral(tokenPosition));
+                else if (Character.isAlphabetic(getCurr()) || getCurr() == '_')
+                    tokens.add(lexAlphabeticalToken(tokenPosition));
+                else if (isOperator(getCurr()))
+                    tokens.add(lexOperatorToken(tokenPosition));
+                else if (getCurr() == '"')
+                    tokens.add(lexStringLiteral(tokenPosition));
+                else if (getCurr() == ',')
+                    tokens.add(lexCommaToken(tokenPosition));
+                else if (!inBounds())
+                    break;
+                else
+                    tokens.add(lexBadToken(tokenPosition));
+            }
+
         return tokens;
+    }
+
+    private boolean isOperator(char curr) {
+        return operatorSet.contains(curr);
     }
 
     private boolean isDataType(String tokenText) {
@@ -158,7 +210,7 @@ public class Lexer {
     }
 
     private char getCurr() {
-        if (this.position == this.text.length())
+        if (this.position >= this.text.length())
             return '\0';
         return this.text.charAt(position);
     }
