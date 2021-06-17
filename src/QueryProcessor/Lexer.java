@@ -13,8 +13,8 @@ public class Lexer {
     private final HashSet<Character> operatorSet = new HashSet<>();
 
     public Lexer(String input) {
-        this.text = input;
-        this.position = 0;
+        text = input;
+        position = 0;
         populateKeywordSet();
         populateDataTypeSet();
         populateOperatorSet();
@@ -28,9 +28,9 @@ public class Lexer {
     }
 
     private void populateDataTypeSet() {
-        keywordSet.add("int");
-        keywordSet.add("string");
-        keywordSet.add("float");
+        dataTypeSet.add("int");
+        dataTypeSet.add("string");
+        dataTypeSet.add("float");
     }
 
     private void populateKeywordSet() {
@@ -45,7 +45,7 @@ public class Lexer {
         keywordSet.add("where");
     }
 
-    public Token lexWhiteSpaceToken(int tokenPosition) {
+    private Token lexWhiteSpaceToken(int tokenPosition) {
         while (inBounds() && Character.isWhitespace(getCurr()))
             advance();
         String tokenText = text.substring(tokenPosition, position);
@@ -53,7 +53,7 @@ public class Lexer {
                 TokenKind.WhiteSpaceToken);
     }
 
-    public Token lexNumericLiteral(int tokenPosition) {
+    private Token lexNumericLiteral(int tokenPosition) {
         while (inBounds() && (Character.isDigit(getCurr()) || getCurr() == '.'))
             advance();
 
@@ -67,7 +67,7 @@ public class Lexer {
         }
     }
 
-    public Token lexAlphabeticalToken(int tokenPosition) {
+    private Token lexAlphabeticalToken(int tokenPosition) {
         while (inBounds() && (Character.isAlphabetic(getCurr()) || getCurr() == '_'))
             advance();
         String tokenText = text.substring(tokenPosition, position);
@@ -95,13 +95,13 @@ public class Lexer {
         }
     }
 
-    public Token lexBeginningWithEquals(int tokenPosition) {
+    private Token lexBeginningWithEquals(int tokenPosition) {
         advance();
         return new Token(tokenPosition, "=", "=",
                 TokenKind.EqualsToken);
     }
 
-    public Token lexBeginningWithBang(int tokenPosition) {
+    private Token lexBeginningWithBang(int tokenPosition) {
         advance();
         if (!inBounds() || getCurr() != '=') {
             String tokenText = "!";
@@ -143,7 +143,7 @@ public class Lexer {
         }
     }
 
-    public Token lexOperatorToken(int tokenPosition) {
+    private Token lexOperatorToken(int tokenPosition) {
         return switch (getCurr()) {
             case '=' -> lexBeginningWithEquals(tokenPosition);
             case '!' -> lexBeginningWithBang(tokenPosition);
@@ -153,14 +153,14 @@ public class Lexer {
         };
     }
 
-    public Token lexCommaToken(int tokenPosition) {
+    private Token lexCommaToken(int tokenPosition) {
         advance();
         String tokenText = ",";
         return new Token(tokenPosition, tokenText, tokenText,
                 TokenKind.CommaToken);
     }
 
-    public Token lexBadToken(int tokenPosition) {
+    private Token lexBadToken(int tokenPosition) {
         advance();
         return new Token(tokenPosition, Character.toString(getCurr()),
                 Character.toString(getCurr()), TokenKind.BadToken);
@@ -198,26 +198,26 @@ public class Lexer {
     }
 
     private boolean isDataType(String tokenText) {
-        return this.dataTypeSet.contains(tokenText.toLowerCase(Locale.ROOT));
+        return dataTypeSet.contains(tokenText.toLowerCase(Locale.ROOT));
     }
 
     private boolean isKeyword(String tokenText) {
-        return this.keywordSet.contains(tokenText.toLowerCase(Locale.ROOT));
+        return keywordSet.contains(tokenText.toLowerCase(Locale.ROOT));
     }
 
     private boolean inBounds() {
-        return this.position < this.text.length();
+        return position < text.length();
     }
 
     private char getCurr() {
-        if (this.position >= this.text.length())
+        if (position >= text.length())
             return '\0';
-        return this.text.charAt(position);
+        return text.charAt(position);
     }
 
     private void advance() {
-        if (this.position != this.text.length())
-            this.position++;
+        if (position != text.length())
+            position++;
     }
 }
 
