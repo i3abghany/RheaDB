@@ -15,5 +15,7 @@ public enum TokenKind {
     LessEqualsToken,
     GreaterToken,
     LessToken,
-    CommaToken
+    CommaToken,
+    OpenParenToken,
+    ClosedParenToken,
 }

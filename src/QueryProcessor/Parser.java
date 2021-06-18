@@ -11,13 +11,15 @@ import java.util.stream.Collectors;
 
 public class Parser {
     private final Vector<Token> tokenVector;
+    private int position;
 
     public Parser(String line) {
-        this.tokenVector = new Lexer(line)
+        tokenVector = new Lexer(line)
                 .lex()
                 .stream()
                 .filter(tok -> tok.getKind() != TokenKind.WhiteSpaceToken)
                 .collect(Collectors.toCollection(Vector::new));
+        position = 0;
     }
 
     public SQLStatement parse() throws DBError {
@@ -157,38 +159,54 @@ public class Parser {
     }
 
     private SQLStatement parseInsert() throws DBError {
-        if (tokenVector.size() <= 3) {
-            throw new DBError("Error parsing statement.");
-        }
+        Token insertKeywordToken = currentToken();
+        matchToken(insertKeywordToken, TokenKind.KeywordToken, "insert");
 
-        // As we're here, we're sure that the zeroth token is an INSERT token.
-        assert matchToken(0, TokenKind.KeywordToken, "insert");
+        Token intoToken = nextToken();
+        matchToken(intoToken, TokenKind.KeywordToken, "into");
 
-        if (!matchToken(1, TokenKind.KeywordToken, "into")) {
-            Token badToken = tokenVector.elementAt(1);
-            throw new DBError("Unexpected token: \"" + badToken.getTokenText()
-                + "\" at position " + badToken.getPosition());
-        }
+        Token tableNameToken = nextToken();
+        matchToken(tableNameToken, TokenKind.IdentifierToken);
 
-        if (!matchToken(2, TokenKind.IdentifierToken)) {
-            Token badToken = tokenVector.elementAt(2);
-            throw new DBError("Unexpected token: \"" + badToken.getTokenText()
-                    + "\" at position " + badToken.getPosition());
-        }
+        Token valuesKeywordToken = nextToken();
+        matchToken(valuesKeywordToken, TokenKind.KeywordToken, "values");
 
-        String tableName = tokenVector.elementAt(2).getTokenText();
-        Vector<Object> objectList = new Vector<>();
+        Token openParenToken = nextToken();
+        matchToken(openParenToken, TokenKind.OpenParenToken);
 
-        for (int i = 3; i < tokenVector.size(); i++) {
-            Token token = tokenVector.elementAt(i);
-            if (!token.isLiteral()) {
-                throw new DBError("Invalid token: \"" + token.getTokenText()
-                    + "\". Expected a literal.");
+        Vector<Object> valueVector = new Vector<>();
+
+        while (true) {
+            Token valueToken = nextToken();
+            if (valueToken == null) {
+                throw new DBError("Error while parsing. Expected value tokens.");
             }
-            objectList.add(token.getValue());
-        }
 
-        return new DMLStatement.InsertStatement(tableName, objectList);
+            if (!valueToken.isLiteral()) {
+                throw new DBError("Unexpected token \"" + valueToken.getTokenText()
+                    + "\" at position " + valueToken.getPosition() +
+                        ". Expected a literal value.");
+            }
+
+            valueVector.add(valueToken.getValue());
+
+            Token commaOrClosedParenToken = nextToken();
+            if (commaOrClosedParenToken == null) {
+                throw new DBError("Error parsing the statement. Expected a" +
+                        "continuation of values or closed parenthesis.");
+            }
+
+            if (commaOrClosedParenToken.getKind() == TokenKind.ClosedParenToken)
+                break;
+
+            if (commaOrClosedParenToken.getKind() != TokenKind.CommaToken) {
+                throw new DBError("Unexpected token \"" + valueToken.getTokenText()
+                        + "\" at position " + valueToken.getPosition() +
+                        ". Expected a continuation of values or a closed parenthesis.");
+            }
+        }
+        return new DMLStatement.InsertStatement(tableNameToken.getTokenText(),
+                                                valueVector);
     }
 
     private SQLStatement parseSelect() throws DBError {
@@ -245,6 +263,30 @@ public class Parser {
                  attributeNames, predicates);
     }
 
+    private boolean matchToken(Token token, TokenKind tokenKind, String text) throws DBError {
+        matchToken(token, tokenKind);
+        if (!token.getTokenText().equals(text)) {
+            throw new DBError("Unexpected token \"" + token.getTokenText() +
+                    "\" at position " + token.getPosition() + ". Expected a " +
+                    tokenKind + " with value \"" + text + "\".");
+        }
+        return true;
+    }
+
+    private boolean matchToken(Token token, TokenKind tokenKind) throws DBError {
+        if (token == null) {
+            throw new DBError("Error parsing the statement. Expected a " +
+                    tokenKind + ".");
+        }
+        if (token.getKind() != tokenKind) {
+            throw new DBError("Unexpected token \"" + token.getTokenText() + "\"" +
+                    " at position " + token.getPosition() + ". Expected a " +
+                    tokenKind);
+        }
+
+        return true;
+    }
+
     private Vector<Predicate> parsePredicates(int i) throws DBError {
         Vector<Predicate> predicates = new Vector<>();
         for (; i < tokenVector.size(); i += 4) {
@@ -291,5 +333,21 @@ public class Parser {
             case LessEqualsToken -> new LessThanEqualPredicate(attributeName, value);
             default -> null;
         };
+    }
+
+    private Token currentToken() {
+        if (position >= tokenVector.size())
+            return null;
+
+        return tokenVector.get(position);
+    }
+
+    private Token nextToken() {
+        position++;
+
+        if (position >= tokenVector.size())
+            return null;
+
+        return tokenVector.get(position);
     }
 }

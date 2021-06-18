@@ -43,6 +43,7 @@ public class Lexer {
         keywordSet.add("select");
         keywordSet.add("table");
         keywordSet.add("where");
+        keywordSet.add("values");
     }
 
     private Token lexWhiteSpaceToken(int tokenPosition) {
@@ -103,43 +104,43 @@ public class Lexer {
 
     private Token lexBeginningWithBang(int tokenPosition) {
         advance();
-        if (getCurr() != '=') {
-            String tokenText = "!";
-            return new Token(tokenPosition, tokenText, tokenText,
-                    TokenKind.BadToken);
-        } else {
+        if (getCurr() == '=') {
             advance();
             String tokenText = "!=";
             return new Token(tokenPosition, tokenText, tokenText,
                     TokenKind.NotEqualsToken);
+        } else {
+            String tokenText = "!";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.BadToken);
         }
     }
 
     private Token lexGreaterThan(int tokenPosition) {
         advance();
-        if (getCurr() != '=') {
-            String tokenText = ">";
-            return new Token(tokenPosition, tokenText, tokenText,
-                    TokenKind.GreaterToken);
-        } else {
+        if (getCurr() == '=') {
             advance();
             String tokenText = ">=";
             return new Token(tokenPosition, tokenText, tokenText,
                     TokenKind.GreaterEqualsToken);
+        } else {
+            String tokenText = ">";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.GreaterToken);
         }
     }
 
     private Token lexLessThan(int tokenPosition) {
         advance();
-        if (getCurr() != '=') {
-            String tokenText = "<";
-            return new Token(tokenPosition, tokenText, tokenText,
-                    TokenKind.LessToken);
-        } else {
+        if (getCurr() == '=') {
             advance();
             String tokenText = "<=";
             return new Token(tokenPosition, tokenText, tokenText,
                     TokenKind.LessEqualsToken);
+        } else {
+            String tokenText = "<";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.LessToken);
         }
     }
 
@@ -151,6 +152,20 @@ public class Lexer {
             case '<' -> lexLessThan(tokenPosition);
             default -> null;
         };
+    }
+
+    private Token lexOpenParen(int tokenPosition) {
+        advance();
+        String tokenText = "(";
+        return new Token(tokenPosition, tokenText, tokenText,
+                TokenKind.OpenParenToken);
+    }
+
+    private Token lexClosedParen(int tokenPosition) {
+        advance();
+        String tokenText = ")";
+        return new Token(tokenPosition, tokenText, tokenText,
+                TokenKind.ClosedParenToken);
     }
 
     private Token lexCommaToken(int tokenPosition) {
@@ -184,6 +199,10 @@ public class Lexer {
                     tokens.add(lexStringLiteral(tokenPosition));
                 else if (getCurr() == ',')
                     tokens.add(lexCommaToken(tokenPosition));
+                else if (getCurr() == '(')
+                    tokens.add(lexOpenParen(tokenPosition));
+                else if (getCurr() == ')')
+                    tokens.add(lexClosedParen(tokenPosition));
                 else if (!inBounds())
                     break;
                 else
