@@ -300,6 +300,10 @@ public class RheaDB {
         Vector<Attribute> attributes = table.getAttributeList();
         Vector<Object> values = insertStatement.getValues();
 
+        if (values.size() != table.getAttributeList().size()) {
+            throw new DBError("Invalid number of attribute values.");
+        }
+
         for (int i = 0; i < attributes.size(); i++) {
             Attribute attribute = attributes.elementAt(i);
             Object value = values.elementAt(i);
