@@ -49,7 +49,7 @@ public class RheaDB {
             QueryResult queryResult = executeStatement(statementStr);
 
             if (queryResult != null) {
-                queryResult.print();
+                System.out.println(queryResult);
             }
 
             saveMetadata();

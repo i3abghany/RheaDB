@@ -19,9 +19,8 @@ public class QueryResult {
         return rows;
     }
 
-    public void print() {
+    private Vector<Integer> getLengths() {
         Vector<Integer> lengths = new Vector<>();
-
         for (int i = 0; i < allAttributes.size(); i++) {
             lengths.add(-1);
             for (RowRecord rowRecord : rows) {
@@ -38,16 +37,23 @@ public class QueryResult {
             }
         }
 
+        return lengths;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        Vector<Integer> lengths = getLengths();
+
         for (int i = 0; i < allAttributes.size(); i++) {
             Attribute attribute = allAttributes.get(i);
             String attributeName = attribute.getName();
             if (selectedAttributes.stream().anyMatch(s -> s.equals(attributeName))) {
-                System.out.printf("%-" + lengths.get(i) + "s ", allAttributes.get(i).getName());
+                builder.append(String.format("%-" + lengths.get(i) + "s ", allAttributes.get(i).getName()));
             }
         }
-        System.out.println();
+        builder.append("\n");
         for (RowRecord rowRecord : rows) {
-            StringBuilder builder = new StringBuilder();
             Vector<Object> attributeValues = rowRecord.getAttributeValues();
             for (int i = 0; i < attributeValues.size(); i++) {
                 int finalIndex = i;
@@ -57,7 +63,8 @@ public class QueryResult {
                     builder.append(String.format("%-" + lengths.get(i) + "s ", attributeVal));
                 }
             }
-            System.out.println(builder);
+            builder.append("\n");
         }
+        return builder.toString();
     }
 }
