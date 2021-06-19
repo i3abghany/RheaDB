@@ -24,7 +24,7 @@ public class Attribute implements Serializable {
         if (!(obj instanceof Attribute other))
             return false;
 
-        return this.type.equals(other.type) &&
+        return this.type == other.type &&
                this.name.equals(other.name) &&
                this.isPrimaryKey == other.isPrimaryKey;
     }

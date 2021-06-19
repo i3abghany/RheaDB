@@ -2,12 +2,10 @@ package RheaDB;
 
 import BPlusTree.BPlusTree;
 import Predicate.Predicate;
-import QueryProcessor.DDLStatement;
-import QueryProcessor.DMLStatement;
+import QueryProcessor.*;
 import QueryProcessor.DDLStatement.*;
 import QueryProcessor.DMLStatement.*;
-import QueryProcessor.Parser;
-import QueryProcessor.SQLStatement;
+import QueryProcessor.InternalStatement.*;
 import RheaDB.StorageManagement.BufferPool;
 import RheaDB.StorageManagement.DiskManager;
 
@@ -123,8 +121,37 @@ public class RheaDB {
         switch (sqlStatement.getKind()) {
             case DDL: executeDDL((DDLStatement) sqlStatement); return null;
             case DML: return executeDML((DMLStatement) sqlStatement);
+            case INTERNAL: return executeInternal((InternalStatement) sqlStatement);
             default: return null;
         }
+    }
+
+    private QueryResult executeInternal(InternalStatement sqlStatement) throws DBError {
+        if (sqlStatement.getInternalStatementKind() == InternalStatementKind.DESCRIBE) {
+            return describeTable((DescribeStatement) sqlStatement);
+        }
+        return null;
+    }
+
+    private QueryResult describeTable(DescribeStatement sqlStatement) throws DBError {
+        String tableName = sqlStatement.getTableName();
+        Table table = getTable(tableName);
+        if (table == null) {
+            throw new DBError("The name " + tableName
+                    + " does not resolve to a table in the database.");
+        }
+
+        Vector<String> attributeNames = table.getAttributeList()
+                .stream()
+                .map(attr -> attr.getName())
+                .collect(Collectors.toCollection(Vector::new));
+
+        Vector<AttributeType> attributeTypes = table.getAttributeList()
+                .stream()
+                .map(attr -> attr.getType())
+                .collect(Collectors.toCollection(Vector::new));
+
+        return new QueryResult(attributeNames, attributeTypes);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

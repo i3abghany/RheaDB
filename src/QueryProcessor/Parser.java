@@ -23,8 +23,8 @@ public class Parser {
     }
 
     public SQLStatement parse() throws DBError {
-        if (tokenVector.isEmpty())
-            return null;
+        if (tokenVector.size() < 2)
+            throw new DBError("Error parsing the statement.");
 
         Token badToken = tokenVector
                 .stream()
@@ -41,9 +41,26 @@ public class Parser {
             return parseDDL();
         else if (SQLStatement.isDMLKeyword(tokenVector.get(0)))
             return parseDML();
+        else if (SQLStatement.isInternalKeyword(tokenVector.get(0)))
+            return parseInternalStatement();
         else
             throw new DBError("Unexpected token: \"" +
                     tokenVector.get(0).getTokenText() + "\".");
+    }
+
+    private SQLStatement parseInternalStatement() throws DBError {
+        Token typeToken = tokenVector.get(0);
+
+        if (matchToken(typeToken, TokenKind.KeywordToken, "describe"))
+            return parseDescribe();
+
+        return null;
+    }
+
+    private SQLStatement parseDescribe() throws DBError {
+        Token tableNameToken = tokenVector.get(1);
+        matchToken(tableNameToken, TokenKind.IdentifierToken);
+        return new InternalStatement.DescribeStatement(tableNameToken.getTokenText());
     }
 
     private SQLStatement parseDDL() throws DBError {

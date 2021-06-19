@@ -3,7 +3,8 @@ package QueryProcessor;
 public abstract class SQLStatement {
     public enum SQLStatementKind {
         DDL,
-        DML
+        DML,
+        INTERNAL
     }
 
     public abstract SQLStatementKind getKind();
@@ -18,6 +19,11 @@ public abstract class SQLStatement {
                 (token.getTokenText().equals("insert") ||
                  token.getTokenText().equals("delete") ||
                  token.getTokenText().equals("select"));
+    }
+
+    public static boolean isInternalKeyword(Token token) {
+        return token.getKind() == TokenKind.KeywordToken &&
+                token.getTokenText().equals("describe");
     }
 }
 
