@@ -110,20 +110,20 @@ public class RheaDB {
         }
     }
 
-    public void executeDDL(DDLStatement ddlStatement) throws DBError {
+    public QueryResult executeDDL(DDLStatement ddlStatement) throws DBError {
         switch (ddlStatement.getDDLKind()) {
             case CreateTable -> executeCreateTable((CreateTableStatement) ddlStatement);
             case CreateIndex -> executeCreateIndex((CreateIndexStatement) ddlStatement);
         }
+        return null;
     }
 
     public QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
-        switch (sqlStatement.getKind()) {
-            case DDL: executeDDL((DDLStatement) sqlStatement); return null;
-            case DML: return executeDML((DMLStatement) sqlStatement);
-            case INTERNAL: return executeInternal((InternalStatement) sqlStatement);
-            default: return null;
-        }
+        return switch (sqlStatement.getKind()) {
+            case DDL -> executeDDL((DDLStatement) sqlStatement);
+            case DML -> executeDML((DMLStatement) sqlStatement);
+            case INTERNAL -> executeInternal((InternalStatement) sqlStatement);
+        };
     }
 
     private QueryResult executeInternal(InternalStatement sqlStatement) throws DBError {
