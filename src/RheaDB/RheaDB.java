@@ -223,7 +223,8 @@ public class RheaDB {
 
     private void verifySelectedAttributesExist(Table table, Vector<String> selectedAttributes) throws DBError {
         for (String attributeName : selectedAttributes) {
-            if (table.getAttributeWithName(attributeName) == null) {
+            if (!attributeName.equals("*") &&
+                table.getAttributeWithName(attributeName) == null) {
                 throw new DBError("Invalid attribute name " + attributeName);
             }
         }

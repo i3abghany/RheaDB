@@ -2,6 +2,7 @@ package RheaDB;
 
 import java.util.HashSet;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 public class QueryResult {
     private final HashSet<RowRecord> rows;
@@ -12,7 +13,14 @@ public class QueryResult {
                 Vector<String> selectedAttributes) {
         this.rows = rows;
         this.allAttributes = attributes;
-        this.selectedAttributes = selectedAttributes;
+        boolean starAttribute = selectedAttributes.contains("*");
+        if (starAttribute) {
+            this.selectedAttributes = attributes.stream()
+                    .map(attr -> attr.getName())
+                    .collect(Collectors.toCollection(Vector::new));
+        } else {
+            this.selectedAttributes = selectedAttributes;
+        }
     }
 
     public HashSet<RowRecord> getRows() {

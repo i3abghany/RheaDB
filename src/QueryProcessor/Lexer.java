@@ -175,6 +175,13 @@ public class Lexer {
                 TokenKind.CommaToken);
     }
 
+    private Token lexStarToken(int tokenPosition) {
+        advance();
+        String tokenText = "*";
+        return new Token(tokenPosition, tokenText, tokenText,
+                TokenKind.IdentifierToken);
+    }
+
     private Token lexBadToken(int tokenPosition) {
         advance();
         return new Token(tokenPosition, Character.toString(getCurr()),
@@ -203,6 +210,8 @@ public class Lexer {
                     tokens.add(lexOpenParen(tokenPosition));
                 else if (getCurr() == ')')
                     tokens.add(lexClosedParen(tokenPosition));
+                else if (getCurr() == '*')
+                    tokens.add(lexStarToken(tokenPosition));
                 else if (!inBounds())
                     break;
                 else
