@@ -259,6 +259,11 @@ public class Parser {
         i++;
         Vector<Predicate> predicates = parsePredicates(i);
 
+        if (predicates.isEmpty()) {
+            throw new DBError("Error parsing the statement. Expected a list " +
+                    "of predicates.");
+        }
+
         return new DMLStatement.SelectStatement(tableName,
                  attributeNames, predicates);
     }
