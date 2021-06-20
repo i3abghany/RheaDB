@@ -1,12 +1,14 @@
 package RheaDB.StorageManagement;
 
 import BPlusTree.BPlusTree;
-import RheaDB.Attribute;
-import RheaDB.Page;
-import RheaDB.RowRecord;
-import RheaDB.Table;
+import RheaDB.*;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +21,24 @@ public class BufferPool {
         pageHashMap.forEach((PageIdentifier pi, Page page) -> {
             updatePage(pi.table, page);
         });
+    }
+
+    public boolean deleteTable(Table table) {
+        for (int i = 0; i < table.getNumPages(); i++) {
+            deletePage(table, i);
+        }
+
+        for (Attribute attribute : table.getAttributeList()) {
+            if (attribute.getIsIndexed())
+                deleteIndex(table, attribute);
+        }
+
+        String pageDir = table.getPageDirectory();
+        File indexDirectory = Paths.get(pageDir + File.separator + "index").toFile();
+        indexDirectory.delete();
+        Paths.get(pageDir).toFile().delete();
+
+        return true;
     }
 
     private record PageIdentifier(Table table, int pageIdx) {
