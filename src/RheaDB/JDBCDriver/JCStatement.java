@@ -1,7 +1,5 @@
 package RheaDB.JDBCDriver;
 
-import QueryProcessor.Parser;
-import QueryProcessor.SQLStatement;
 import RheaDB.QueryResult;
 import RheaDB.RheaDB;
 
@@ -20,8 +18,7 @@ public class JCStatement implements Statement {
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        SQLStatement sqlStatement = new Parser(sql).parse();
-        QueryResult queryResult = rheaDB.executeStatement(sqlStatement);
+        QueryResult queryResult = rheaDB.executeStatement(sql);
         rheaDB.saveMetadata();
         if (queryResult != null)
             return new JCResultSet(queryResult.getRows().stream());
