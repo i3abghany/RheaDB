@@ -70,12 +70,12 @@ public class RheaDB {
     }
 
     public QueryResult executeDML(DMLStatement dmlStatement) throws DBError {
-        switch (dmlStatement.getDMLKind()) {
-            case SELECT: return selectFrom((SelectStatement) dmlStatement);
-            case INSERT: insertInto((InsertStatement) dmlStatement); return null;
-            case DELETE: deleteFrom((DeleteStatement) dmlStatement); return null;
-            default: throw new DBError("Could not identify and parse the statement");
-        }
+        return switch (dmlStatement.getDMLKind()) {
+            case SELECT -> selectFrom((SelectStatement) dmlStatement);
+            case INSERT -> insertInto((InsertStatement) dmlStatement);
+            case DELETE -> deleteFrom((DeleteStatement) dmlStatement);
+            case DROP -> dropTable((DropTableStatement) dmlStatement);
+        };
     }
 
     public void executeCreateTable(CreateTableStatement statement) throws DBError {
@@ -118,7 +118,7 @@ public class RheaDB {
         return null;
     }
 
-    public QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
+    private QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
         return switch (sqlStatement.getKind()) {
             case DDL -> executeDDL((DDLStatement) sqlStatement);
             case DML -> executeDML((DMLStatement) sqlStatement);
@@ -137,8 +137,8 @@ public class RheaDB {
         String tableName = sqlStatement.getTableName();
         Table table = getTable(tableName);
         if (table == null) {
-            throw new DBError("The name " + tableName
-                    + " does not resolve to a table in the database.");
+            throw new DBError("The name \"" + tableName + "\" does not resolve " +
+                    "to a valid table.");
         }
 
         Vector<String> attributeNames = table.getAttributeList()
@@ -191,12 +191,32 @@ public class RheaDB {
         return true;
     }
 
+    public QueryResult dropTable(DropTableStatement dropTableStatement) throws DBError {
+        String tableName = dropTableStatement.getTableName();
+        Table table = getTable(tableName);
+        if (table == null) {
+            throw new DBError("The name \"" + dropTableStatement.getTableName()
+                    + "\" does not resolve to a table in the database.");
+        }
+
+        boolean isDeleted = bufferPool.deleteTable(table);
+        if (!isDeleted) {
+            throw new DBError("Could not delete the table files.");
+        }
+        deleteTableFromMetadata(tableName);
+        return null;
+    }
+
+    private void deleteTableFromMetadata(String tableName) {
+        this.createdTables.remove(tableName);
+    }
+
     public QueryResult selectFrom(SelectStatement selectStatement) throws DBError {
         Table table = getTable(selectStatement.getTableName());
         Vector<String> selectedAttributes = selectStatement.getSelectedAttributes();
         if (table == null) {
-            throw new DBError("The name " + selectStatement.getTableName()
-                    + " does not resolve to a table in the database.");
+            throw new DBError("The name \"" + selectStatement.getTableName()
+                    + "\" does not resolve to a table in the database.");
         }
         HashSet<RowRecord> result = new HashSet<>();
         Vector<Predicate> predicates = selectStatement.getPredicates();
@@ -231,7 +251,7 @@ public class RheaDB {
 
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
-            page.getRecords().forEach(
+            page.getRecords().parallelStream().forEach(
                     (r) -> {
                         boolean ret = false;
                         for (Predicate p : finalPredicates) {
@@ -268,12 +288,12 @@ public class RheaDB {
             new QueryResult(result, table.getAttributeList(), selectedAttributes);
     }
 
-    public void deleteFrom(DeleteStatement deleteStatement) throws DBError {
+    public QueryResult deleteFrom(DeleteStatement deleteStatement) throws DBError {
         String tableName = deleteStatement.getTableName();
         Table table = getTable(tableName);
         if (table == null) {
             throw new DBError("The name \"" + tableName + "\" does not resolve " +
-                    "to a valid table.");
+                    "to a table in the database");
         }
 
         Vector<Predicate> predicates = deleteStatement.getPredicateVector();
@@ -307,6 +327,7 @@ public class RheaDB {
                 bufferPool.updatePage(table, page);
             }
         }
+        return null;
     }
 
     private void deleteAllRows(Table table) {
@@ -316,13 +337,13 @@ public class RheaDB {
         }
     }
 
-    public void insertInto(InsertStatement insertStatement) throws DBError {
+    public QueryResult insertInto(InsertStatement insertStatement) throws DBError {
         String tableName = insertStatement.getTableName();
         Table table = getTable(tableName);
 
         if (table == null) {
             throw new DBError("The name \"" + tableName + "\" does not resolve " +
-                    "to a valid table.");
+                    "to a table in the database");
         }
 
         Vector<Attribute> attributes = table.getAttributeList();
@@ -358,6 +379,8 @@ public class RheaDB {
         }
         RowRecord rowRecord = new RowRecord(attributes, values);
         insertInto(table, rowRecord);
+
+        return null;
     }
 
     private void insertInto(Table table, RowRecord record) {

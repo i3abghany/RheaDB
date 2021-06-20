@@ -138,9 +138,26 @@ public class Parser {
             return parseInsert();
         else if (matchToken(0, TokenKind.KeywordToken, "delete"))
             return parseDelete();
+        else if (matchToken(0, TokenKind.KeywordToken, "drop"))
+            return parseDrop();
         else
             throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
                     + "\" at position " + typeToken.getPosition());
+    }
+
+    private SQLStatement parseDrop() {
+        if (matchToken(1, TokenKind.KeywordToken, "table"))
+            return parseDropTable();
+        else
+            return null;
+    }
+
+    private SQLStatement parseDropTable() {
+        if (!matchToken(2, TokenKind.IdentifierToken))
+            return null;
+
+        String tableName = tokenVector.get(2).getTokenText();
+        return new DMLStatement.DropTableStatement(tableName);
     }
 
     private SQLStatement parseDelete() throws DBError {

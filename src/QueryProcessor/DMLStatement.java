@@ -9,7 +9,8 @@ public abstract class DMLStatement extends SQLStatement {
     public enum DMLStatementKind {
         SELECT,
         INSERT,
-        DELETE
+        DELETE,
+        DROP,
     }
     @Override
     public SQLStatementKind getKind() {
@@ -90,6 +91,23 @@ public abstract class DMLStatement extends SQLStatement {
         @Override
         public DMLStatementKind getDMLKind() {
             return DMLStatementKind.DELETE;
+        }
+    }
+
+    public static class DropTableStatement extends DMLStatement {
+        private final String tableName;
+
+        public DropTableStatement(String tableName) {
+            this.tableName = tableName;
+        }
+
+        @Override
+        public DMLStatementKind getDMLKind() {
+            return DMLStatementKind.DROP;
+        }
+
+        public String getTableName() {
+            return tableName;
         }
     }
 }

@@ -18,6 +18,7 @@ public abstract class SQLStatement {
         return token.getKind() == TokenKind.KeywordToken &&
                 (token.getTokenText().equals("insert") ||
                  token.getTokenText().equals("delete") ||
+                 token.getTokenText().equals("drop")   ||
                  token.getTokenText().equals("select"));
     }
 
@@ -26,4 +27,3 @@ public abstract class SQLStatement {
                 token.getTokenText().equals("describe");
     }
 }
-

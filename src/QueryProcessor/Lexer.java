@@ -45,6 +45,7 @@ public class Lexer {
         keywordSet.add("table");
         keywordSet.add("values");
         keywordSet.add("where");
+        keywordSet.add("drop");
     }
 
     private Token lexWhiteSpaceToken(int tokenPosition) {
