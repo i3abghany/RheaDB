@@ -19,7 +19,7 @@ public class BufferPool {
     }
 
     public boolean deleteTable(Table table) {
-        for (int i = 0; i < table.getNumPages(); i++) {
+        for (int i = 1; i <= table.getNumPages(); i++) {
             deletePage(table, i);
         }
 
