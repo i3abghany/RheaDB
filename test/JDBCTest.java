@@ -25,7 +25,6 @@ public class JDBCTest {
 
     void dropTestTable(String tableName) {
         try {
-            conn = connect("jdbc:rhea:/home/pwng/dbdata");
             Statement statement = conn.createStatement();
             statement.executeQuery("DROP TABLE " + tableName);
         } catch (Exception exception) {
@@ -90,6 +89,13 @@ public class JDBCTest {
                         (i + 2) + ", \"Random Name\", 69.42)");
                 Assertions.assertNull(resultSet.getIterator());
             }
+
+            ResultSet rs = statement.executeQuery("SELECT * FROM TestTableInsertThousandRows");
+            int i = 0;
+            while (rs.next()) i++;
+
+            Assertions.assertEquals(i, 1000);
+
             dropTestTable("TestTableInsertThousandRows");
         } catch (Exception exception) {
             System.out.println(exception.getMessage());
