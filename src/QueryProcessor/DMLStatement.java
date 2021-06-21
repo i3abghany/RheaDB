@@ -1,7 +1,6 @@
 package QueryProcessor;
 
 import Predicate.Predicate;
-import RheaDB.Attribute;
 
 import java.util.Vector;
 
