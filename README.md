@@ -27,7 +27,7 @@ public class ExampleProgram {
         try (
                 Connection conn = DriverManager.getConnection("jdbc:rhea:/home/USER_NAME/dbdata");
                 Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT id name salary FROM FancyTable")
+                ResultSet rs = stmt.executeQuery("SELECT * FROM FancyTable")
         ) {
             while (rs.next())
                 System.out.println(rs.getInt(0) + " - " + rs.getString(1) + " - " +
