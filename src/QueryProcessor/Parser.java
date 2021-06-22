@@ -127,27 +127,32 @@ public class Parser {
     }
 
     private SQLStatement parseCreateIndex() throws DBError {
-        if (tokenVector.size() < 4) {
-            throw new DBError("Error parsing Create Index statement.");
+        Token curr = currentToken();
+        matchToken(curr, TokenKind.KeywordToken, "create");
+
+        curr = nextToken();
+        matchToken(curr, TokenKind.KeywordToken, "index");
+
+        Token tableNameToken = nextToken();
+        matchToken(tableNameToken, TokenKind.IdentifierToken);
+
+        Token attributeNameToken = nextToken();
+        matchToken(attributeNameToken, TokenKind.IdentifierToken);
+
+        if (!done()) {
+            Token badToken = nextToken();
+            assert badToken != null;
+            throw new DBError("Error parsing the statement. " +
+                    "Unexpected token: \"" + badToken.getTokenText() + "\"" +
+                    " at position: " + badToken.getPosition());
         }
 
-        Token tableNameToken = tokenVector.get(2);
-        Token attributeNameToken = tokenVector.get(3);
+        return new DDLStatement.CreateIndexStatement(tableNameToken.getTokenText(),
+                attributeNameToken.getTokenText());
+    }
 
-        if (!matchToken(2, TokenKind.IdentifierToken)) {
-            throw new DBError("Unexpected token: \"" + tableNameToken.getTokenText() +
-                    "\" at position " + tableNameToken.getPosition());
-        }
-
-        if (!matchToken(3, TokenKind.IdentifierToken)) {
-            throw new DBError("Unexpected token: \"" + attributeNameToken.getTokenText() +
-                    "\" at position " + attributeNameToken.getPosition());
-        }
-
-        String tableName = tableNameToken.getTokenText();
-        String attributeName = attributeNameToken.getTokenText();
-
-        return new DDLStatement.CreateIndexStatement(tableName, attributeName);
+    private boolean done() {
+        return this.position == this.tokenVector.size() - 1;
     }
 
     private SQLStatement parseDML() throws DBError {
