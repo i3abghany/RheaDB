@@ -223,9 +223,17 @@ public class RheaDB {
 
         verifySelectedAttributesExist(table, selectedAttributes);
 
+        if (selectedAttributes.stream().anyMatch(s -> s.equals("*"))) {
+            selectedAttributes = table.getAttributeList()
+                    .stream()
+                    .map(o -> o.getName())
+                    .collect(Collectors.toCollection(Vector::new));
+        }
+
         if (predicates.isEmpty()) {
             return getAllRows(table, selectedAttributes);
         }
+
         for (Predicate predicate : predicates) {
             Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
             if (attribute == null) {
@@ -297,6 +305,12 @@ public class RheaDB {
         }
 
         Vector<Predicate> predicates = deleteStatement.getPredicateVector();
+        Vector<String> predicatedAttributes = predicates.stream()
+                .map(p -> p.getAttributeName())
+                .collect(Collectors.toCollection(Vector::new));
+
+        verifySelectedAttributesExist(table, predicatedAttributes);
+
         if (predicates.isEmpty())
             deleteAllRows(table);
 
@@ -325,6 +339,10 @@ public class RheaDB {
                     });
             if (!lazyCommit && page.getNumberOfRows() != rowsBeforeDelete) {
                 bufferPool.updatePage(table, page);
+                table.getAttributeList()
+                        .stream()
+                        .filter(p -> p.getIsIndexed())
+                        .forEach(p -> updateIndex(table, p));
             }
         }
         return null;
