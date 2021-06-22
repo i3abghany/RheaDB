@@ -244,62 +244,53 @@ public class Parser {
     }
 
     private SQLStatement parseSelect() throws DBError {
+        Token curr = currentToken();
+        matchToken(curr, TokenKind.KeywordToken, "select");
+
         Vector<String> attributeNames = new Vector<>();
-        Token token;
-        int i = 1;
-        for (; i < tokenVector.size(); i += 2) {
-            token = tokenVector.elementAt(i);
-            if (matchToken(i, TokenKind.IdentifierToken) &&
-                matchToken(i + 1, TokenKind.CommaToken)) {
-                attributeNames.add(token.getTokenText());
-            } else if (matchToken(i, TokenKind.IdentifierToken) &&
-                       matchToken(i + 1, TokenKind.KeywordToken, "from")) {
-                attributeNames.add(token.getTokenText());
+
+        while (true) {
+            Token attributeNameToken = nextToken();
+            matchToken(attributeNameToken, TokenKind.IdentifierToken);
+
+            curr = nextToken();
+            if (curr == null) {
+                throw new DBError("Error parsing SELECT statement. Expected a " +
+                        "continuation of identifier names or a FROM keyword.");
+            }
+
+            if (curr.getKind() == TokenKind.KeywordToken &&
+                    curr.getTokenText().equals("from")) {
+                attributeNames.add(attributeNameToken.getTokenText());
                 break;
+            } else if (curr.getKind() == TokenKind.CommaToken) {
+                attributeNames.add(attributeNameToken.getTokenText());
             } else {
-                if (!matchToken(i + 1, TokenKind.KeywordToken, "from") &&
-                    i + 1 < tokenVector.size()) {
-                    token = tokenVector.get(i + 1);
-                    throw new DBError("Unexpected token: \"" + token.getTokenText()
-                            + "\" at position: " + token.getPosition());
-                } else {
-                    throw new DBError("Error parsing SELECT statement. Expected a FROM keyword");
-                }
+                throw new DBError("Error parsing SELECT statement. Unexpected token:" +
+                        " \"" + curr.getTokenText() + "\" at position: "
+                        + curr.getPosition());
             }
         }
 
-        i++;
-        if (!matchToken(i, TokenKind.KeywordToken, "from")) {
-            throw new DBError("Error parsing SELECT statement. Expected FROM keyword.");
+        Token tableNameToken = nextToken();
+        matchToken(tableNameToken, TokenKind.IdentifierToken);
+
+        Token whereKeywordToken = nextToken();
+        if (whereKeywordToken == null) {
+            return new DMLStatement.SelectStatement(tableNameToken.getTokenText(),
+                    attributeNames, new Vector<>());
         }
 
-        i++;
-        if (!matchToken(i, TokenKind.IdentifierToken)) {
-            throw new DBError("Error parsing SELECT statement. Expected a table name.");
-        }
+        matchToken(whereKeywordToken, TokenKind.KeywordToken, "where");
 
-        String tableName = tokenVector.elementAt(i).getTokenText();
-        if (i == tokenVector.size() - 1) {
-            return new DMLStatement.SelectStatement(tableName, attributeNames,
-                    new Vector<>());
-        }
-        i++;
-        token = tokenVector.elementAt(i);
-        if (!matchToken(i, TokenKind.KeywordToken, "where")) {
-            throw new DBError("Unexpected token: \"" + token.getTokenText() +
-                    "\" at position: " + token.getPosition());
-        }
-
-        i++;
-        Vector<Predicate> predicates = parsePredicates(i);
-
+        Vector<Predicate> predicates = parsePredicates();
         if (predicates.isEmpty()) {
-            throw new DBError("Error parsing the statement. Expected a list " +
-                    "of predicates.");
+            throw new DBError("Error parsing the statement. Expected a list of " +
+                    "comma-separated predicates.");
         }
 
-        return new DMLStatement.SelectStatement(tableName,
-                 attributeNames, predicates);
+        return new DMLStatement.SelectStatement(tableNameToken.getTokenText(),
+                attributeNames, predicates);
     }
 
     private boolean matchToken(Token token, TokenKind tokenKind, String text) throws DBError {
@@ -317,6 +308,7 @@ public class Parser {
             throw new DBError("Error parsing the statement. Expected a " +
                     tokenKind + ".");
         }
+
         if (token.getKind() != tokenKind) {
             throw new DBError("Unexpected token \"" + token.getTokenText() + "\"" +
                     " at position " + token.getPosition() + ". Expected a " +
@@ -324,6 +316,35 @@ public class Parser {
         }
 
         return true;
+    }
+
+    private Vector<Predicate> parsePredicates() throws DBError {
+        Vector<Predicate> predicates = new Vector<>();
+
+        while (true) {
+            Token attributeNameToken = nextToken();
+            matchToken(attributeNameToken, TokenKind.IdentifierToken);
+
+            Token operatorToken = nextToken();
+            if (operatorToken == null || !operatorToken.isOperator()) {
+                throw new DBError("Error parsing the statement. Expected operator" +
+                        " token.");
+            }
+
+            Token literalToken = nextToken();
+            if (literalToken == null || !literalToken.isLiteral()) {
+                throw new DBError("Error parsing the statement. Expected a literal" +
+                        " token.");
+            }
+            predicates.add(parsePredicate(attributeNameToken, operatorToken, literalToken));
+
+            Token optionalComma = nextToken();
+            if (optionalComma == null)
+                break;
+            else matchToken(optionalComma, TokenKind.CommaToken);
+        }
+
+        return predicates;
     }
 
     private Vector<Predicate> parsePredicates(int i) throws DBError {
