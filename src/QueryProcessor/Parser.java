@@ -80,25 +80,50 @@ public class Parser {
     }
 
     private SQLStatement parseCreateTable() throws DBError {
-        if (tokenVector.size() < 3) {
-            throw new DBError("Error parsing Create Table statement.");
-        }
+        Token curr = currentToken();
+        matchToken(curr, TokenKind.KeywordToken, "create");
 
-        String tableName = tokenVector.get(2).getTokenText();
-        Vector<Attribute> attributeVector = new Vector<>();
-        for (int i = 3; i < tokenVector.size() - 1; i += 2) {
-            String attributeName = tokenVector.get(i).getTokenText();
-            AttributeType attributeType = Attribute.getAttributeTypeFromString(
-                    tokenVector.get(i + 1).getTokenText()
-            );
-            attributeVector.add(new Attribute(attributeType, attributeName, false));
+        curr = nextToken();
+        matchToken(curr, TokenKind.KeywordToken, "table");
+
+        Token tableNameToken = nextToken();
+        matchToken(tableNameToken, TokenKind.IdentifierToken);
+
+        Token openParenToken = nextToken();
+        matchToken(openParenToken, TokenKind.OpenParenToken);
+
+        Vector<Attribute> attributes = new Vector<>();
+        while (true) {
+            Token attributeName = nextToken();
+            matchToken(attributeName, TokenKind.IdentifierToken);
+
+            Token dataTypeToken = nextToken();
+            if (dataTypeToken == null || dataTypeToken.getKind() != TokenKind.DataTypeToken) {
+                throw new DBError("Error parsing the statement. Expected a " +
+                        "datatype.");
+            }
+
+            AttributeType type = switch (dataTypeToken.getTokenText()) {
+                case "int" -> AttributeType.INT;
+                case "string" -> AttributeType.STRING;
+                case "float" -> AttributeType.FLOAT;
+                default -> null;
+            };
+            attributes.add(new Attribute(type, attributeName.getTokenText()));
+
+            Token commaOrClosedParenToken = nextToken();
+            if (commaOrClosedParenToken == null ||
+                    (commaOrClosedParenToken.getKind() != TokenKind.CommaToken &&
+                     commaOrClosedParenToken.getKind() != TokenKind.ClosedParenToken)) {
+                throw new DBError("Error parsing the statement. Expected a " +
+                        "continuation of attribute definitions or a closed paren.");
+            }
+
+            if (commaOrClosedParenToken.getKind() == TokenKind.ClosedParenToken)
+                break;
         }
-        if (attributeVector.isEmpty()) {
-            throw new DBError("Error parsing Create Table statement. " +
-                    "Expected a set of attributes.");
-        } else {
-            return new DDLStatement.CreateTableStatement(tableName, attributeVector);
-        }
+        return new DDLStatement.CreateTableStatement(tableNameToken.getTokenText(),
+               attributes);
     }
 
     private SQLStatement parseCreateIndex() throws DBError {
