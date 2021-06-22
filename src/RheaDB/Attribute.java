@@ -11,6 +11,10 @@ public class Attribute implements Serializable {
     private boolean isPrimaryKey;
     private boolean isIndexed;
 
+    public Attribute(AttributeType type, String name) {
+        this(type, name, false);
+    }
+
     public Attribute(AttributeType type, String name, boolean isPrimaryKey) {
         this.type = type;
         this.name = name;
