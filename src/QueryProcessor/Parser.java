@@ -161,35 +161,30 @@ public class Parser {
     }
 
     private SQLStatement parseDelete() throws DBError {
-        if (tokenVector.size() < 3) {
-            throw new DBError("Error parsing statement.");
+        Token curr = currentToken();
+        matchToken(curr, TokenKind.KeywordToken, "delete");
+
+        curr = nextToken();
+        matchToken(curr, TokenKind.KeywordToken, "from");
+
+        Token tableNameToken = nextToken();
+        matchToken(tableNameToken, TokenKind.IdentifierToken);
+
+        Token optionalWhereToken = nextToken();
+
+        if (optionalWhereToken == null) {
+            return new DMLStatement.DeleteStatement(tableNameToken.getTokenText(),
+                    new Vector<>());
         }
 
-        assert matchToken(0, TokenKind.KeywordToken, "delete");
-
-        if (!matchToken(1, TokenKind.KeywordToken, "from")) {
-            throw new DBError("Unexpected token \"" + tokenVector.get(1).getTokenText() +
-                    "\" at position: " + tokenVector.get(1).getPosition());
+        Vector<Predicate> predicates = parsePredicates();
+        if (predicates.isEmpty()) {
+            throw new DBError("Error parsing the statement. " +
+                    "Expected a list of predicates.");
         }
 
-        if (!matchToken(2, TokenKind.IdentifierToken)) {
-            throw new DBError("Unexpected token \"" + tokenVector.get(2).getTokenText() +
-                    "\" at position: " + tokenVector.get(2).getPosition());
-        }
-
-        String tableName = tokenVector.get(2).getTokenText();
-
-        if (tokenVector.size() == 3) {
-            return new DMLStatement.DeleteStatement(tableName, new Vector<>());
-        }
-
-        if (!matchToken(3, TokenKind.KeywordToken, "where")) {
-            throw new DBError("Unexpected token \"" + tokenVector.get(3).getTokenText() +
-                    "\" at position: " + tokenVector.get(3).getPosition());
-        }
-        Vector<Predicate> predicates = parsePredicates(4);
-
-        return new DMLStatement.DeleteStatement(tableName, predicates);
+        return new DMLStatement.DeleteStatement(tableNameToken.getTokenText(),
+                predicates);
     }
 
     private SQLStatement parseInsert() throws DBError {
@@ -342,27 +337,6 @@ public class Parser {
             if (optionalComma == null)
                 break;
             else matchToken(optionalComma, TokenKind.CommaToken);
-        }
-
-        return predicates;
-    }
-
-    private Vector<Predicate> parsePredicates(int i) throws DBError {
-        Vector<Predicate> predicates = new Vector<>();
-        for (; i < tokenVector.size(); i += 4) {
-            try {
-                Token attributeNameToken = tokenVector.elementAt(i);
-                Token operatorToken = tokenVector.elementAt(i + 1);
-                Token valueToken = tokenVector.elementAt(i + 2);
-                if (i + 3 < tokenVector.size() - 1 && !matchToken(i + 3, TokenKind.CommaToken)) {
-                    Token badToken = tokenVector.elementAt(i + 3);
-                    throw new Exception("Unexpected token: \"" + badToken.getTokenText()
-                        + "\" at position " + badToken.getPosition());
-                }
-                predicates.add(parsePredicate(attributeNameToken, operatorToken, valueToken));
-            } catch (Exception e) {
-                throw new DBError("Error parsing SELECT statement.");
-            }
         }
 
         return predicates;
