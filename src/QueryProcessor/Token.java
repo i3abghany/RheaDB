@@ -19,6 +19,15 @@ public class Token {
                kind == TokenKind.IntegralToken;
     }
 
+    public boolean isOperator() {
+        return kind == TokenKind.LessToken ||
+               kind == TokenKind.LessEqualsToken ||
+               kind == TokenKind.EqualsToken ||
+               kind == TokenKind.GreaterToken ||
+               kind == TokenKind.GreaterEqualsToken ||
+               kind == TokenKind.NotEqualsToken;
+    }
+
     public int getPosition() {
         return position;
     }
