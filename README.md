@@ -27,6 +27,12 @@ public class ExampleProgram {
         try (
                 Connection conn = DriverManager.getConnection("jdbc:rhea:/home/USER_NAME/dbdata");
                 Statement stmt = conn.createStatement();
+                stmt.executeQuery("CREATE TABLE FancyTable (id INT, name STRING, mass FLOAT)");
+                
+                stmt.executeQuery("INSERT INTO FancyTable VALUES (1, \"Random Name\", 42.69)");
+                stmt.executeQuery("INSERT INTO FancyTable VALUES (2, \"Not Random Name\", 96.24)");
+                stmt.executeQuery("INSERT INTO FancyTable VALUES (3, \"Completely Random Name\", 3.1415)");
+                
                 ResultSet rs = stmt.executeQuery("SELECT * FROM FancyTable")
         ) {
             while (rs.next())
