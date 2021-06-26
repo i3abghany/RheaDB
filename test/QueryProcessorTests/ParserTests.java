@@ -94,4 +94,18 @@ public class ParserTests {
 
     }
 
+    @Test
+    public void parseSelectWithStarAttribute() {
+        String sqlString = "SELECT * FROM tableName";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError throwables) {
+            throwables.printStackTrace();
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof SelectStatement);
+        SelectStatement selectStatement = (SelectStatement) sqlStatement;
+        Assertions.assertEquals(selectStatement.getSelectedAttributes().get(0), "*");
+    }
 }
