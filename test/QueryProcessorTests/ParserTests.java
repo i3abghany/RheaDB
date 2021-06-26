@@ -59,8 +59,8 @@ public class ParserTests {
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError throwables) {
-            throwables.printStackTrace();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
         }
 
         Assertions.assertTrue(sqlStatement instanceof CreateIndexStatement);
@@ -100,8 +100,8 @@ public class ParserTests {
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError throwables) {
-            throwables.printStackTrace();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
         }
 
         Assertions.assertTrue(sqlStatement instanceof SelectStatement);
@@ -126,8 +126,8 @@ public class ParserTests {
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError throwables) {
-            throwables.printStackTrace();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
         }
 
         Assertions.assertTrue(sqlStatement instanceof SelectStatement);
