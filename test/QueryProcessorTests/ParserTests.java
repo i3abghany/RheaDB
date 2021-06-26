@@ -134,4 +134,47 @@ public class ParserTests {
         SelectStatement selectStatement = (SelectStatement) sqlStatement;
         Assertions.assertEquals(selectStatement.getSelectedAttributes().get(0), "*");
     }
+
+    @Test
+    public void parseDropTableWithoutPredicates() {
+        String sqlString = "DELETE FROM tableName";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof DeleteStatement);
+        DeleteStatement deleteStatement = (DeleteStatement) sqlStatement;
+
+        Assertions.assertEquals(deleteStatement.getPredicateVector().size(), 0);
+        Assertions.assertEquals(deleteStatement.getTableName(), "tableName");
+    }
+
+    @Test
+    public void parseDropTableWithPredicates() {
+        String sqlString = "DELETE FROM tableName WHERE attrA = 1, attrB = 2";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof DeleteStatement);
+        DeleteStatement deleteStatement = (DeleteStatement) sqlStatement;
+
+        Assertions.assertEquals(deleteStatement.getPredicateVector().size(), 2);
+        Assertions.assertEquals(deleteStatement.getTableName(), "tableName");
+
+        String[] attrNames = {"attrA", "attrB"};
+        Integer[] values = {1, 2};
+
+        for (int i = 0; i < attrNames.length; i++) {
+            Assertions.assertEquals(deleteStatement.getPredicateVector().get(i).getAttributeName(), attrNames[i]);
+            Assertions.assertEquals((Integer) deleteStatement.getPredicateVector().get(i).getValue(), values[i]);
+        }
+
+    }
 }
