@@ -1,6 +1,8 @@
 package QueryProcessorTests;
 
+import Predicate.Predicate;
 import QueryProcessor.DDLStatement.*;
+import QueryProcessor.DMLStatement.*;
 import QueryProcessor.Parser;
 import QueryProcessor.SQLStatement;
 import RheaDB.Attribute;
@@ -68,4 +70,28 @@ public class ParserTests {
         Assertions.assertEquals(createIndexStatement.getIndexAttribute(), "attributeName");
         Assertions.assertEquals(createIndexStatement.getDDLKind(), DDLKind.CreateIndex);
     }
+
+    @Test
+    public void parseSelectStatementWithoutPredicates() {
+        String sqlString = "SELECT attrA, attrB, attrC FROM tableName";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof SelectStatement);
+        SelectStatement selectStatement = (SelectStatement) sqlStatement;
+
+        Assertions.assertEquals(selectStatement.getPredicates().size(), 0);
+        Assertions.assertEquals(selectStatement.getTableName(), "tableName");
+        String[] attributeNames = {"attrA", "attrB", "attrC"};
+
+        for (int i = 0; i < attributeNames.length; i++) {
+            Assertions.assertEquals(attributeNames[i], selectStatement.getSelectedAttributes().get(i));
+        }
+
+    }
+
 }
