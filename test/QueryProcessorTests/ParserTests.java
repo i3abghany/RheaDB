@@ -95,6 +95,32 @@ public class ParserTests {
     }
 
     @Test
+    public void parseSelectStatementWithAttributes() {
+        String sqlString = "SELECT attrA, attrB, attrC FROM tableName where attrA = 1, attrB = 2";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError throwables) {
+            throwables.printStackTrace();
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof SelectStatement);
+        SelectStatement selectStatement = (SelectStatement) sqlStatement;
+
+        Assertions.assertEquals(selectStatement.getTableName(), "tableName");
+
+        Assertions.assertEquals(selectStatement.getPredicates().size(), 2);
+
+        Vector<Predicate> predicates = selectStatement.getPredicates();
+
+        Assertions.assertEquals(predicates.get(0).getAttributeName(), "attrA");
+        Assertions.assertEquals((Integer) predicates.get(0).getValue(), 1);
+
+        Assertions.assertEquals(predicates.get(1).getAttributeName(), "attrB");
+        Assertions.assertEquals((Integer) predicates.get(1).getValue(), 2);
+    }
+
+    @Test
     public void parseSelectWithStarAttribute() {
         String sqlString = "SELECT * FROM tableName";
         SQLStatement sqlStatement = null;
