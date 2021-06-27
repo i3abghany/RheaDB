@@ -136,7 +136,7 @@ public class ParserTests {
     }
 
     @Test
-    public void parseDropTableWithoutPredicates() {
+    public void parseDeleteWithoutPredicates() {
         String sqlString = "DELETE FROM tableName";
         SQLStatement sqlStatement = null;
         try {
@@ -153,7 +153,7 @@ public class ParserTests {
     }
 
     @Test
-    public void parseDropTableWithPredicates() {
+    public void parseDeleteWithPredicates() {
         String sqlString = "DELETE FROM tableName WHERE attrA = 1, attrB = 2";
         SQLStatement sqlStatement = null;
         try {
