@@ -175,6 +175,20 @@ public class ParserTests {
             Assertions.assertEquals(deleteStatement.getPredicateVector().get(i).getAttributeName(), attrNames[i]);
             Assertions.assertEquals((Integer) deleteStatement.getPredicateVector().get(i).getValue(), values[i]);
         }
+    }
 
+    @Test
+    public void parseDropTable() {
+        String sqlString = "DROP TABLE TableName";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof DropTableStatement);
+        DropTableStatement dropTableStatement = (DropTableStatement) sqlStatement;
+        Assertions.assertEquals(dropTableStatement.getTableName(), "TableName");
     }
 }
