@@ -3,6 +3,7 @@ package QueryProcessorTests;
 import Predicate.Predicate;
 import QueryProcessor.DDLStatement.*;
 import QueryProcessor.DMLStatement.*;
+import QueryProcessor.InternalStatement.*;
 import QueryProcessor.Parser;
 import QueryProcessor.SQLStatement;
 import RheaDB.Attribute;
@@ -190,5 +191,22 @@ public class ParserTests {
         Assertions.assertTrue(sqlStatement instanceof DropTableStatement);
         DropTableStatement dropTableStatement = (DropTableStatement) sqlStatement;
         Assertions.assertEquals(dropTableStatement.getTableName(), "TableName");
+    }
+
+    @Test
+    public void parseDescribe() {
+        String sqlString = "DESCRIBE TableName";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof DescribeStatement);
+        DescribeStatement describeStatement = (DescribeStatement) sqlStatement;
+
+        Assertions.assertEquals(describeStatement.getTableName(), "TableName");
+        Assertions.assertEquals(describeStatement.getInternalStatementKind(), InternalStatementKind.DESCRIBE);
     }
 }
