@@ -23,10 +23,11 @@ public class BufferPool {
             deletePage(table, i);
         }
 
-        for (Attribute attribute : table.getAttributeList()) {
-            if (attribute.getIsIndexed())
-                deleteIndex(table, attribute);
-        }
+        table.getAttributeList()
+                .stream()
+                .filter(attr -> attr.getIsIndexed())
+                .forEach(attr -> deleteIndex(table, attr));
+
 
         String pageDir = table.getPageDirectory();
         File indexDirectory = Paths.get(pageDir + File.separator + "index").toFile();
