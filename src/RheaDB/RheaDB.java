@@ -223,7 +223,7 @@ public class RheaDB {
 
         verifySelectedAttributesExist(table, selectedAttributes);
 
-        if (selectedAttributes.stream().anyMatch(s -> s.equals("*"))) {
+        if (selectedAttributes.contains("*")) {
             selectedAttributes = table.getAttributeList()
                     .stream()
                     .map(o -> o.getName())
