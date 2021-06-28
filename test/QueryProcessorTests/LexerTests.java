@@ -74,4 +74,32 @@ public class LexerTests {
             Assertions.assertTrue(matchToken(tokenVector.get(i), TokenKind.DataTypeToken, tokenTexts[i]));
         }
     }
+
+    @Test
+    public void lexLiterals() {
+        String statement = "\"StringLiteral\" 333214 3.1415";
+        Vector<Token> tokenVector = new Lexer(statement).lex();
+
+        Assertions.assertTrue(whiteSpaceSeparation(tokenVector));
+        tokenVector = removeWhiteSpaces(tokenVector);
+
+        for (Token token : tokenVector) {
+            Assertions.assertTrue(token.isLiteral());
+        }
+
+        String[] tokenTexts = Arrays.stream(statement.split(" "))
+                .toArray(String[]::new);
+
+        TokenKind[] kinds = {
+                TokenKind.StringLiteralToken,
+                TokenKind.IntegralToken,
+                TokenKind.FloatingPointToken
+        };
+
+        for (int i = 0; i < tokenVector.size(); i++) {
+            Token token = tokenVector.get(i);
+            Assertions.assertEquals(token.getValue().toString(), tokenTexts[i].replaceAll("^\"|\"$", ""));
+            Assertions.assertEquals(token.getKind(), kinds[i]);
+        }
+    }
 }
