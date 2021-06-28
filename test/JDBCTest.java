@@ -16,7 +16,7 @@ public class JDBCTest {
             conn = connect("jdbc:rhea:/home/pwng/dbdata");
             Statement statement = conn.createStatement();
             statement.executeQuery("CREATE TABLE " + tableName +
-                    " id INT name STRING mass FLOAT");
+                    " (id INT, name STRING, mass FLOAT)");
         } catch (Exception exception) {
             System.out.println(exception.getMessage());
             Assertions.fail();
