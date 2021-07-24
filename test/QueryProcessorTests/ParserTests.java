@@ -23,6 +23,17 @@ public class ParserTests {
             SQLStatement sqlStatement = new Parser("").parse();
             Assertions.fail();
         } catch (DBError ignored) {
+
+        }
+    }
+
+    @Test
+    public void parseIncompleteStatement() {
+        try {
+            SQLStatement sqlStatement = new Parser("SELECT").parse();
+            Assertions.fail();
+        } catch (DBError ignored) {
+
         }
     }
 
@@ -208,5 +219,23 @@ public class ParserTests {
 
         Assertions.assertEquals(describeStatement.getTableName(), "TableName");
         Assertions.assertEquals(describeStatement.getInternalStatementKind(), InternalStatementKind.DESCRIBE);
+    }
+
+    @Test
+    void parseDropIndex() {
+        String sqlString = "DROP INDEX FancyTable attributeName";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof DropIndexStatement);
+        DropIndexStatement dropIndexStatement = (DropIndexStatement) sqlStatement;
+
+        Assertions.assertEquals(dropIndexStatement.getTableName(), "FancyTable");
+        Assertions.assertEquals(dropIndexStatement.getAttributeName(), "attributeName");
+        Assertions.assertEquals(dropIndexStatement.getDMLKind(), DMLStatementKind.DROP_INDEX);
     }
 }
