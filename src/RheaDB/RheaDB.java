@@ -60,8 +60,8 @@ public class RheaDB {
 
         try {
             sqlStatement = new Parser(sql).parse();
-            if (sqlStatement != null)
-                queryResult = executeStatement(sqlStatement);
+            assert sqlStatement != null;
+            queryResult = executeStatement(sqlStatement);
         } catch (DBError DBError) {
             System.out.println(DBError.getMessage());
         }

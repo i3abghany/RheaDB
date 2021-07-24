@@ -53,8 +53,8 @@ public class Parser {
 
         if (matchToken(typeToken, TokenKind.KeywordToken, "describe"))
             return parseDescribe();
-
-        return null;
+        else
+            throw new DBError("Error parsing statement.");
     }
 
     private SQLStatement parseDescribe() throws DBError {
@@ -181,7 +181,7 @@ public class Parser {
         else if (matchToken(1, TokenKind.KeywordToken, "index"))
             return parseDropIndex();
         else
-            return null;
+            throw new DBError("Error parsing statement.");
     }
 
     private SQLStatement parseDropIndex() throws DBError {
