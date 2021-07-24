@@ -126,13 +126,13 @@ public class RheaDB {
     public void executeCreateIndex(CreateIndexStatement statement) throws DBError {
         Table table = getTable(statement.getTableName());
         String indexAttributeName = statement.getIndexAttribute();
-        Attribute indexAttribute = table.getAttributeWithName(indexAttributeName);
 
-        if (table.getName() == null) {
+        if (table == null) {
             throw new DBError("Name " + statement.getTableName() +
                     " Does not resolve to a table.");
         }
 
+        Attribute indexAttribute = table.getAttributeWithName(indexAttributeName);
         if (indexAttribute == null) {
             throw new DBError("Invalid attribute: \"" + statement.getIndexAttribute() + "\"");
         }
