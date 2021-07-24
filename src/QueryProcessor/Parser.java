@@ -9,6 +9,10 @@ import RheaDB.DBError;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
+import QueryProcessor.DMLStatement.*;
+import QueryProcessor.DDLStatement.*;
+import QueryProcessor.InternalStatement.*;
+
 public class Parser {
     private final Vector<Token> tokenVector;
     private int position;
@@ -60,7 +64,7 @@ public class Parser {
     private SQLStatement parseDescribe() throws DBError {
         Token tableNameToken = tokenVector.get(1);
         matchToken(tableNameToken, TokenKind.IdentifierToken);
-        return new InternalStatement.DescribeStatement(tableNameToken.getTokenText());
+        return new DescribeStatement(tableNameToken.getTokenText());
     }
 
     private SQLStatement parseDDL() throws DBError {
@@ -122,7 +126,7 @@ public class Parser {
             if (commaOrClosedParenToken.getKind() == TokenKind.ClosedParenToken)
                 break;
         }
-        return new DDLStatement.CreateTableStatement(tableNameToken.getTokenText(),
+        return new CreateTableStatement(tableNameToken.getTokenText(),
                attributes);
     }
 
@@ -147,7 +151,7 @@ public class Parser {
                     " at position: " + badToken.getPosition());
         }
 
-        return new DDLStatement.CreateIndexStatement(tableNameToken.getTokenText(),
+        return new CreateIndexStatement(tableNameToken.getTokenText(),
                 attributeNameToken.getTokenText());
     }
 
@@ -156,7 +160,7 @@ public class Parser {
     }
 
     private SQLStatement parseDML() throws DBError {
-        if (tokenVector.size() == 1) {
+        if (tokenVector.size() <= 1) {
             throw new DBError("Error parsing statement.");
         }
 
@@ -205,7 +209,7 @@ public class Parser {
                     " at position: " + badToken.getPosition());
         }
 
-        return new DMLStatement.DropIndexStatement(tableNameToken.getTokenText(),
+        return new DropIndexStatement(tableNameToken.getTokenText(),
                 attributeNameToken.getTokenText());
     }
 
@@ -227,7 +231,7 @@ public class Parser {
                     " at position: " + badToken.getPosition());
         }
 
-        return new DMLStatement.DropTableStatement(tableNameToken.getTokenText());
+        return new DropTableStatement(tableNameToken.getTokenText());
     }
 
     private SQLStatement parseDelete() throws DBError {
@@ -243,7 +247,7 @@ public class Parser {
         Token optionalWhereToken = nextToken();
 
         if (optionalWhereToken == null) {
-            return new DMLStatement.DeleteStatement(tableNameToken.getTokenText(),
+            return new DeleteStatement(tableNameToken.getTokenText(),
                     new Vector<>());
         }
 
@@ -253,7 +257,7 @@ public class Parser {
                     "Expected a list of predicates.");
         }
 
-        return new DMLStatement.DeleteStatement(tableNameToken.getTokenText(),
+        return new DeleteStatement(tableNameToken.getTokenText(),
                 predicates);
     }
 
@@ -304,7 +308,7 @@ public class Parser {
                         ". Expected a continuation of values or a closed parenthesis.");
             }
         }
-        return new DMLStatement.InsertStatement(tableNameToken.getTokenText(),
+        return new InsertStatement(tableNameToken.getTokenText(),
                                                 valueVector);
     }
 
@@ -342,7 +346,7 @@ public class Parser {
 
         Token whereKeywordToken = nextToken();
         if (whereKeywordToken == null) {
-            return new DMLStatement.SelectStatement(tableNameToken.getTokenText(),
+            return new SelectStatement(tableNameToken.getTokenText(),
                     attributeNames, new Vector<>());
         }
 
@@ -354,7 +358,7 @@ public class Parser {
                     "comma-separated predicates.");
         }
 
-        return new DMLStatement.SelectStatement(tableNameToken.getTokenText(),
+        return new SelectStatement(tableNameToken.getTokenText(),
                 attributeNames, predicates);
     }
 
