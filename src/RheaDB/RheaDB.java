@@ -74,8 +74,45 @@ public class RheaDB {
             case SELECT -> selectFrom((SelectStatement) dmlStatement);
             case INSERT -> insertInto((InsertStatement) dmlStatement);
             case DELETE -> deleteFrom((DeleteStatement) dmlStatement);
-            case DROP -> dropTable((DropTableStatement) dmlStatement);
+            case DROP_TABLE -> dropTable((DropTableStatement) dmlStatement);
+            case DROP_INDEX -> executeDropIndex((DropIndexStatement) dmlStatement);
         };
+    }
+
+    public QueryResult executeDropIndex(DropIndexStatement statement) throws DBError {
+        Table table = getTable(statement.getTableName());
+        String indexAttributeName = statement.getAttributeName();
+        if (table == null) {
+            throw new DBError("Name " + statement.getTableName() +
+                    " Does not resolve to a table.");
+        }
+        Attribute indexAttribute = table.getAttributeWithName(indexAttributeName);
+
+        if (indexAttribute == null) {
+            throw new DBError("Invalid attribute: \"" + indexAttributeName + "\"");
+        }
+
+        if (!indexAttribute.getIsIndexed()) {
+            throw new DBError("Attribute \"" + indexAttributeName + "\"" +
+                    "is not indexed.");
+        }
+
+        boolean wasDeleted = dropIndex(table, indexAttribute);
+        if (!wasDeleted) {
+            throw new DBError("An error occurred while attempting to delete" +
+                    "attribute \"" + indexAttributeName + "\"");
+        }
+
+        return null;
+    }
+
+    public boolean dropIndex(Table table, Attribute attribute) {
+        if (table == null || attribute == null || !attribute.getIsIndexed())
+            return false;
+
+        bufferPool.deleteIndex(table, attribute);
+        attribute.setIsIndexed(false);
+        return true;
     }
 
     public void executeCreateTable(CreateTableStatement statement) throws DBError {

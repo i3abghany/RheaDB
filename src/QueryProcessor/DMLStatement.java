@@ -9,7 +9,8 @@ public abstract class DMLStatement extends SQLStatement {
         SELECT,
         INSERT,
         DELETE,
-        DROP,
+        DROP_TABLE,
+        DROP_INDEX,
     }
     @Override
     public SQLStatementKind getKind() {
@@ -102,11 +103,34 @@ public abstract class DMLStatement extends SQLStatement {
 
         @Override
         public DMLStatementKind getDMLKind() {
-            return DMLStatementKind.DROP;
+            return DMLStatementKind.DROP_TABLE;
         }
 
         public String getTableName() {
             return tableName;
+        }
+    }
+
+    public static class DropIndexStatement extends DMLStatement {
+        private final String tableName;
+        private final String attributeName;
+
+        public DropIndexStatement(String tableName, String attributeName) {
+            this.tableName = tableName;
+            this.attributeName = attributeName;
+        }
+
+        public String getTableName() {
+            return tableName;
+        }
+
+        public String getAttributeName() {
+            return attributeName;
+        }
+
+        @Override
+        public DMLStatementKind getDMLKind() {
+            return DMLStatementKind.DROP_INDEX;
         }
     }
 }

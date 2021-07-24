@@ -178,8 +178,35 @@ public class Parser {
     private SQLStatement parseDrop() throws DBError {
         if (matchToken(1, TokenKind.KeywordToken, "table"))
             return parseDropTable();
+        else if (matchToken(1, TokenKind.KeywordToken, "index"))
+            return parseDropIndex();
         else
             return null;
+    }
+
+    private SQLStatement parseDropIndex() throws DBError {
+        Token curr = currentToken();
+        matchToken(curr, TokenKind.KeywordToken, "drop");
+
+        curr = nextToken();
+        matchToken(curr, TokenKind.KeywordToken, "index");
+
+        Token tableNameToken = nextToken();
+        matchToken(tableNameToken, TokenKind.IdentifierToken);
+
+        Token attributeNameToken = nextToken();
+        matchToken(attributeNameToken, TokenKind.IdentifierToken);
+
+        if (!done()) {
+            Token badToken = nextToken();
+            assert badToken != null;
+            throw new DBError("Error parsing the statement. " +
+                    "Unexpected token: \"" + badToken.getTokenText() + "\"" +
+                    " at position: " + badToken.getPosition());
+        }
+
+        return new DMLStatement.DropIndexStatement(tableNameToken.getTokenText(),
+                attributeNameToken.getTokenText());
     }
 
     private SQLStatement parseDropTable() throws DBError {
