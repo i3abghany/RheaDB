@@ -69,17 +69,17 @@ public class RheaDB {
         return queryResult;
     }
 
-    public QueryResult executeDML(DMLStatement dmlStatement) throws DBError {
+    private QueryResult executeDML(DMLStatement dmlStatement) throws DBError {
         return switch (dmlStatement.getDMLKind()) {
             case SELECT -> selectFrom((SelectStatement) dmlStatement);
             case INSERT -> insertInto((InsertStatement) dmlStatement);
             case DELETE -> deleteFrom((DeleteStatement) dmlStatement);
-            case DROP_TABLE -> dropTable((DropTableStatement) dmlStatement);
+            case DROP_TABLE -> executeDropTable((DropTableStatement) dmlStatement);
             case DROP_INDEX -> executeDropIndex((DropIndexStatement) dmlStatement);
         };
     }
 
-    public QueryResult executeDropIndex(DropIndexStatement statement) throws DBError {
+    private QueryResult executeDropIndex(DropIndexStatement statement) throws DBError {
         Table table = getTable(statement.getTableName());
         String indexAttributeName = statement.getAttributeName();
         if (table == null) {
@@ -106,7 +106,7 @@ public class RheaDB {
         return null;
     }
 
-    public boolean dropIndex(Table table, Attribute attribute) {
+    private boolean dropIndex(Table table, Attribute attribute) {
         if (table == null || attribute == null || !attribute.getIsIndexed())
             return false;
 
@@ -115,7 +115,7 @@ public class RheaDB {
         return true;
     }
 
-    public void executeCreateTable(CreateTableStatement statement) throws DBError {
+    private void executeCreateTable(CreateTableStatement statement) throws DBError {
         boolean wasCreated = createTable(statement.getTableName(),
                 statement.getAttributeVector());
         if (!wasCreated) {
@@ -123,7 +123,7 @@ public class RheaDB {
         }
     }
 
-    public void executeCreateIndex(CreateIndexStatement statement) throws DBError {
+    private void executeCreateIndex(CreateIndexStatement statement) throws DBError {
         Table table = getTable(statement.getTableName());
         String indexAttributeName = statement.getIndexAttribute();
 
@@ -147,7 +147,7 @@ public class RheaDB {
         }
     }
 
-    public QueryResult executeDDL(DDLStatement ddlStatement) throws DBError {
+    private QueryResult executeDDL(DDLStatement ddlStatement) throws DBError {
         switch (ddlStatement.getDDLKind()) {
             case CreateTable -> executeCreateTable((CreateTableStatement) ddlStatement);
             case CreateIndex -> executeCreateIndex((CreateIndexStatement) ddlStatement);
@@ -216,7 +216,7 @@ public class RheaDB {
         this("." + File.separator + "data");
     }
 
-    public boolean createTable(String tableName, Vector<Attribute> attributeList) {
+    private boolean createTable(String tableName, Vector<Attribute> attributeList) {
         if (createdTables.containsKey(tableName))
             return false;
 
@@ -228,7 +228,7 @@ public class RheaDB {
         return true;
     }
 
-    public QueryResult dropTable(DropTableStatement dropTableStatement) throws DBError {
+    private QueryResult executeDropTable(DropTableStatement dropTableStatement) throws DBError {
         String tableName = dropTableStatement.getTableName();
         Table table = getTable(tableName);
         if (table == null) {
@@ -236,19 +236,23 @@ public class RheaDB {
                     + "\" does not resolve to a table in the database.");
         }
 
+        dropTable(table);
+        return null;
+    }
+
+    private void dropTable(Table table) throws DBError {
         boolean isDeleted = bufferPool.deleteTable(table);
         if (!isDeleted) {
             throw new DBError("Could not delete the table files.");
         }
-        deleteTableFromMetadata(tableName);
-        return null;
+        deleteTableFromMetadata(table.getName());
     }
 
     private void deleteTableFromMetadata(String tableName) {
         this.createdTables.remove(tableName);
     }
 
-    public QueryResult selectFrom(SelectStatement selectStatement) throws DBError {
+    private QueryResult selectFrom(SelectStatement selectStatement) throws DBError {
         Table table = getTable(selectStatement.getTableName());
         Vector<String> selectedAttributes = selectStatement.getSelectedAttributes();
         if (table == null) {
@@ -333,7 +337,7 @@ public class RheaDB {
             new QueryResult(result, table.getAttributeList(), selectedAttributes);
     }
 
-    public QueryResult deleteFrom(DeleteStatement deleteStatement) throws DBError {
+    private QueryResult deleteFrom(DeleteStatement deleteStatement) throws DBError {
         String tableName = deleteStatement.getTableName();
         Table table = getTable(tableName);
         if (table == null) {
@@ -392,7 +396,7 @@ public class RheaDB {
         }
     }
 
-    public QueryResult insertInto(InsertStatement insertStatement) throws DBError {
+    private QueryResult insertInto(InsertStatement insertStatement) throws DBError {
         String tableName = insertStatement.getTableName();
         Table table = getTable(tableName);
 
@@ -458,7 +462,7 @@ public class RheaDB {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public boolean createIndex(Table table, Attribute attribute) {
+    private boolean createIndex(Table table, Attribute attribute) {
         if (table == null || attribute == null)
             return false;
 
@@ -476,7 +480,7 @@ public class RheaDB {
         return true;
     }
 
-    public void updateIndex(Table table, Attribute attribute) {
+    private void updateIndex(Table table, Attribute attribute) {
         bufferPool.deleteIndex(table, attribute);
         createIndex(table, attribute);
     }
