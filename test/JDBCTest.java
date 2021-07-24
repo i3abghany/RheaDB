@@ -2,19 +2,52 @@ import RheaDB.JDBCDriver.JCResultSet;
 import org.junit.jupiter.api.*;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.*;
+import java.util.Comparator;
 
 public class JDBCTest {
     private Connection conn;
+    private static final String userName = System.getProperty("user.name");
+    private static final String dataDirPath = "/home/" + userName + "/dbdata";
 
     static Connection connect(String url) throws ClassNotFoundException, SQLException {
         Class.forName("RheaDB.JDBCDriver.JCDriver");
         return DriverManager.getConnection(url);
     }
 
+    @BeforeAll
+    static void createDataDir() {
+        File dir = new File(dataDirPath);
+        if (!dir.exists()) {
+            boolean created = dir.mkdir();
+            if (!created) {
+                System.out.println("Could not create data dir.");
+                Assertions.fail();
+            }
+        }
+    }
+
+    @AfterAll
+    static void deleteDataDir() {
+        try {
+            Files.walk(Paths.get(dataDirPath))
+                    .map(Path::toFile)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(File::delete);
+        } catch (IOException ioException) {
+            System.out.println("Could not delete data dir.");
+            Assertions.fail();
+        }
+    }
+
     void createTestingTable(String tableName) {
         try {
-            conn = connect("jdbc:rhea:/home/pwng/dbdata");
+            String userName = System.getProperty("user.name");
+            conn = connect("jdbc:rhea:/home/" + userName + "/dbdata");
             Statement statement = conn.createStatement();
             statement.executeQuery("CREATE TABLE " + tableName +
                     " (id INT, name STRING, mass FLOAT)");
