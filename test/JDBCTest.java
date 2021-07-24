@@ -11,8 +11,8 @@ import java.util.Comparator;
 
 public class JDBCTest {
     private Connection conn;
-    private static final String userName = System.getProperty("user.name");
-    private static final String dataDirPath = "/home/" + userName + "/dbdata";
+    private static final String homeDir = System.getProperty("user.home");
+    private static final String dataDirPath = homeDir + File.separator + "dbdata";
 
     static Connection connect(String url) throws ClassNotFoundException, SQLException {
         Class.forName("RheaDB.JDBCDriver.JCDriver");
@@ -46,8 +46,7 @@ public class JDBCTest {
 
     void createTestingTable(String tableName) {
         try {
-            String userName = System.getProperty("user.name");
-            conn = connect("jdbc:rhea:/home/" + userName + "/dbdata");
+            conn = connect("jdbc:rhea:" + homeDir + File.separator + "dbdata");
             Statement statement = conn.createStatement();
             statement.executeQuery("CREATE TABLE " + tableName +
                     " (id INT, name STRING, mass FLOAT)");
@@ -70,7 +69,7 @@ public class JDBCTest {
     @Test
     public void connectivityTest() {
         try {
-            connect("jdbc:rhea:/home/pwng/dbdata");
+            connect("jdbc:rhea:" + dataDirPath);
         } catch (Exception exception) {
             Assertions.fail();
         }
@@ -188,8 +187,8 @@ public class JDBCTest {
             statement.executeQuery("INSERT INTO TestTableWithIndex VALUES (2, \"Not a random String\", 69.42)");
 
             statement.executeQuery("CREATE INDEX TestTableWithIndex id");
-            String userName = System.getProperty("user.name");
-            File idx_file = new File("/home/" + userName + "/dbdata/TestTableWithIndex/index/id.idx");
+            File idx_file = new File( dataDirPath + File.separator +"TestTableWithIndex"
+                    + File.separator + "index" + File.separator + "id.idx");
             Assertions.assertTrue(idx_file.exists());
             JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableWithIndex WHERE id = 2");
             Assertions.assertNotNull(resultSet.getIterator());
@@ -224,8 +223,8 @@ public class JDBCTest {
             Assertions.assertEquals(resultSet.getInt(0), 2);
             Assertions.assertEquals(resultSet.getString(1), "Not a random String");
             statement.executeQuery("DROP INDEX TestTableDeleteIndex id");
-            String userName = System.getProperty("user.name");
-            File idx_file = new File("/home/" + userName + "/dbdata/TestTableDeleteIndex/index/id.idx");
+            File idx_file = new File(dataDirPath + File.separator + "TestTableDeleteIndex"
+                    + File.separator + "index" + File.separator + "id.idx");
             Assertions.assertFalse(idx_file.exists());
             dropTestTable("TestTableDeleteIndex");
         } catch (Exception exception) {
