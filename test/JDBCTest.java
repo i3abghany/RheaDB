@@ -1,6 +1,7 @@
 import RheaDB.JDBCDriver.JCResultSet;
 import org.junit.jupiter.api.*;
 
+import java.io.File;
 import java.sql.*;
 
 public class JDBCTest {
@@ -139,6 +140,61 @@ public class JDBCTest {
             Assertions.assertEquals(resultSet.getInt(0), 2);
             Assertions.assertEquals(resultSet.getString(1), "Not a random String");
             dropTestTable("TestTableSelectWithPredicates");
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+            Assertions.fail();
+        }
+    }
+
+    @Test
+    void createIndexTest() {
+        try {
+            createTestingTable("TestTableWithIndex");
+            Statement statement = conn.createStatement();
+            statement.executeQuery("INSERT INTO TestTableWithIndex VALUES (1, \"Random String\", 42.69)");
+            statement.executeQuery("INSERT INTO TestTableWithIndex VALUES (2, \"Not a random String\", 69.42)");
+
+            statement.executeQuery("CREATE INDEX TestTableWithIndex id");
+            String userName = System.getProperty("user.name");
+            File idx_file = new File("/home/" + userName + "/dbdata/TestTableWithIndex/index/id.idx");
+            Assertions.assertTrue(idx_file.exists());
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableWithIndex WHERE id = 2");
+            Assertions.assertNotNull(resultSet.getIterator());
+
+            Assertions.assertTrue(resultSet.next());
+            Assertions.assertFalse(resultSet.next());
+
+            Assertions.assertEquals(resultSet.getInt(0), 2);
+            Assertions.assertEquals(resultSet.getString(1), "Not a random String");
+            dropTestTable("TestTableWithIndex");
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+            Assertions.fail();
+        }
+    }
+
+    @Test
+    void dropIndexTest() {
+        try {
+            createTestingTable("TestTableDeleteIndex");
+            Statement statement = conn.createStatement();
+            statement.executeQuery("INSERT INTO TestTableDeleteIndex VALUES (1, \"Random String\", 42.69)");
+            statement.executeQuery("INSERT INTO TestTableDeleteIndex VALUES (2, \"Not a random String\", 69.42)");
+
+            statement.executeQuery("CREATE INDEX TestTableDeleteIndex id");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableDeleteIndex WHERE id = 2");
+            Assertions.assertNotNull(resultSet.getIterator());
+
+            Assertions.assertTrue(resultSet.next());
+            Assertions.assertFalse(resultSet.next());
+
+            Assertions.assertEquals(resultSet.getInt(0), 2);
+            Assertions.assertEquals(resultSet.getString(1), "Not a random String");
+            statement.executeQuery("DROP INDEX TestTableDeleteIndex id");
+            String userName = System.getProperty("user.name");
+            File idx_file = new File("/home/" + userName + "/dbdata/TestTableDeleteIndex/index/id.idx");
+            Assertions.assertFalse(idx_file.exists());
+            dropTestTable("TestTableDeleteIndex");
         } catch (Exception exception) {
             System.out.println(exception.getMessage());
             Assertions.fail();
