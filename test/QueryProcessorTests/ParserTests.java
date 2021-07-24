@@ -50,7 +50,7 @@ public class ParserTests {
         Assertions.assertTrue(sqlStatement instanceof CreateTableStatement);
         CreateTableStatement createTableStatement = (CreateTableStatement) sqlStatement;
         Assertions.assertEquals(createTableStatement.getTableName(), "FancyTable");
-        Assertions.assertEquals(createTableStatement.getDDLKind(), DDLKind.CreateTable);
+        Assertions.assertEquals(createTableStatement.getDDLKind(), DDLKind.CREATE_TABLE);
 
         Vector<Attribute> attributeVector = createTableStatement.getAttributeVector();
 
@@ -80,7 +80,7 @@ public class ParserTests {
 
         Assertions.assertEquals(createIndexStatement.getTableName(), "FancyTable");
         Assertions.assertEquals(createIndexStatement.getIndexAttribute(), "attributeName");
-        Assertions.assertEquals(createIndexStatement.getDDLKind(), DDLKind.CreateIndex);
+        Assertions.assertEquals(createIndexStatement.getDDLKind(), DDLKind.CREATE_INDEX);
     }
 
     @Test

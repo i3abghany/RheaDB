@@ -6,8 +6,8 @@ import java.util.Vector;
 public abstract class DDLStatement extends SQLStatement {
 
     public enum DDLKind {
-        CreateIndex,
-        CreateTable,
+        CREATE_INDEX,
+        CREATE_TABLE,
     }
 
     @Override
@@ -29,7 +29,7 @@ public abstract class DDLStatement extends SQLStatement {
 
         @Override
         public DDLKind getDDLKind() {
-            return DDLKind.CreateTable;
+            return DDLKind.CREATE_TABLE;
         }
 
         public String getTableName() {
@@ -52,7 +52,7 @@ public abstract class DDLStatement extends SQLStatement {
 
         @Override
         public DDLKind getDDLKind() {
-            return DDLKind.CreateIndex;
+            return DDLKind.CREATE_INDEX;
         }
 
         public String getTableName() {

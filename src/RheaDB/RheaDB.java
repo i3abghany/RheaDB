@@ -149,8 +149,8 @@ public class RheaDB {
 
     private QueryResult executeDDL(DDLStatement ddlStatement) throws DBError {
         switch (ddlStatement.getDDLKind()) {
-            case CreateTable -> executeCreateTable((CreateTableStatement) ddlStatement);
-            case CreateIndex -> executeCreateIndex((CreateIndexStatement) ddlStatement);
+            case CREATE_TABLE -> executeCreateTable((CreateTableStatement) ddlStatement);
+            case CREATE_INDEX -> executeCreateIndex((CreateIndexStatement) ddlStatement);
         }
         return null;
     }
