@@ -71,9 +71,9 @@ public class RheaDB {
 
     private QueryResult executeDML(DMLStatement dmlStatement) throws DBError {
         return switch (dmlStatement.getDMLKind()) {
-            case SELECT -> selectFrom((SelectStatement) dmlStatement);
-            case INSERT -> insertInto((InsertStatement) dmlStatement);
-            case DELETE -> deleteFrom((DeleteStatement) dmlStatement);
+            case SELECT -> executeSelectFrom((SelectStatement) dmlStatement);
+            case INSERT -> executeInsertInto((InsertStatement) dmlStatement);
+            case DELETE -> executeDeleteFrom((DeleteStatement) dmlStatement);
             case DROP_TABLE -> executeDropTable((DropTableStatement) dmlStatement);
             case DROP_INDEX -> executeDropIndex((DropIndexStatement) dmlStatement);
         };
@@ -252,7 +252,7 @@ public class RheaDB {
         this.createdTables.remove(tableName);
     }
 
-    private QueryResult selectFrom(SelectStatement selectStatement) throws DBError {
+    private QueryResult executeSelectFrom(SelectStatement selectStatement) throws DBError {
         Table table = getTable(selectStatement.getTableName());
         Vector<String> selectedAttributes = selectStatement.getSelectedAttributes();
         if (table == null) {
@@ -337,7 +337,7 @@ public class RheaDB {
             new QueryResult(result, table.getAttributeList(), selectedAttributes);
     }
 
-    private QueryResult deleteFrom(DeleteStatement deleteStatement) throws DBError {
+    private QueryResult executeDeleteFrom(DeleteStatement deleteStatement) throws DBError {
         String tableName = deleteStatement.getTableName();
         Table table = getTable(tableName);
         if (table == null) {
@@ -396,7 +396,7 @@ public class RheaDB {
         }
     }
 
-    private QueryResult insertInto(InsertStatement insertStatement) throws DBError {
+    private QueryResult executeInsertInto(InsertStatement insertStatement) throws DBError {
         String tableName = insertStatement.getTableName();
         Table table = getTable(tableName);
 
