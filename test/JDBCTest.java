@@ -232,4 +232,35 @@ public class JDBCTest {
             Assertions.fail();
         }
     }
+
+    @Test
+    void selectIndexedAttributesWithPredicates() {
+        try {
+            createTestingTable("TestTableIndexPred");
+            Statement statement = conn.createStatement();
+
+            for (int i = 0; i < 100; i++) {
+                statement.executeQuery("INSERT INTO TestTableIndexPred VALUES (" + i + ", \"Random String\", 42.69)");
+            }
+
+            statement.executeQuery("CREATE INDEX TestTableIndexPred id");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableIndexPred WHERE id >= 50");
+            Assertions.assertNotNull(resultSet.getIterator());
+
+            int i = 50;
+
+            while (resultSet.next()) {
+                Assertions.assertEquals(resultSet.getInt("id"), i);
+                Assertions.assertEquals(resultSet.getString("name"), "Random String");
+                Assertions.assertEquals(resultSet.getFloat("mass"), 42.69, 0.001);
+                i++;
+            }
+
+            Assertions.assertEquals(i, 100);
+            dropTestTable("TestTableIndexPred");
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+            Assertions.fail();
+        }
+    }
 }
