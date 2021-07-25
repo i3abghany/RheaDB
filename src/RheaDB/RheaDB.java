@@ -296,14 +296,22 @@ public class RheaDB {
                 .stream()
                 .filter(p -> !table.getAttributeWithName(p.getAttributeName()).getIsIndexed())
                 .collect(Collectors.toCollection(Vector::new));
-        final Vector<Predicate> finalPredicates = predicates;
+
+        result.addAll(selectWithPredicates(table, predicates));
+        return result.size() == 0 ? null :
+                new QueryResult(result, table.getAttributeList(),
+                        selectedAttributes);
+    }
+
+    private HashSet<RowRecord> selectWithPredicates(Table table, final Vector<Predicate> predicates) {
+        HashSet<RowRecord> result = new HashSet<>();
 
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
             page.getRecords().parallelStream().forEach(
                     (r) -> {
                         boolean ret = false;
-                        for (Predicate p : finalPredicates) {
+                        for (Predicate p : predicates) {
                             Attribute attribute = table
                                     .getAttributeWithName(p.getAttributeName());
                             ret |= p.doesSatisfy(r.getValueOf(attribute));
@@ -312,9 +320,7 @@ public class RheaDB {
                     }
             );
         }
-        return result.size() == 0 ? null :
-            new QueryResult(result, table.getAttributeList(),
-                selectedAttributes);
+        return result;
     }
 
     private void verifySelectedAttributesExist(Table table, Vector<String> selectedAttributes) throws DBError {
