@@ -19,7 +19,7 @@ public class RheaDB {
 
     private boolean lazyCommit;
     private final String rootDirectory;
-    private final HashMap<String, Table> createdTables;
+    private HashMap<String, Table> createdTables = new HashMap<>();
 
     private final BufferPool bufferPool;
 
@@ -192,27 +192,40 @@ public class RheaDB {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public RheaDB(String rootDirectory) throws IOException {
+    public RheaDB(String rootDirectory) {
         this.rootDirectory = rootDirectory;
         File file = new File(rootDirectory + File.separator +
                 "metadata.db");
         if (!file.exists()) {
             file.getParentFile().mkdirs();
-            boolean fileCreated = file.createNewFile();
-            if (!fileCreated) {
+            try {
+                boolean fileCreated = file.createNewFile();
+                if (!fileCreated) {
+                    System.out.println("Could not instantiate a metadata file... " +
+                            "Exiting.");
+                    System.exit(1);
+                }
+            } catch (IOException ioException) {
                 System.out.println("Could not instantiate a metadata file... " +
                         "Exiting.");
                 System.exit(1);
             }
             createdTables = new HashMap<>();
-        } else
-            createdTables = DiskManager.readMetadata();
+        } else {
+            try {
+                createdTables = DiskManager.readMetadata();
+            } catch (IOException ioException) {
+                System.out.println("Could not read metadata file... " +
+                        "Exiting.");
+                System.exit(1);
+            }
+        }
         bufferPool = new BufferPool();
         lazyCommit = true;
         Runtime.getRuntime().addShutdownHook(new Thread(this::commitOnExit));
     }
 
-    public RheaDB() throws IOException {
+    public RheaDB() {
         this("." + File.separator + "data");
     }
 
@@ -507,7 +520,7 @@ public class RheaDB {
         return lazyCommit;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         RheaDB rheaDB = new RheaDB();
         rheaDB.run();
     }
