@@ -36,14 +36,17 @@ public class JCDriver implements Driver {
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
         String[] tokens = url.split(":");
-        if (tokens.length < 2 || !tokens[0].toLowerCase(Locale.ROOT).equals("jdbc") || !tokens[1].toLowerCase(Locale.ROOT).equals("rhea"))
+        if (tokens.length < 2 ||
+            !tokens[0].toLowerCase(Locale.ROOT).equals("jdbc") ||
+            !tokens[1].toLowerCase(Locale.ROOT).equals("rhea")) {
             return null;
+        }
 
 
         String dataDir = Arrays.stream(tokens).skip(2).collect(Collectors.joining(":"));
         Path path = Paths.get(dataDir).toAbsolutePath();
         if (!Files.isDirectory(path)) {
-            throw new SQLException("\"" + path + "\" is not a valid directory.");
+            throw new SQLException("\"" + path + "\"" + " is not a valid directory.");
         }
 
         try {
