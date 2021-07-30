@@ -24,6 +24,7 @@ public abstract class SQLStatement {
 
     public static boolean isInternalKeyword(Token token) {
         return token.getKind() == TokenKind.KeywordToken &&
-                token.getTokenText().equals("describe");
+                (token.getTokenText().equals("describe") ||
+                 token.getTokenText().equals("compact"));
     }
 }

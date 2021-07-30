@@ -34,9 +34,11 @@ public class Lexer {
     }
 
     private void populateKeywordSet() {
+        keywordSet.add("compact");
         keywordSet.add("create");
         keywordSet.add("delete");
         keywordSet.add("describe");
+        keywordSet.add("drop");
         keywordSet.add("from");
         keywordSet.add("index");
         keywordSet.add("insert");
@@ -45,7 +47,6 @@ public class Lexer {
         keywordSet.add("table");
         keywordSet.add("values");
         keywordSet.add("where");
-        keywordSet.add("drop");
     }
 
     private Token lexWhiteSpaceToken(int tokenPosition) {

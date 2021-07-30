@@ -53,10 +53,10 @@ public class Parser {
     }
 
     private SQLStatement parseInternalStatement() throws DBError {
-        Token typeToken = tokenVector.get(0);
-
-        if (matchToken(typeToken, TokenKind.KeywordToken, "describe"))
+        if (matchToken(0, TokenKind.KeywordToken, "describe"))
             return parseDescribe();
+        else if (matchToken(0, TokenKind.KeywordToken, "compact"))
+            return parseCompact();
         else
             throw new DBError("Error parsing statement.");
     }
@@ -65,6 +65,12 @@ public class Parser {
         Token tableNameToken = tokenVector.get(1);
         matchToken(tableNameToken, TokenKind.IdentifierToken);
         return new DescribeStatement(tableNameToken.getTokenText());
+    }
+
+    private SQLStatement parseCompact() throws DBError {
+        Token tableNameToken = tokenVector.get(1);
+        matchToken(tableNameToken, TokenKind.IdentifierToken);
+        return new CompactStatement(tableNameToken.getTokenText());
     }
 
     private SQLStatement parseDDL() throws DBError {

@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class RheaDB {
-    static final int maxTuplesPerPage = 8;
+    static final int maxTuplesPerPage = 32;
 
     private boolean lazyCommit;
     private final String rootDirectory;
@@ -163,17 +163,18 @@ public class RheaDB {
         };
     }
 
-    private void compactTable(String tString) {
-        Table t = getTable(tString);
+    private QueryResult executeInternal(InternalStatement sqlStatement) throws DBError {
+        return switch (sqlStatement.getInternalStatementKind()) {
+            case DESCRIBE -> describeTable((DescribeStatement) sqlStatement);
+            case COMPACT -> compactTable((CompactStatement) sqlStatement);
+        };
+    }
+
+    private QueryResult compactTable(CompactStatement compactStatement) {
+        Table t = getTable(compactStatement.getTableName());
         bufferPool.commitTable(t);
         DiskManager.compactTable(t);
         bufferPool.updateTablePagesFromDisk(t);
-    }
-
-    private QueryResult executeInternal(InternalStatement sqlStatement) throws DBError {
-        if (sqlStatement.getInternalStatementKind() == InternalStatementKind.DESCRIBE) {
-            return describeTable((DescribeStatement) sqlStatement);
-        }
         return null;
     }
 
