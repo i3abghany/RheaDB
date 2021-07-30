@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.Comparator;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -266,6 +267,52 @@ public class JDBCTest {
             }
 
             dropTestTable("TestTableIndexPred");
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+            Assertions.fail();
+        }
+    }
+
+    @Test
+    void compactTable() {
+        try {
+            createTestingTable("TableCompactTest");
+            Statement statement = conn.createStatement();
+            for (int i = 0; i < 100; i++) {
+                statement.executeQuery("INSERT INTO TableCompactTest VALUES (" + i + ", \"Random String\", 42.69" + ")");
+            }
+
+            Set<Integer> randDeletions = new TreeSet<>();
+            Random rnd = new Random();
+            while (randDeletions.size() < 32) {
+                randDeletions.add(rnd.nextInt(100));
+            }
+
+            for (int i : randDeletions) {
+                statement.executeQuery("DELETE FROM TableCompactTest WHERE id = " + i);
+            }
+
+            statement.executeQuery("COMPACT TableCompactTest");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TableCompactTest");
+            Assertions.assertNotNull(resultSet.getIterator());
+
+            Set<Integer> idSet = new TreeSet<>();
+            int i = 0;
+            while (resultSet.next()) {
+                idSet.add(resultSet.getInt("id"));
+                Assertions.assertEquals(resultSet.getString("name"), "Random String");
+                Assertions.assertEquals(resultSet.getFloat("mass"), 42.69, 0.001);
+                i++;
+            }
+
+            Assertions.assertEquals(i, 100 - 32);
+            Assertions.assertEquals(idSet.size(), 100 - 32);
+
+            for (int j : randDeletions) {
+                Assertions.assertFalse(idSet.contains(j));
+            }
+
+            dropTestTable("TableCompactTest");
         } catch (Exception exception) {
             System.out.println(exception.getMessage());
             Assertions.fail();

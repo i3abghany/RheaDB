@@ -222,6 +222,23 @@ public class ParserTests {
     }
 
     @Test
+    public void parseCompact() {
+        String sqlString = "COMPACT TableName";
+        SQLStatement sqlStatement = null;
+        try {
+            sqlStatement = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof CompactStatement);
+        CompactStatement compactStatement = (CompactStatement) sqlStatement;
+
+        Assertions.assertEquals(compactStatement.getTableName(), "TableName");
+        Assertions.assertEquals(compactStatement.getInternalStatementKind(), InternalStatementKind.COMPACT);
+    }
+
+    @Test
     void parseDropIndex() {
         String sqlString = "DROP INDEX FancyTable attributeName";
         SQLStatement sqlStatement = null;
