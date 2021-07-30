@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.Comparator;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class JDBCTest {
     private Connection conn;
@@ -247,16 +249,22 @@ public class JDBCTest {
             JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableIndexPred WHERE id >= 50");
             Assertions.assertNotNull(resultSet.getIterator());
 
-            int i = 50;
+            int i = 0;
 
+            Set<Integer> idSet = new TreeSet<>();
             while (resultSet.next()) {
-                Assertions.assertEquals(resultSet.getInt("id"), i);
+                idSet.add(resultSet.getInt("id"));
                 Assertions.assertEquals(resultSet.getString("name"), "Random String");
                 Assertions.assertEquals(resultSet.getFloat("mass"), 42.69, 0.001);
                 i++;
             }
 
-            Assertions.assertEquals(i, 100);
+            Assertions.assertEquals(i, 50);
+
+            for (int j = 50; j < 100; j++) {
+                Assertions.assertTrue(idSet.contains(j));
+            }
+
             dropTestTable("TestTableIndexPred");
         } catch (Exception exception) {
             System.out.println(exception.getMessage());
