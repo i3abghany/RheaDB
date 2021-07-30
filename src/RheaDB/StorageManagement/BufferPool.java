@@ -6,36 +6,10 @@ import RheaDB.*;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BufferPool {
-    private final static int maxPagesInCache = 16;
-    private final ConcurrentHashMap<PageIdentifier, Page> pageHashMap;
-
-    public void commitAllPages() {
-        pageHashMap.forEach((PageIdentifier pi, Page page) -> {
-            updatePage(pi.table, page);
-        });
-    }
-
-    public boolean deleteTable(Table table) {
-        for (int i = 1; i <= table.getNumPages(); i++) {
-            deletePage(table, i);
-        }
-
-        table.getAttributeList()
-                .stream()
-                .filter(attr -> attr.getIsIndexed())
-                .forEach(attr -> deleteIndex(table, attr));
-
-
-        String pageDir = table.getPageDirectory();
-        File indexDirectory = Paths.get(pageDir + File.separator + "index").toFile();
-        indexDirectory.delete();
-        Paths.get(pageDir).toFile().delete();
-
-        return true;
-    }
 
     private record PageIdentifier(Table table, int pageIdx) {
         @Override
@@ -52,16 +26,61 @@ public class BufferPool {
         }
     }
 
+    private final static int maxPagesInCache = 16;
+    private final ConcurrentHashMap<PageIdentifier, Page> pageHashMap;
+
+    public void commitAllPages() {
+        pageHashMap.forEach((PageIdentifier pi, Page page) -> {
+            updatePage(pi.table, page);
+        });
+    }
+
+    public boolean deleteTable(Table table) {
+        for (int i = table.getNumPages(); i > 0; i--) {
+            deletePage(table, i);
+        }
+
+        table.getAttributeList()
+                .stream()
+                .filter(attr -> attr.getIsIndexed())
+                .forEach(attr -> deleteIndex(table, attr));
+
+        String pageDir = table.getPageDirectory();
+        File indexDirectory = Paths.get(pageDir + File.separator + "index").toFile();
+        indexDirectory.delete();
+        Paths.get(pageDir).toFile().delete();
+
+        return true;
+    }
+
+    public void updateTablePagesFromDisk(Table t) {
+        Vector<Integer> pages = new Vector<>();
+        pageHashMap.keySet().forEach((PageIdentifier pi) -> {
+            if (pi.table == t) {
+                pages.add(pi.pageIdx);
+            }
+        });
+
+        pageHashMap.keySet().removeIf( p -> p.table == t);
+        for (int i : pages) {
+            insertPage(t, i);
+        }
+    }
+
+    public void commitTable(Table t) {
+        pageHashMap.forEach((PageIdentifier pi, Page page) -> {
+            if (pi.table == t) {
+                updatePage(pi.table, page);
+            }
+        });
+    }
+
     public BPlusTree<?, RowRecord> getIndex(Table table, Attribute attribute) {
         String indexFullPath =
                 table.getPageDirectory() + File.separator + "index" +
                 File.separator + attribute.getName() + ".idx";
 
         return DiskManager.deserializeIndex(indexFullPath);
-    }
-
-    public void savePage(Table table, Page lastPage) {
-        DiskManager.savePage(table, lastPage);
     }
 
     public void saveIndex(Table table, Attribute attribute, BPlusTree<?, RowRecord> bPlusTree) {
@@ -85,8 +104,7 @@ public class BufferPool {
     }
 
     public void updatePage(Table table, Page page) {
-        deletePage(table, page.getPageIdx());
-        savePage(table, page);
+        DiskManager.savePage(table, page);
         insertPage(table, page);
     }
 

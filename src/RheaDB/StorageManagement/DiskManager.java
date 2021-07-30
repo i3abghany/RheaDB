@@ -17,16 +17,62 @@ public class DiskManager {
         return deserializePage(fullPath);
     }
 
+    public static void compactTable(Table table) {
+        int numPages = table.getNumPages();
+
+        for (int i = numPages; i > 0; i--) {
+            Page p = deserializePage(getFullPath(table, i));
+            if (p.isEmpty()) {
+                deletePage(table, i);
+            }
+        }
+
+        Page lastPage = deserializePage(getFullPath(table, numPages));
+        for (int i = 1; i < numPages; i++) {
+            Page p = deserializePage(getFullPath(table, i));
+            if (!p.isFull()) {
+                mergePages(p, lastPage);
+                savePage(table, p);
+                if (lastPage.isEmpty()) {
+                    deletePage(table, numPages);
+                    lastPage = deserializePage(getFullPath(table, i));
+                } else {
+                    savePage(table, lastPage);
+                }
+            }
+        }
+    }
+
+    private static void mergePages(Page p, Page lastPage) {
+        int rem = p.getMaxRows() - p.getNumberOfRows();
+        int taken = (rem - lastPage.getNumberOfRows());
+        taken = taken < 0 ? rem : taken;
+
+        for (int i = 0; i < taken; i++) {
+            stealRow(p, lastPage);
+        }
+    }
+
+    private static void stealRow(Page p1, Page p2) {
+        if (p1.isFull() || p2.isEmpty()) {
+            return;
+        }
+
+        p1.addRecord(p2.popRow());
+    }
+
     public static void deletePage(Table table, int idx) {
         String fullPath = getFullPath(table, idx);
         File pageFile = new File(fullPath);
 
-        if (!pageFile.exists())
+        if (!pageFile.exists()) {
             return;
+        }
 
         if (!pageFile.delete()) {
             LOGGER.log(Level.SEVERE, "Could not delete database files... Exiting");
         }
+        table.popPage();
     }
 
     private static String getFullPath(Table table, int idx) {

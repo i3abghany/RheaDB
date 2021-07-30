@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class RheaDB {
-    static final int maxTuplesPerPage = 32;
+    static final int maxTuplesPerPage = 8;
 
     private boolean lazyCommit;
     private final String rootDirectory;
@@ -161,6 +161,13 @@ public class RheaDB {
             case DML -> executeDML((DMLStatement) sqlStatement);
             case INTERNAL -> executeInternal((InternalStatement) sqlStatement);
         };
+    }
+
+    private void compactTable(String tString) {
+        Table t = getTable(tString);
+        bufferPool.commitTable(t);
+        DiskManager.compactTable(t);
+        bufferPool.updateTablePagesFromDisk(t);
     }
 
     private QueryResult executeInternal(InternalStatement sqlStatement) throws DBError {
@@ -411,7 +418,6 @@ public class RheaDB {
     private void deleteAllRows(Table table) {
         for (int i = table.getNumPages(); i > 0; i--) {
             bufferPool.deletePage(table, i);
-            table.popPage();
         }
     }
 

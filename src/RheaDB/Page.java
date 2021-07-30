@@ -8,14 +8,14 @@ public class Page implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final int maxTuples;
+    private final int maxRows;
     private final int pageIdx;
     private final Vector<RowRecord> records;
     private final String tableName;
 
-    public Page(String tableName, int maxTuples, int pageIdx) {
+    public Page(String tableName, int maxRows, int pageIdx) {
         this.tableName = tableName;
-        this.maxTuples = maxTuples;
+        this.maxRows = maxRows;
         this.pageIdx = pageIdx;
         this.records = new Vector<>();
     }
@@ -41,7 +41,11 @@ public class Page implements Serializable {
     }
 
     public boolean isFull() {
-        return this.records.size() == this.maxTuples;
+        return this.records.size() == this.maxRows;
+    }
+
+    public boolean isEmpty() {
+        return this.records.size() == 0;
     }
 
     public int getLastRowIndex() {
@@ -57,13 +61,25 @@ public class Page implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Page page = (Page) o;
-        return maxTuples == page.maxTuples &&
+        return maxRows == page.maxRows &&
                pageIdx == page.pageIdx &&
                tableName.equals(page.tableName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(maxTuples, pageIdx, tableName);
+        return Objects.hash(maxRows, pageIdx, tableName);
+    }
+
+    public int getMaxRows() {
+        return maxRows;
+    }
+
+    public RowRecord popRow() {
+        if (records.isEmpty()) {
+            return null;
+        }
+
+        return records.remove(records.size() - 1);
     }
 }
