@@ -6,6 +6,7 @@ import RheaDB.Attribute;
 import RheaDB.AttributeType;
 import RheaDB.DBError;
 
+import java.security.Key;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
@@ -162,7 +163,7 @@ public class Parser {
     }
 
     private boolean done() {
-        return this.position == this.tokenVector.size() - 1;
+        return this.position >= this.tokenVector.size() - 1;
     }
 
     private SQLStatement parseDML() throws DBError {
@@ -180,9 +181,39 @@ public class Parser {
             return parseDelete();
         else if (matchToken(0, TokenKind.KeywordToken, "drop"))
             return parseDrop();
+        else if (matchToken(0, TokenKind.KeywordToken, "update"))
+            return parseUpdate();
         else
             throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
                     + "\" at position " + typeToken.getPosition());
+    }
+
+    // FIXME: "UPDATE t SET i = 2, j = 3 WHERE" parses...
+    private SQLStatement parseUpdate() throws DBError {
+        Token curr = currentToken();
+        matchToken(curr, TokenKind.KeywordToken, "update");
+
+        Token tableName = nextToken();
+        matchToken(tableName, TokenKind.IdentifierToken);
+
+        curr = nextToken();
+        matchToken(curr, TokenKind.KeywordToken, "set");
+
+        Vector<Predicate> setPredicates = parsePredicates();
+
+        curr = currentToken();
+
+        if (done()) {
+            return new UpdateStatement(tableName.getTokenText(), setPredicates,
+                    new Vector<>());
+        }
+
+        matchToken(curr, TokenKind.KeywordToken, "where");
+
+        Vector<Predicate> wherePredicates = parsePredicates();
+
+        return new UpdateStatement(tableName.getTokenText(), setPredicates,
+                wherePredicates);
     }
 
     private SQLStatement parseDrop() throws DBError {
@@ -258,6 +289,11 @@ public class Parser {
         }
 
         Vector<Predicate> predicates = parsePredicates();
+
+        if (matchToken(this.position, TokenKind.KeywordToken, "where")) {
+            throw new DBError("Unexpected token \"where\" at position: " + currentToken().getPosition());
+        }
+
         if (predicates.isEmpty()) {
             throw new DBError("Error parsing the statement. " +
                     "Expected a list of predicates.");
@@ -414,7 +450,7 @@ public class Parser {
             predicates.add(parsePredicate(attributeNameToken, operatorToken, literalToken));
 
             Token optionalComma = nextToken();
-            if (optionalComma == null)
+            if (optionalComma == null || matchToken(this.position, TokenKind.KeywordToken, "where"))
                 break;
             else matchToken(optionalComma, TokenKind.CommaToken);
         }

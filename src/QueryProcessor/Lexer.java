@@ -44,7 +44,9 @@ public class Lexer {
         keywordSet.add("insert");
         keywordSet.add("into");
         keywordSet.add("select");
+        keywordSet.add("set");
         keywordSet.add("table");
+        keywordSet.add("update");
         keywordSet.add("values");
         keywordSet.add("where");
     }

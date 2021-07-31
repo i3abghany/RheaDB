@@ -33,6 +33,15 @@ public class RowRecord implements Serializable {
         this.attributeValues.set(idx, val);
     }
 
+    public void setAttributeValue(Attribute attribute, Object val) {
+        for (int i = 0; i < attributeList.size(); i++) {
+            if (attributeList.get(i).equals(attribute)) {
+                attributeValues.set(i, val);
+                break;
+            }
+        }
+    }
+
     public void setAttributeValues(Object[] values) {
         this.attributeValues = Arrays.stream(values)
                 .collect(Collectors.toCollection(Vector::new));
