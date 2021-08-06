@@ -82,6 +82,12 @@ public class RheaDB {
 
     private QueryResult executeUpdate(UpdateStatement statement) throws DBError {
         Table table = getTable(statement.getTableName());
+
+        if (table == null) {
+            throw new DBError("Table " + statement.getTableName() + " does not " +
+                    "resolve to a table");
+        }
+
         Vector<Predicate> setPredicates = statement.getSetPredicates();
         Vector<Predicate> wherePredicates = statement.getWherePredicates();
 

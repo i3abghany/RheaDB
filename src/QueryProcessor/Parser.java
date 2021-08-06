@@ -188,7 +188,6 @@ public class Parser {
                     + "\" at position " + typeToken.getPosition());
     }
 
-    // FIXME: "UPDATE t SET i = 2, j = 3 WHERE" parses...
     private SQLStatement parseUpdate() throws DBError {
         Token curr = currentToken();
         matchToken(curr, TokenKind.KeywordToken, "update");
@@ -201,16 +200,19 @@ public class Parser {
 
         Vector<Predicate> setPredicates = parsePredicates();
 
-        curr = currentToken();
-
-        if (done()) {
+        if (this.position == this.tokenVector.size()) {
             return new UpdateStatement(tableName.getTokenText(), setPredicates,
                     new Vector<>());
         }
 
+        curr = currentToken();
         matchToken(curr, TokenKind.KeywordToken, "where");
 
         Vector<Predicate> wherePredicates = parsePredicates();
+
+        if (wherePredicates.isEmpty()) {
+            throw new DBError("Unexpected token: \"where\".");
+        }
 
         return new UpdateStatement(tableName.getTokenText(), setPredicates,
                 wherePredicates);
@@ -432,8 +434,13 @@ public class Parser {
     private Vector<Predicate> parsePredicates() throws DBError {
         Vector<Predicate> predicates = new Vector<>();
 
+        Token firstToken = nextToken();
+        if (firstToken == null) {
+            return predicates;
+        }
+
         while (true) {
-            Token attributeNameToken = nextToken();
+            Token attributeNameToken = currentToken();
             matchToken(attributeNameToken, TokenKind.IdentifierToken);
 
             Token operatorToken = nextToken();
@@ -453,6 +460,7 @@ public class Parser {
             if (optionalComma == null || matchToken(this.position, TokenKind.KeywordToken, "where"))
                 break;
             else matchToken(optionalComma, TokenKind.CommaToken);
+            nextToken();
         }
 
         return predicates;

@@ -304,6 +304,19 @@ public class ParserTests {
     }
 
     @Test
+    void parseInvalidUpdateWithoutWherePredicates() {
+        String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
+                + "\"Random String\" WHERE";
+
+        try {
+            new Parser(sqlString).parse();
+            Assertions.fail("Should not parse correctly. A trailing WHERE exists");
+        } catch (DBError ignored) {
+
+        }
+    }
+
+    @Test
     void parseUpdateAllRows() {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
                 + "\"Random String\"";
