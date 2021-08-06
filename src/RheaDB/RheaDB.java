@@ -76,7 +76,47 @@ public class RheaDB {
             case DELETE -> executeDeleteFrom((DeleteStatement) dmlStatement);
             case DROP_TABLE -> executeDropTable((DropTableStatement) dmlStatement);
             case DROP_INDEX -> executeDropIndex((DropIndexStatement) dmlStatement);
+            case UPDATE -> executeUpdate((UpdateStatement) dmlStatement);
         };
+    }
+
+    private QueryResult executeUpdate(UpdateStatement statement) throws DBError {
+        Table table = getTable(statement.getTableName());
+        Vector<Predicate> setPredicates = statement.getSetPredicates();
+        Vector<Predicate> wherePredicates = statement.getWherePredicates();
+
+        resolvePredicatesAttributes(table, setPredicates);
+
+        if (wherePredicates.isEmpty()) {
+            updateAllRows(table, setPredicates);
+        } else {
+            // FIXME: implement.
+            assert false;
+        }
+
+        return null;
+    }
+
+    private void updateAllRows(Table table, Vector<Predicate> setPredicates) {
+        for (int i = 1; i <= table.getNumPages(); i++) {
+            Page page = bufferPool.getPage(table, i);
+            for (Predicate predicate : setPredicates) {
+                for (RowRecord r : page.getRecords()) {
+                    r.setAttributeValue(predicate.getAttribute(), predicate.getValue());
+                }
+            }
+        }
+    }
+
+    private void resolvePredicatesAttributes(Table table, Vector<Predicate> predicates) throws DBError {
+        for (Predicate predicate : predicates) {
+            Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
+            if (attribute == null) {
+                throw new DBError("Invalid attribute: \"" + predicate.getAttributeName()
+                        + "\"");
+            }
+            predicate.setAttribute(attribute);
+        }
     }
 
     private QueryResult executeDropIndex(DropIndexStatement statement) throws DBError {

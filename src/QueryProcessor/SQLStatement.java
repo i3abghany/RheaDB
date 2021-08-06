@@ -19,6 +19,7 @@ public abstract class SQLStatement {
                 (token.getTokenText().equals("insert") ||
                  token.getTokenText().equals("delete") ||
                  token.getTokenText().equals("drop")   ||
+                 token.getTokenText().equals("update") ||
                  token.getTokenText().equals("select"));
     }
 

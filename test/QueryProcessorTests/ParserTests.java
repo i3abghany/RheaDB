@@ -255,4 +255,66 @@ public class ParserTests {
         Assertions.assertEquals(dropIndexStatement.getAttributeName(), "attributeName");
         Assertions.assertEquals(dropIndexStatement.getDMLKind(), DMLStatementKind.DROP_INDEX);
     }
+
+    private static UpdateStatement testInitialPartOfUpdate(String sqlString) throws DBError {
+        SQLStatement sqlStatement = new Parser(sqlString).parse();
+
+        Assertions.assertTrue(sqlStatement instanceof UpdateStatement);
+        UpdateStatement updateStatement = (UpdateStatement) sqlStatement;
+
+        Assertions.assertEquals(updateStatement.getTableName(), "FancyTable");
+        Assertions.assertEquals(updateStatement.getSetPredicates().size(), 2);
+
+        Predicate p1 = updateStatement.getSetPredicates().get(0);
+        Assertions.assertEquals(p1.getAttributeName(), "intAttribute");
+        Assertions.assertEquals(p1.getOperation(), Predicate.Operation.EQUALS);
+        Assertions.assertEquals((int) p1.getValue(), 1);
+
+        Predicate p2 = updateStatement.getSetPredicates().get(1);
+        Assertions.assertEquals(p2.getAttributeName(), "stringAttribute");
+        Assertions.assertEquals(p2.getOperation(), Predicate.Operation.EQUALS);
+        Assertions.assertEquals(p2.getValue(), "Random String");
+
+        return (UpdateStatement) sqlStatement;
+    }
+
+    @Test
+    void parseUpdateWithPredicates() {
+        String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
+                + "\"Random String\" WHERE x <= 10, y > 2";
+
+        UpdateStatement updateStatement = null;
+        try {
+            updateStatement = testInitialPartOfUpdate(sqlString);
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertEquals(updateStatement.getWherePredicates().size(), 2);
+
+        Predicate p1 = updateStatement.getWherePredicates().get(0);
+        Assertions.assertEquals(p1.getAttributeName(), "x");
+        Assertions.assertEquals(p1.getOperation(), Predicate.Operation.LESS_THAN_EQUAL);
+        Assertions.assertEquals((int) p1.getValue(), 10);
+
+        Predicate p2 = updateStatement.getWherePredicates().get(1);
+        Assertions.assertEquals(p2.getAttributeName(), "y");
+        Assertions.assertEquals(p2.getOperation(), Predicate.Operation.GREATER_THAN);
+        Assertions.assertEquals((int) p2.getValue(), 2);
+    }
+
+    @Test
+    void parseUpdateAllRows() {
+        String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
+                + "\"Random String\"";
+
+        UpdateStatement updateStatement = null;
+        try {
+            updateStatement = testInitialPartOfUpdate(sqlString);
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(updateStatement.getWherePredicates().isEmpty());
+    }
 }
