@@ -211,7 +211,7 @@ public class Parser {
         Vector<Predicate> wherePredicates = parsePredicates();
 
         if (wherePredicates.isEmpty()) {
-            throw new DBError("Unexpected token: \"where\".");
+            throw new DBError("Unexpected token: \"" + curr.getTokenText() + "\", expected a trail of predicates.");
         }
 
         return new UpdateStatement(tableName.getTokenText(), setPredicates,

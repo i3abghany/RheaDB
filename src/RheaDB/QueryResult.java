@@ -5,11 +5,18 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class QueryResult {
-    private HashSet<RowRecord> rows = new HashSet<>();
-    private Vector<Attribute> allAttributes = new Vector<>();
-    private Vector<String> selectedAttributes = new Vector<>();
+    private final HashSet<RowRecord> rows;
+    private Vector<Attribute> allAttributes;
+    private final Vector<String> selectedAttributes;
+
+    QueryResult() {
+        rows = new HashSet<>();
+        allAttributes = new Vector<>();
+        selectedAttributes = new Vector<>();
+    }
 
     QueryResult(Vector<String> attributeNames, Vector<AttributeType> types) {
+        this();
         Vector<Attribute> artificialAttributes = new Vector<>();
 
         artificialAttributes.add(new Attribute(null, "Column", false));

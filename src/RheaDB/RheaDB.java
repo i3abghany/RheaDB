@@ -20,10 +20,12 @@ public class RheaDB {
     private boolean lazyCommit;
     private final String rootDirectory;
     private HashMap<String, Table> createdTables = new HashMap<>();
+    private final Thread shutdownThread;
 
     private final BufferPool bufferPool;
 
     public void commitOnExit() {
+        System.out.println("in commitOnExit");
         bufferPool.commitAllPages();
     }
 
@@ -35,9 +37,6 @@ public class RheaDB {
             statementStr = scanner.nextLine();
 
             if (statementStr.equals("@exit")) {
-                if (lazyCommit) {
-                    commitOnExit();
-                }
                 return;
             }
 
@@ -93,25 +92,33 @@ public class RheaDB {
 
         resolvePredicatesAttributes(table, setPredicates);
 
+        int affectedRows = 0;
         if (wherePredicates.isEmpty()) {
-            updateAllRows(table, setPredicates);
+            affectedRows = updateAllRows(table, setPredicates);
         } else {
             // FIXME: implement.
             assert false;
         }
 
-        return null;
+        return new UpdateResult(affectedRows);
     }
 
-    private void updateAllRows(Table table, Vector<Predicate> setPredicates) {
+    private int updateAllRows(Table table, Vector<Predicate> setPredicates) {
+        int rows = 0;
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
             for (Predicate predicate : setPredicates) {
                 for (RowRecord r : page.getRecords()) {
                     r.setAttributeValue(predicate.getAttribute(), predicate.getValue());
                 }
+                if (!lazyCommit) {
+                    bufferPool.updatePage(table, page);
+                }
+                rows += page.getRecords().size();
             }
         }
+
+        return rows;
     }
 
     private void resolvePredicatesAttributes(Table table, Vector<Predicate> predicates) throws DBError {
@@ -276,7 +283,8 @@ public class RheaDB {
         }
         bufferPool = new BufferPool();
         lazyCommit = true;
-        Runtime.getRuntime().addShutdownHook(new Thread(this::commitOnExit));
+        shutdownThread = new Thread(this::commitOnExit);
+        Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
     public RheaDB() {
@@ -567,6 +575,9 @@ public class RheaDB {
 
     public void setLazyCommit(boolean b) {
         lazyCommit = b;
+        if (!lazyCommit) {
+            Runtime.getRuntime().removeShutdownHook(shutdownThread);
+        }
     }
 
     public boolean getLazyCommit() {
@@ -575,6 +586,7 @@ public class RheaDB {
 
     public static void main(String[] args) {
         RheaDB rheaDB = new RheaDB();
+        rheaDB.setLazyCommit(false);
         rheaDB.run();
     }
 }

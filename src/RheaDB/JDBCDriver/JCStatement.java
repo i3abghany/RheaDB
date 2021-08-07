@@ -1,6 +1,7 @@
 package RheaDB.JDBCDriver;
 
 import RheaDB.QueryResult;
+import RheaDB.UpdateResult;
 import RheaDB.RheaDB;
 
 import java.sql.Connection;
@@ -28,7 +29,12 @@ public class JCStatement implements Statement {
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        return 0;
+        QueryResult qr = rheaDB.executeStatement(sql);
+        if (!(qr instanceof UpdateResult updateResult)) {
+            throw new SQLException("Expected an UPDATE statement.");
+        } else {
+            return updateResult.getAffectedRows();
+        }
     }
 
     @Override
