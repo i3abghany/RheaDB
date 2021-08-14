@@ -100,7 +100,8 @@ public class BufferPool {
     public void deletePage(Table table, int pageIdx) {
         PageIdentifier pageIdentifier = new PageIdentifier(table, pageIdx);
         pageHashMap.remove(pageIdentifier);
-        DiskManager.deletePage(table, pageIdx);
+        boolean didDelete = DiskManager.deletePage(table, pageIdx);
+        if (!didDelete) table.popPage();
     }
 
     public void updatePage(Table table, Page page) {

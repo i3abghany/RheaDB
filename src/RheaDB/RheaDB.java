@@ -25,7 +25,6 @@ public class RheaDB {
     private final BufferPool bufferPool;
 
     public void commitOnExit() {
-        System.out.println("in commitOnExit");
         bufferPool.commitAllPages();
     }
 
@@ -433,8 +432,10 @@ public class RheaDB {
 
         verifySelectedAttributesExist(table, predicatedAttributes);
 
-        if (predicates.isEmpty())
+        if (predicates.isEmpty()) {
             deleteAllRows(table);
+            return null;
+        }
 
         for (Predicate predicate : predicates) {
             Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
@@ -472,7 +473,11 @@ public class RheaDB {
 
     private void deleteAllRows(Table table) {
         for (int i = table.getNumPages(); i > 0; i--) {
+            Page page = bufferPool.getPage(table, i);
             bufferPool.deletePage(table, i);
+            if (!lazyCommit) {
+                bufferPool.updatePage(table, page);
+            }
         }
     }
 

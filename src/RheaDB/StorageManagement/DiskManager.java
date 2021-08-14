@@ -61,18 +61,20 @@ public class DiskManager {
         p1.addRecord(p2.popRow());
     }
 
-    public static void deletePage(Table table, int idx) {
+    public static boolean deletePage(Table table, int idx) {
         String fullPath = getFullPath(table, idx);
         File pageFile = new File(fullPath);
 
         if (!pageFile.exists()) {
-            return;
+            return false;
         }
 
         if (!pageFile.delete()) {
             LOGGER.log(Level.SEVERE, "Could not delete database files... Exiting");
+            return false;
         }
         table.popPage();
+        return true;
     }
 
     private static String getFullPath(Table table, int idx) {
