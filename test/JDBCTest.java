@@ -320,4 +320,26 @@ public class JDBCTest {
             Assertions.fail();
         }
     }
+
+    @Test
+    void deleteAllRows() {
+        try {
+            createTestingTable("DeleteAllRowsTable");
+            Statement statement = conn.createStatement();
+            for (int i = 0; i < 100; i++) {
+                statement.executeQuery("INSERT INTO DeleteAllRowsTable VALUES (" + i + ", \"Random String\", 42.69" + ")");
+            }
+
+            statement.executeQuery("DELETE FROM DeleteAllRowsTable");
+
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM DeleteAllRowsTable");
+            Assertions.assertNull(resultSet.getIterator());
+            Assertions.assertFalse(resultSet.next());
+
+            dropTestTable("DeleteAllRowsTable");
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+            Assertions.fail();
+        }
+    }
 }
