@@ -58,12 +58,12 @@ public class JCConnection implements Connection {
 
     @Override
     public void close() throws SQLException {
-
+        this.rheaDB.close();
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        return false;
+        return this.rheaDB.isClosed();
     }
 
     @Override

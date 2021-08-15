@@ -24,6 +24,60 @@ public class RheaDB {
 
     private final BufferPool bufferPool;
 
+    private boolean isClosed = false;
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public RheaDB(String rootDirectory) {
+        this.rootDirectory = rootDirectory;
+        File file = new File(rootDirectory + File.separator +
+                "metadata.db");
+        if (!file.exists()) {
+            file.getParentFile().mkdirs();
+            try {
+                boolean fileCreated = file.createNewFile();
+                if (!fileCreated) {
+                    System.out.println("Could not instantiate a metadata file... " +
+                            "Exiting.");
+                    System.exit(1);
+                }
+            } catch (IOException ioException) {
+                System.out.println("Could not instantiate a metadata file... " +
+                        "Exiting.");
+                System.exit(1);
+            }
+            createdTables = new HashMap<>();
+        } else {
+            try {
+                createdTables = DiskManager.readMetadata();
+            } catch (IOException ioException) {
+                System.out.println("Could not read metadata file... " +
+                        "Exiting.");
+                System.exit(1);
+            }
+        }
+        bufferPool = new BufferPool();
+        lazyCommit = true;
+        shutdownThread = new Thread(this::commitOnExit);
+        Runtime.getRuntime().addShutdownHook(shutdownThread);
+    }
+
+    public RheaDB() {
+        this("." + File.separator + "data");
+    }
+
+    /*
+     * To support their interface in JDBC, only save the data as if the DB was
+     * really closed.
+     */
+    public boolean isClosed() { return isClosed; }
+    public void close() {
+        isClosed = true;
+        saveMetadata();
+        if (lazyCommit) {
+            commitOnExit();
+        }
+    }
+
     public void commitOnExit() {
         bufferPool.commitAllPages();
     }
@@ -249,45 +303,6 @@ public class RheaDB {
                 .collect(Collectors.toCollection(Vector::new));
 
         return new QueryResult(attributeNames, attributeTypes);
-    }
-
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public RheaDB(String rootDirectory) {
-        this.rootDirectory = rootDirectory;
-        File file = new File(rootDirectory + File.separator +
-                "metadata.db");
-        if (!file.exists()) {
-            file.getParentFile().mkdirs();
-            try {
-                boolean fileCreated = file.createNewFile();
-                if (!fileCreated) {
-                    System.out.println("Could not instantiate a metadata file... " +
-                            "Exiting.");
-                    System.exit(1);
-                }
-            } catch (IOException ioException) {
-                System.out.println("Could not instantiate a metadata file... " +
-                        "Exiting.");
-                System.exit(1);
-            }
-            createdTables = new HashMap<>();
-        } else {
-            try {
-                createdTables = DiskManager.readMetadata();
-            } catch (IOException ioException) {
-                System.out.println("Could not read metadata file... " +
-                        "Exiting.");
-                System.exit(1);
-            }
-        }
-        bufferPool = new BufferPool();
-        lazyCommit = true;
-        shutdownThread = new Thread(this::commitOnExit);
-        Runtime.getRuntime().addShutdownHook(shutdownThread);
-    }
-
-    public RheaDB() {
-        this("." + File.separator + "data");
     }
 
     private boolean createTable(String tableName, Vector<Attribute> attributeList) {
