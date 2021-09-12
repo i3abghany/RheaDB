@@ -2,6 +2,7 @@ package QueryProcessor;
 
 import Predicate.*;
 import Predicate.Predicate;
+import QueryProcessor.StatementParsers.*;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
 import RheaDB.DBError;
@@ -317,7 +318,7 @@ public class Parser {
         return tokenVector.elementAt(i).getTokenText().equals(tokenText);
     }
 
-    enum OperatorKind {
+    public enum OperatorKind {
         EqualsOperator,
         NotEqualsOperator,
         GreaterOperator,

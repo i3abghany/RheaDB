@@ -1,5 +1,7 @@
-package QueryProcessor;
+package QueryProcessor.StatementParsers;
 
+import QueryProcessor.DDLStatement;
+import QueryProcessor.SQLStatement;
 import RheaDB.DBError;
 
 import java.util.regex.Matcher;

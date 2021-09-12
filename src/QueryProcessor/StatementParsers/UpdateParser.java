@@ -1,13 +1,14 @@
-package QueryProcessor;
+package QueryProcessor.StatementParsers;
 
 import Predicate.Predicate;
+import QueryProcessor.DMLStatement;
+import QueryProcessor.SQLStatement;
 import RheaDB.DBError;
 
 import java.util.Arrays;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class UpdateParser extends StatementParser {
 
