@@ -67,7 +67,7 @@ public class ParserTests {
 
     @Test
     public void parseCreateIndexStatement() {
-        String sqlString = "CREATE INDEX FancyTable attributeName";
+        String sqlString = "CREATE INDEX FancyTable attributeName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
