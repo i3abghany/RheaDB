@@ -142,10 +142,6 @@ public class Parser {
         return new CreateIndexParser(line).parse();
     }
 
-    private boolean done() {
-        return this.position >= this.tokenVector.size() - 1;
-    }
-
     private SQLStatement parseDML() throws DBError {
         if (tokenVector.size() <= 1) {
             throw new DBError("Error parsing statement.");
@@ -169,33 +165,7 @@ public class Parser {
     }
 
     private SQLStatement parseUpdate() throws DBError {
-        Token curr = currentToken();
-        matchToken(curr, TokenKind.KeywordToken, "update");
-
-        Token tableName = nextToken();
-        matchToken(tableName, TokenKind.IdentifierToken);
-
-        curr = nextToken();
-        matchToken(curr, TokenKind.KeywordToken, "set");
-
-        Vector<Predicate> setPredicates = parsePredicates();
-
-        if (this.position == this.tokenVector.size()) {
-            return new UpdateStatement(tableName.getTokenText(), setPredicates,
-                    new Vector<>());
-        }
-
-        curr = currentToken();
-        matchToken(curr, TokenKind.KeywordToken, "where");
-
-        Vector<Predicate> wherePredicates = parsePredicates();
-
-        if (wherePredicates.isEmpty()) {
-            throw new DBError("Unexpected token: \"" + curr.getTokenText() + "\", expected a trail of predicates.");
-        }
-
-        return new UpdateStatement(tableName.getTokenText(), setPredicates,
-                wherePredicates);
+        return new UpdateParser(line).parse();
     }
 
     private SQLStatement parseDrop() throws DBError {

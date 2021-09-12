@@ -152,7 +152,7 @@ public class ParserTests {
 
     @Test
     public void parseDeleteWithoutPredicates() {
-        String sqlString = "DELETE FROM tableName";
+        String sqlString = "DELETE FROM tableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -284,7 +284,7 @@ public class ParserTests {
     @Test
     void parseUpdateWithPredicates() {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
-                + "\"Random String\" WHERE x <= 10, y > 2";
+                + "\"Random String\" WHERE x <= 10, y > 2;";
 
         UpdateStatement updateStatement = null;
         try {
@@ -322,7 +322,7 @@ public class ParserTests {
     @Test
     void parseUpdateAllRows() {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
-                + "\"Random String\"";
+                + "\"Random String\";";
 
         UpdateStatement updateStatement = null;
         try {
