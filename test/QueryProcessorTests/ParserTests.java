@@ -320,6 +320,30 @@ public class ParserTests {
     }
 
     @Test
+    void parseInsert() {
+        String sqlString = "INSERT INTO TableName VALUES(1, 2, \"Hello\");";
+
+        SQLStatement sqlStatement  = null;
+        try {
+            sqlStatement  = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof InsertStatement);
+
+        InsertStatement insertStatement = (InsertStatement) sqlStatement;
+
+        Assertions.assertEquals(insertStatement.getTableName(), "TableName");
+
+        Assertions.assertEquals(insertStatement.getValues().size(), 3);
+
+        Assertions.assertEquals(insertStatement.getValues().get(0), 1);
+        Assertions.assertEquals(insertStatement.getValues().get(1), 2);
+        Assertions.assertEquals(insertStatement.getValues().get(2), "Hello");
+    }
+
+    @Test
     void parseUpdateAllRows() {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
                 + "\"Random String\";";
