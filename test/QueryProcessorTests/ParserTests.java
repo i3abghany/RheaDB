@@ -243,7 +243,7 @@ public class ParserTests {
 
     @Test
     void parseDropIndex() {
-        String sqlString = "DROP INDEX FancyTable attributeName";
+        String sqlString = "DROP INDEX FancyTable attributeName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
