@@ -254,35 +254,7 @@ public class Parser {
     }
 
     private SQLStatement parseDelete() throws DBError {
-        Token curr = currentToken();
-        matchToken(curr, TokenKind.KeywordToken, "delete");
-
-        curr = nextToken();
-        matchToken(curr, TokenKind.KeywordToken, "from");
-
-        Token tableNameToken = nextToken();
-        matchToken(tableNameToken, TokenKind.IdentifierToken);
-
-        Token optionalWhereToken = nextToken();
-
-        if (optionalWhereToken == null) {
-            return new DeleteStatement(tableNameToken.getTokenText(),
-                    new Vector<>());
-        }
-
-        Vector<Predicate> predicates = parsePredicates();
-
-        if (matchToken(this.position, TokenKind.KeywordToken, "where")) {
-            throw new DBError("Unexpected token \"where\" at position: " + currentToken().getPosition());
-        }
-
-        if (predicates.isEmpty()) {
-            throw new DBError("Error parsing the statement. " +
-                    "Expected a list of predicates.");
-        }
-
-        return new DeleteStatement(tableNameToken.getTokenText(),
-                predicates);
+        return new DeleteParser(line).parse();
     }
 
     private SQLStatement parseInsert() throws DBError {

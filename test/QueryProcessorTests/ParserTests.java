@@ -169,7 +169,7 @@ public class ParserTests {
 
     @Test
     public void parseDeleteWithPredicates() {
-        String sqlString = "DELETE FROM tableName WHERE attrA = 1, attrB = 2";
+        String sqlString = "DELETE FROM tableName WHERE attrA = 1, attrB = 2;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
