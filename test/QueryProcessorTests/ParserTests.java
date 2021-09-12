@@ -85,7 +85,7 @@ public class ParserTests {
 
     @Test
     public void parseSelectStatementWithoutPredicates() {
-        String sqlString = "SELECT attrA, attrB, attrC FROM tableName";
+        String sqlString = "SELECT attrA, attrB, attrC FROM tableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -108,7 +108,7 @@ public class ParserTests {
 
     @Test
     public void parseSelectStatementWithAttributes() {
-        String sqlString = "SELECT attrA, attrB, attrC FROM tableName where attrA = 1, attrB = 2";
+        String sqlString = "SELECT attrA, attrB, attrC FROM tableName where attrA = 1, attrB = 2, attrC = \"Hello World\";";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -121,7 +121,7 @@ public class ParserTests {
 
         Assertions.assertEquals(selectStatement.getTableName(), "tableName");
 
-        Assertions.assertEquals(selectStatement.getPredicates().size(), 2);
+        Assertions.assertEquals(selectStatement.getPredicates().size(), 3);
 
         Vector<Predicate> predicates = selectStatement.getPredicates();
 
@@ -130,11 +130,14 @@ public class ParserTests {
 
         Assertions.assertEquals(predicates.get(1).getAttributeName(), "attrB");
         Assertions.assertEquals((Integer) predicates.get(1).getValue(), 2);
+
+        Assertions.assertEquals(predicates.get(2).getAttributeName(), "attrC");
+        Assertions.assertEquals(predicates.get(2).getValue(), "Hello World");
     }
 
     @Test
     public void parseSelectWithStarAttribute() {
-        String sqlString = "SELECT * FROM tableName";
+        String sqlString = "SELECT * FROM tableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
