@@ -191,54 +191,7 @@ public class Parser {
     }
 
     private SQLStatement parseInsert() throws DBError {
-        Token insertKeywordToken = currentToken();
-        matchToken(insertKeywordToken, TokenKind.KeywordToken, "insert");
-
-        Token intoToken = nextToken();
-        matchToken(intoToken, TokenKind.KeywordToken, "into");
-
-        Token tableNameToken = nextToken();
-        matchToken(tableNameToken, TokenKind.IdentifierToken);
-
-        Token valuesKeywordToken = nextToken();
-        matchToken(valuesKeywordToken, TokenKind.KeywordToken, "values");
-
-        Token openParenToken = nextToken();
-        matchToken(openParenToken, TokenKind.OpenParenToken);
-
-        Vector<Object> valueVector = new Vector<>();
-
-        while (true) {
-            Token valueToken = nextToken();
-            if (valueToken == null) {
-                throw new DBError("Error while parsing. Expected value tokens.");
-            }
-
-            if (!valueToken.isLiteral()) {
-                throw new DBError("Unexpected token \"" + valueToken.getTokenText()
-                    + "\" at position " + valueToken.getPosition() +
-                        ". Expected a literal value.");
-            }
-
-            valueVector.add(valueToken.getValue());
-
-            Token commaOrClosedParenToken = nextToken();
-            if (commaOrClosedParenToken == null) {
-                throw new DBError("Error parsing the statement. Expected a" +
-                        "continuation of values or closed parenthesis.");
-            }
-
-            if (commaOrClosedParenToken.getKind() == TokenKind.ClosedParenToken)
-                break;
-
-            if (commaOrClosedParenToken.getKind() != TokenKind.CommaToken) {
-                throw new DBError("Unexpected token \"" + valueToken.getTokenText()
-                        + "\" at position " + valueToken.getPosition() +
-                        ". Expected a continuation of values or a closed parenthesis.");
-            }
-        }
-        return new InsertStatement(tableNameToken.getTokenText(),
-                                                valueVector);
+        return new InsertParser(line).parse();
     }
 
     private SQLStatement parseSelect() throws DBError {
@@ -268,41 +221,6 @@ public class Parser {
         }
 
         return true;
-    }
-
-    private Vector<Predicate> parsePredicates() throws DBError {
-        Vector<Predicate> predicates = new Vector<>();
-
-        Token firstToken = nextToken();
-        if (firstToken == null) {
-            return predicates;
-        }
-
-        while (true) {
-            Token attributeNameToken = currentToken();
-            matchToken(attributeNameToken, TokenKind.IdentifierToken);
-
-            Token operatorToken = nextToken();
-            if (operatorToken == null || !operatorToken.isOperator()) {
-                throw new DBError("Error parsing the statement. Expected operator" +
-                        " token.");
-            }
-
-            Token literalToken = nextToken();
-            if (literalToken == null || !literalToken.isLiteral()) {
-                throw new DBError("Error parsing the statement. Expected a literal" +
-                        " token.");
-            }
-            predicates.add(parsePredicate(attributeNameToken.getTokenText(), operatorToken.getTokenText(), literalToken));
-
-            Token optionalComma = nextToken();
-            if (optionalComma == null || matchToken(this.position, TokenKind.KeywordToken, "where"))
-                break;
-            else matchToken(optionalComma, TokenKind.CommaToken);
-            nextToken();
-        }
-
-        return predicates;
     }
 
     private boolean matchToken(int i, TokenKind tokenKind) {

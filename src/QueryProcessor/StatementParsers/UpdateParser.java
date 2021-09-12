@@ -18,7 +18,7 @@ public class UpdateParser extends StatementParser {
 
     public UpdateParser(String line) {
         super(line);
-        this.regex = "update\\s+(.*)\\s*set\\s+(.*?)(\\s+where\\s+(.*)\\s*)?;";
+        this.regex = "update\\s+(.*?)\\s*set\\s+(.*?)(\\s+where\\s+(.*)\\s*)?;";
     }
 
     public SQLStatement parse() throws DBError {
@@ -29,10 +29,10 @@ public class UpdateParser extends StatementParser {
             throw new DBError("Error parsing the statement.");
         }
 
-        String tableName = matcher.group(TABLENAME_GROUP).trim();
+        String tableName = matcher.group(TABLENAME_GROUP);
         boolean usePredicates = matcher.group(PREDICATES_GROUP) != null;
 
-        String setPredicatesString = matcher.group(SET_ATTRIBUTES_GROUP).trim();
+        String setPredicatesString = matcher.group(SET_ATTRIBUTES_GROUP);
         Vector<Predicate> setPredicates =
                 getPredicates(setPredicatesString.split(","));
 
