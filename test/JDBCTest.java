@@ -12,7 +12,6 @@ import java.util.Comparator;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class JDBCTest {
     private Connection conn;
@@ -54,7 +53,7 @@ public class JDBCTest {
             conn = connect("jdbc:rhea:" + homeDir + File.separator + "dbdata");
             Statement statement = conn.createStatement();
             statement.executeQuery("CREATE TABLE " + tableName +
-                    " (id INT, name STRING, mass FLOAT)");
+                    " (id INT, name STRING, mass FLOAT);");
         } catch (Exception exception) {
             System.out.println(exception.getMessage());
             Assertions.fail();
@@ -64,7 +63,7 @@ public class JDBCTest {
     void dropTestTable(String tableName) {
         try {
             Statement statement = conn.createStatement();
-            statement.executeQuery("DROP TABLE " + tableName);
+            statement.executeQuery("DROP TABLE " + tableName + ";");
         } catch (Exception exception) {
             System.out.println(exception.getMessage());
             Assertions.fail();
@@ -85,8 +84,8 @@ public class JDBCTest {
         try {
             createTestingTable("TestTableGetColumnsByName");
             Statement statement = conn.createStatement();
-            statement.executeQuery("INSERT INTO TestTableGetColumnsByName VALUES (1, \"Random Name\", 69.42)");
-            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * from TestTableGetColumnsByName");
+            statement.executeQuery("INSERT INTO TestTableGetColumnsByName VALUES (1, \"Random Name\", 69.42);");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * from TestTableGetColumnsByName;");
             Assertions.assertTrue(resultSet.next());
             Assertions.assertEquals(resultSet.getInt("id"), 1);
             Assertions.assertEquals(resultSet.getString("name"), "Random Name");
@@ -103,8 +102,8 @@ public class JDBCTest {
         try {
             createTestingTable("TestTableGetColumnsByIndex");
             Statement statement = conn.createStatement();
-            statement.executeQuery("INSERT INTO TestTableGetColumnsByIndex VALUES (1, \"Random Name\", 69.42)");
-            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * from TestTableGetColumnsByIndex");
+            statement.executeQuery("INSERT INTO TestTableGetColumnsByIndex VALUES (1, \"Random Name\", 69.42);");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * from TestTableGetColumnsByIndex;");
             Assertions.assertTrue(resultSet.next());
             Assertions.assertEquals(resultSet.getInt(0), 1);
             Assertions.assertEquals(resultSet.getString(1), "Random Name");
@@ -124,11 +123,11 @@ public class JDBCTest {
             for (int i = 0; i < 1000; i++) {
                 JCResultSet resultSet = (JCResultSet) statement.executeQuery(
                         "INSERT INTO TestTableInsertThousandRows VALUES (" +
-                        (i + 2) + ", \"Random Name\", 69.42)");
+                        (i + 2) + ", \"Random Name\", 69.42);");
                 Assertions.assertNull(resultSet.getIterator());
             }
 
-            ResultSet rs = statement.executeQuery("SELECT * FROM TestTableInsertThousandRows");
+            ResultSet rs = statement.executeQuery("SELECT * FROM TestTableInsertThousandRows;");
             int i = 0;
             while (rs.next()) i++;
 
@@ -146,10 +145,10 @@ public class JDBCTest {
         try {
             createTestingTable("TestTableSelectWithoutPredicates");
             Statement statement = conn.createStatement();
-            statement.executeQuery("INSERT INTO TestTableSelectWithoutPredicates VALUES (1, \"Random String\", 42.69)");
-            statement.executeQuery("INSERT INTO TestTableSelectWithoutPredicates VALUES (2, \"Not a random String\", 69.42)");
-            statement.executeQuery("INSERT INTO TestTableSelectWithoutPredicates VALUES (3, \"Second random String\", 3.141)");
-            ResultSet resultSet = statement.executeQuery("SELECT * from TestTableSelectWithoutPredicates");
+            statement.executeQuery("INSERT INTO TestTableSelectWithoutPredicates VALUES (1, \"Random String\", 42.69);");
+            statement.executeQuery("INSERT INTO TestTableSelectWithoutPredicates VALUES (2, \"Not a random String\", 69.42);");
+            statement.executeQuery("INSERT INTO TestTableSelectWithoutPredicates VALUES (3, \"Second random String\", 3.141);");
+            ResultSet resultSet = statement.executeQuery("SELECT * from TestTableSelectWithoutPredicates;");
             int count = 0;
             while (resultSet.next()) count++;
             Assertions.assertEquals(count, 3);
@@ -165,10 +164,10 @@ public class JDBCTest {
         try {
             createTestingTable("TestTableSelectWithPredicates");
             Statement statement = conn.createStatement();
-            statement.executeQuery("INSERT INTO TestTableSelectWithPredicates VALUES (1, \"Random String\", 42.69)");
-            statement.executeQuery("INSERT INTO TestTableSelectWithPredicates VALUES (2, \"Not a random String\", 69.42)");
+            statement.executeQuery("INSERT INTO TestTableSelectWithPredicates VALUES (1, \"Random String\", 42.69);");
+            statement.executeQuery("INSERT INTO TestTableSelectWithPredicates VALUES (2, \"Not a random String\", 69.42);");
 
-            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableSelectWithPredicates WHERE id = 2");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableSelectWithPredicates WHERE id = 2;");
             Assertions.assertNotNull(resultSet.getIterator());
 
             Assertions.assertTrue(resultSet.next());
@@ -188,14 +187,14 @@ public class JDBCTest {
         try {
             createTestingTable("TestTableWithIndex");
             Statement statement = conn.createStatement();
-            statement.executeQuery("INSERT INTO TestTableWithIndex VALUES (1, \"Random String\", 42.69)");
-            statement.executeQuery("INSERT INTO TestTableWithIndex VALUES (2, \"Not a random String\", 69.42)");
+            statement.executeQuery("INSERT INTO TestTableWithIndex VALUES (1, \"Random String\", 42.69);");
+            statement.executeQuery("INSERT INTO TestTableWithIndex VALUES (2, \"Not a random String\", 69.42);");
 
-            statement.executeQuery("CREATE INDEX TestTableWithIndex id");
+            statement.executeQuery("CREATE INDEX TestTableWithIndex id;");
             File idx_file = new File( dataDirPath + File.separator +"TestTableWithIndex"
                     + File.separator + "index" + File.separator + "id.idx");
             Assertions.assertTrue(idx_file.exists());
-            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableWithIndex WHERE id = 2");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableWithIndex WHERE id = 2;");
             Assertions.assertNotNull(resultSet.getIterator());
 
             Assertions.assertTrue(resultSet.next());
@@ -215,11 +214,11 @@ public class JDBCTest {
         try {
             createTestingTable("TestTableDeleteIndex");
             Statement statement = conn.createStatement();
-            statement.executeQuery("INSERT INTO TestTableDeleteIndex VALUES (1, \"Random String\", 42.69)");
-            statement.executeQuery("INSERT INTO TestTableDeleteIndex VALUES (2, \"Not a random String\", 69.42)");
+            statement.executeQuery("INSERT INTO TestTableDeleteIndex VALUES (1, \"Random String\", 42.69);");
+            statement.executeQuery("INSERT INTO TestTableDeleteIndex VALUES (2, \"Not a random String\", 69.42);");
 
-            statement.executeQuery("CREATE INDEX TestTableDeleteIndex id");
-            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableDeleteIndex WHERE id = 2");
+            statement.executeQuery("CREATE INDEX TestTableDeleteIndex id;");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableDeleteIndex WHERE id = 2;");
             Assertions.assertNotNull(resultSet.getIterator());
 
             Assertions.assertTrue(resultSet.next());
@@ -227,7 +226,7 @@ public class JDBCTest {
 
             Assertions.assertEquals(resultSet.getInt(0), 2);
             Assertions.assertEquals(resultSet.getString(1), "Not a random String");
-            statement.executeQuery("DROP INDEX TestTableDeleteIndex id");
+            statement.executeQuery("DROP INDEX TestTableDeleteIndex id;");
             File idx_file = new File(dataDirPath + File.separator + "TestTableDeleteIndex"
                     + File.separator + "index" + File.separator + "id.idx");
             Assertions.assertFalse(idx_file.exists());
@@ -245,11 +244,11 @@ public class JDBCTest {
             Statement statement = conn.createStatement();
 
             for (int i = 0; i < 100; i++) {
-                statement.executeQuery("INSERT INTO TestTableIndexPred VALUES (" + i + ", \"Random String\", 42.69)");
+                statement.executeQuery("INSERT INTO TestTableIndexPred VALUES (" + i + ", \"Random String\", 42.69);");
             }
 
-            statement.executeQuery("CREATE INDEX TestTableIndexPred id");
-            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableIndexPred WHERE id >= 50");
+            statement.executeQuery("CREATE INDEX TestTableIndexPred id;");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TestTableIndexPred WHERE id >= 50;");
             Assertions.assertNotNull(resultSet.getIterator());
 
             int i = 0;
@@ -281,7 +280,7 @@ public class JDBCTest {
             createTestingTable("TableCompactTest");
             Statement statement = conn.createStatement();
             for (int i = 0; i < 100; i++) {
-                statement.executeQuery("INSERT INTO TableCompactTest VALUES (" + i + ", \"Random String\", 42.69" + ")");
+                statement.executeQuery("INSERT INTO TableCompactTest VALUES (" + i + ", \"Random String\", 42.69" + ");");
             }
 
             Set<Integer> randDeletions = new TreeSet<>();
@@ -291,11 +290,11 @@ public class JDBCTest {
             }
 
             for (int i : randDeletions) {
-                statement.executeQuery("DELETE FROM TableCompactTest WHERE id = " + i);
+                statement.executeQuery("DELETE FROM TableCompactTest WHERE id = " + i + ";");
             }
 
             statement.executeQuery("COMPACT TableCompactTest");
-            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TableCompactTest");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TableCompactTest;");
             Assertions.assertNotNull(resultSet.getIterator());
 
             Set<Integer> idSet = new TreeSet<>();
@@ -327,12 +326,12 @@ public class JDBCTest {
             createTestingTable("DeleteAllRowsTable");
             Statement statement = conn.createStatement();
             for (int i = 0; i < 100; i++) {
-                statement.executeQuery("INSERT INTO DeleteAllRowsTable VALUES (" + i + ", \"Random String\", 42.69" + ")");
+                statement.executeQuery("INSERT INTO DeleteAllRowsTable VALUES (" + i + ", \"Random String\", 42.69" + ");");
             }
 
-            statement.executeQuery("DELETE FROM DeleteAllRowsTable");
+            statement.executeQuery("DELETE FROM DeleteAllRowsTable;");
 
-            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM DeleteAllRowsTable");
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM DeleteAllRowsTable;");
             Assertions.assertNull(resultSet.getIterator());
             Assertions.assertFalse(resultSet.next());
 
