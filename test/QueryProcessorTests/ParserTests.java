@@ -67,7 +67,7 @@ public class ParserTests {
 
     @Test
     public void parseCreateIndexStatement() {
-        String sqlString = "CREATE INDEX FancyTable attributeName";
+        String sqlString = "CREATE INDEX FancyTable attributeName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -85,7 +85,7 @@ public class ParserTests {
 
     @Test
     public void parseSelectStatementWithoutPredicates() {
-        String sqlString = "SELECT attrA, attrB, attrC FROM tableName";
+        String sqlString = "SELECT attrA, attrB, attrC FROM tableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -108,7 +108,7 @@ public class ParserTests {
 
     @Test
     public void parseSelectStatementWithAttributes() {
-        String sqlString = "SELECT attrA, attrB, attrC FROM tableName where attrA = 1, attrB = 2";
+        String sqlString = "SELECT attrA, attrB, attrC FROM tableName where attrA = 1, attrB = 2, attrC = \"Hello World\";";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -121,7 +121,7 @@ public class ParserTests {
 
         Assertions.assertEquals(selectStatement.getTableName(), "tableName");
 
-        Assertions.assertEquals(selectStatement.getPredicates().size(), 2);
+        Assertions.assertEquals(selectStatement.getPredicates().size(), 3);
 
         Vector<Predicate> predicates = selectStatement.getPredicates();
 
@@ -130,11 +130,14 @@ public class ParserTests {
 
         Assertions.assertEquals(predicates.get(1).getAttributeName(), "attrB");
         Assertions.assertEquals((Integer) predicates.get(1).getValue(), 2);
+
+        Assertions.assertEquals(predicates.get(2).getAttributeName(), "attrC");
+        Assertions.assertEquals(predicates.get(2).getValue(), "Hello World");
     }
 
     @Test
     public void parseSelectWithStarAttribute() {
-        String sqlString = "SELECT * FROM tableName";
+        String sqlString = "SELECT * FROM tableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -149,7 +152,7 @@ public class ParserTests {
 
     @Test
     public void parseDeleteWithoutPredicates() {
-        String sqlString = "DELETE FROM tableName";
+        String sqlString = "DELETE FROM tableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -166,7 +169,7 @@ public class ParserTests {
 
     @Test
     public void parseDeleteWithPredicates() {
-        String sqlString = "DELETE FROM tableName WHERE attrA = 1, attrB = 2";
+        String sqlString = "DELETE FROM tableName WHERE attrA = 1, attrB = 2;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -191,7 +194,7 @@ public class ParserTests {
 
     @Test
     public void parseDropTable() {
-        String sqlString = "DROP TABLE TableName";
+        String sqlString = "DROP TABLE TableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -240,7 +243,7 @@ public class ParserTests {
 
     @Test
     void parseDropIndex() {
-        String sqlString = "DROP INDEX FancyTable attributeName";
+        String sqlString = "DROP INDEX FancyTable attributeName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -281,7 +284,7 @@ public class ParserTests {
     @Test
     void parseUpdateWithPredicates() {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
-                + "\"Random String\" WHERE x <= 10, y > 2";
+                + "\"Random String\" WHERE x <= 10, y > 2;";
 
         UpdateStatement updateStatement = null;
         try {
@@ -317,9 +320,33 @@ public class ParserTests {
     }
 
     @Test
+    void parseInsert() {
+        String sqlString = "INSERT INTO TableName VALUES(1, 2, \"Hello\");";
+
+        SQLStatement sqlStatement  = null;
+        try {
+            sqlStatement  = new Parser(sqlString).parse();
+        } catch (DBError ex) {
+            Assertions.fail(ex.getMessage());
+        }
+
+        Assertions.assertTrue(sqlStatement instanceof InsertStatement);
+
+        InsertStatement insertStatement = (InsertStatement) sqlStatement;
+
+        Assertions.assertEquals(insertStatement.getTableName(), "TableName");
+
+        Assertions.assertEquals(insertStatement.getValues().size(), 3);
+
+        Assertions.assertEquals(insertStatement.getValues().get(0), 1);
+        Assertions.assertEquals(insertStatement.getValues().get(1), 2);
+        Assertions.assertEquals(insertStatement.getValues().get(2), "Hello");
+    }
+
+    @Test
     void parseUpdateAllRows() {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
-                + "\"Random String\"";
+                + "\"Random String\";";
 
         UpdateStatement updateStatement = null;
         try {

@@ -187,6 +187,13 @@ public class Lexer {
                 TokenKind.IdentifierToken);
     }
 
+    private Token lexSemiColon(int tokenPosition) {
+        advance();
+        String tokenText = ";";
+        return new Token(tokenPosition, tokenText, tokenText,
+                TokenKind.SemiColonToken);
+    }
+
     private Token lexBadToken(int tokenPosition) {
         advance();
         return new Token(tokenPosition, Character.toString(getCurr()),
@@ -217,6 +224,8 @@ public class Lexer {
                     tokens.add(lexClosedParen(tokenPosition));
                 else if (getCurr() == '*')
                     tokens.add(lexStarToken(tokenPosition));
+                else if (getCurr() == ';')
+                    tokens.add(lexSemiColon(tokenPosition));
                 else if (!inBounds())
                     break;
                 else

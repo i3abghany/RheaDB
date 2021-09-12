@@ -18,4 +18,5 @@ public enum TokenKind {
     CommaToken,
     OpenParenToken,
     ClosedParenToken,
+    SemiColonToken,
 }
