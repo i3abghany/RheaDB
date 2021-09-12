@@ -39,7 +39,7 @@ public class ParserTests {
 
     @Test
     public void parseCreateTableStatement() {
-        String sqlString = "CREATE TABLE FancyTable (id INT, name STRING, mass FLOAT)";
+        String sqlString = "CREATE TABLE FancyTable (id INT, name STRING, mass FLOAT);";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();

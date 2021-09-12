@@ -18,16 +18,26 @@ public abstract class StatementParser {
 
     public abstract SQLStatement parse() throws DBError;
 
-    protected Parser.OperatorKind getOperatorKind(String op) {
+    protected OperatorKind getOperatorKind(String op) {
         return switch (op) {
-            case "=" -> Parser.OperatorKind.EqualsOperator;
-            case "!=" -> Parser.OperatorKind.NotEqualsOperator;
-            case ">" -> Parser.OperatorKind.GreaterOperator;
-            case ">=" -> Parser.OperatorKind.GreaterEqualsOperator;
-            case "<" -> Parser.OperatorKind.LessOperator;
-            case "<=" -> Parser.OperatorKind.LessEqualsOperator;
-            default -> Parser.OperatorKind.UnsupportedOperator;
+            case "=" -> OperatorKind.EqualsOperator;
+            case "!=" -> OperatorKind.NotEqualsOperator;
+            case ">" -> OperatorKind.GreaterOperator;
+            case ">=" -> OperatorKind.GreaterEqualsOperator;
+            case "<" -> OperatorKind.LessOperator;
+            case "<=" -> OperatorKind.LessEqualsOperator;
+            default -> OperatorKind.UnsupportedOperator;
         };
+    }
+
+    public enum OperatorKind {
+        EqualsOperator,
+        NotEqualsOperator,
+        GreaterOperator,
+        GreaterEqualsOperator,
+        LessOperator,
+        LessEqualsOperator,
+        UnsupportedOperator,
     }
 
     protected Predicate parsePredicate(String attributeName, String operator, Object value) {

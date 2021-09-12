@@ -7,7 +7,6 @@ import QueryProcessor.SQLStatement;
 import QueryProcessor.Token;
 import RheaDB.DBError;
 
-import java.util.Arrays;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

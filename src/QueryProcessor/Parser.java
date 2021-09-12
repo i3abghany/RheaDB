@@ -3,15 +3,11 @@ package QueryProcessor;
 import Predicate.*;
 import Predicate.Predicate;
 import QueryProcessor.StatementParsers.*;
-import RheaDB.Attribute;
-import RheaDB.AttributeType;
 import RheaDB.DBError;
 
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-import QueryProcessor.DMLStatement.*;
-import QueryProcessor.DDLStatement.*;
 import QueryProcessor.InternalStatement.*;
 
 public class Parser {
@@ -93,50 +89,7 @@ public class Parser {
     }
 
     private SQLStatement parseCreateTable() throws DBError {
-        Token curr = currentToken();
-        matchToken(curr, TokenKind.KeywordToken, "create");
-
-        curr = nextToken();
-        matchToken(curr, TokenKind.KeywordToken, "table");
-
-        Token tableNameToken = nextToken();
-        matchToken(tableNameToken, TokenKind.IdentifierToken);
-
-        Token openParenToken = nextToken();
-        matchToken(openParenToken, TokenKind.OpenParenToken);
-
-        Vector<Attribute> attributes = new Vector<>();
-        while (true) {
-            Token attributeName = nextToken();
-            matchToken(attributeName, TokenKind.IdentifierToken);
-
-            Token dataTypeToken = nextToken();
-            if (dataTypeToken == null || dataTypeToken.getKind() != TokenKind.DataTypeToken) {
-                throw new DBError("Error parsing the statement. Expected a " +
-                        "datatype.");
-            }
-
-            AttributeType type = switch (dataTypeToken.getTokenText()) {
-                case "int" -> AttributeType.INT;
-                case "string" -> AttributeType.STRING;
-                case "float" -> AttributeType.FLOAT;
-                default -> null;
-            };
-            attributes.add(new Attribute(type, attributeName.getTokenText()));
-
-            Token commaOrClosedParenToken = nextToken();
-            if (commaOrClosedParenToken == null ||
-                    (commaOrClosedParenToken.getKind() != TokenKind.CommaToken &&
-                     commaOrClosedParenToken.getKind() != TokenKind.ClosedParenToken)) {
-                throw new DBError("Error parsing the statement. Expected a " +
-                        "continuation of attribute definitions or a closed paren.");
-            }
-
-            if (commaOrClosedParenToken.getKind() == TokenKind.ClosedParenToken)
-                break;
-        }
-        return new CreateTableStatement(tableNameToken.getTokenText(),
-               attributes);
+        return new CreateTableParser(line).parse();
     }
 
     private SQLStatement parseCreateIndex() throws DBError {
@@ -236,53 +189,4 @@ public class Parser {
         return tokenVector.elementAt(i).getTokenText().equals(tokenText);
     }
 
-    public enum OperatorKind {
-        EqualsOperator,
-        NotEqualsOperator,
-        GreaterOperator,
-        GreaterEqualsOperator,
-        LessOperator,
-        LessEqualsOperator,
-        UnsupportedOperator,
-    }
-
-    private OperatorKind getOperatorKind(String op) {
-        return switch (op) {
-            case "=" -> OperatorKind.EqualsOperator;
-            case "!=" -> OperatorKind.NotEqualsOperator;
-            case ">" -> OperatorKind.GreaterOperator;
-            case ">=" -> OperatorKind.GreaterEqualsOperator;
-            case "<" -> OperatorKind.LessOperator;
-            case "<=" -> OperatorKind.LessEqualsOperator;
-            default -> OperatorKind.UnsupportedOperator;
-        };
-    }
-
-    private Predicate parsePredicate(String attributeName, String operator, Object value) {
-        return switch (getOperatorKind(operator)) {
-            case EqualsOperator -> new EqualsPredicate(attributeName, value);
-            case NotEqualsOperator -> new NotEqualsPredicate(attributeName, value);
-            case GreaterOperator -> new GreaterThanPredicate(attributeName, value);
-            case GreaterEqualsOperator -> new GreaterThanEqualPredicate(attributeName, value);
-            case LessOperator -> new LessThanPredicate(attributeName, value);
-            case LessEqualsOperator -> new LessThanEqualPredicate(attributeName, value);
-            default -> null;
-        };
-    }
-
-    private Token currentToken() {
-        if (position >= tokenVector.size())
-            return null;
-
-        return tokenVector.get(position);
-    }
-
-    private Token nextToken() {
-        position++;
-
-        if (position >= tokenVector.size())
-            return null;
-
-        return tokenVector.get(position);
-    }
 }
