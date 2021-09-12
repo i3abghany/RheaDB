@@ -43,18 +43,7 @@ public class SelectParser extends StatementParser {
         String[] predicateStrings = matcher.group(PREDICATES_GROUP).split(",");
         predicateStrings[0] = predicateStrings[0].split(" ", 2)[1];
 
-        Vector<Predicate> predicates = new Vector<>();
-
-        for (String predicate : predicateStrings) {
-            Vector<Token> tokens = new Lexer(predicate).lex()
-                    .stream()
-                    .filter(t -> t.getKind() != TokenKind.WhiteSpaceToken)
-                    .collect(Collectors.toCollection(Vector::new));
-
-            predicates.add(parsePredicate(tokens.elementAt(0).getTokenText(),
-                    tokens.elementAt(1).getTokenText(),
-                    tokens.elementAt(2).getValue()));
-        }
+        Vector<Predicate> predicates = getPredicates(predicateStrings);
 
         return new DMLStatement.SelectStatement(tableName, attributeNames,
                 predicates);

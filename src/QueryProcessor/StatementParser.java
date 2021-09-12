@@ -4,6 +4,9 @@ import Predicate.*;
 import Predicate.Predicate;
 import RheaDB.DBError;
 
+import java.util.Vector;
+import java.util.stream.Collectors;
+
 public abstract class StatementParser {
     protected String line;
     protected String regex;
@@ -36,5 +39,21 @@ public abstract class StatementParser {
             case LessEqualsOperator -> new LessThanEqualPredicate(attributeName, value);
             default -> null;
         };
+    }
+
+    protected Vector<Predicate> getPredicates(String[] predicateStrings) {
+        Vector<Predicate> predicates = new Vector<>();
+
+        for (String predicate : predicateStrings) {
+            Vector<Token> tokens = new Lexer(predicate).lex()
+                    .stream()
+                    .filter(t -> t.getKind() != TokenKind.WhiteSpaceToken)
+                    .collect(Collectors.toCollection(Vector::new));
+
+            predicates.add(parsePredicate(tokens.elementAt(0).getTokenText(),
+                    tokens.elementAt(1).getTokenText(),
+                    tokens.elementAt(2).getValue()));
+        }
+        return predicates;
     }
 }
