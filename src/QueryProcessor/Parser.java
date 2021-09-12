@@ -233,24 +233,7 @@ public class Parser {
     }
 
     private SQLStatement parseDropTable() throws DBError {
-        Token curr = currentToken();
-        matchToken(curr, TokenKind.KeywordToken, "drop");
-
-        curr = nextToken();
-        matchToken(curr, TokenKind.KeywordToken, "table");
-
-        Token tableNameToken = nextToken();
-        matchToken(tableNameToken, TokenKind.IdentifierToken);
-
-        if (!done()) {
-            Token badToken = nextToken();
-            assert badToken != null;
-            throw new DBError("Error parsing the statement. " +
-                    "Unexpected token: \"" + badToken.getTokenText() + "\"" +
-                    " at position: " + badToken.getPosition());
-        }
-
-        return new DropTableStatement(tableNameToken.getTokenText());
+        return new DropTableParser(line).parse();
     }
 
     private SQLStatement parseDelete() throws DBError {

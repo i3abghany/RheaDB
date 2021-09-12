@@ -194,7 +194,7 @@ public class ParserTests {
 
     @Test
     public void parseDropTable() {
-        String sqlString = "DROP TABLE TableName";
+        String sqlString = "DROP TABLE TableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
