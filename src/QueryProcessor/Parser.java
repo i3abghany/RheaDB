@@ -6,7 +6,6 @@ import RheaDB.Attribute;
 import RheaDB.AttributeType;
 import RheaDB.DBError;
 
-import java.security.Key;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
@@ -17,8 +16,10 @@ import QueryProcessor.InternalStatement.*;
 public class Parser {
     private final Vector<Token> tokenVector;
     private int position;
+    private final String line;
 
     public Parser(String line) {
+        this.line = line;
         tokenVector = new Lexer(line)
                 .lex()
                 .stream()
@@ -357,53 +358,7 @@ public class Parser {
     }
 
     private SQLStatement parseSelect() throws DBError {
-        Token curr = currentToken();
-        matchToken(curr, TokenKind.KeywordToken, "select");
-
-        Vector<String> attributeNames = new Vector<>();
-
-        while (true) {
-            Token attributeNameToken = nextToken();
-            matchToken(attributeNameToken, TokenKind.IdentifierToken);
-
-            curr = nextToken();
-            if (curr == null) {
-                throw new DBError("Error parsing SELECT statement. Expected a " +
-                        "continuation of identifier names or a FROM keyword.");
-            }
-
-            if (curr.getKind() == TokenKind.KeywordToken &&
-                    curr.getTokenText().equals("from")) {
-                attributeNames.add(attributeNameToken.getTokenText());
-                break;
-            } else if (curr.getKind() == TokenKind.CommaToken) {
-                attributeNames.add(attributeNameToken.getTokenText());
-            } else {
-                throw new DBError("Error parsing SELECT statement. Unexpected token:" +
-                        " \"" + curr.getTokenText() + "\" at position: "
-                        + curr.getPosition());
-            }
-        }
-
-        Token tableNameToken = nextToken();
-        matchToken(tableNameToken, TokenKind.IdentifierToken);
-
-        Token whereKeywordToken = nextToken();
-        if (whereKeywordToken == null) {
-            return new SelectStatement(tableNameToken.getTokenText(),
-                    attributeNames, new Vector<>());
-        }
-
-        matchToken(whereKeywordToken, TokenKind.KeywordToken, "where");
-
-        Vector<Predicate> predicates = parsePredicates();
-        if (predicates.isEmpty()) {
-            throw new DBError("Error parsing the statement. Expected a list of " +
-                    "comma-separated predicates.");
-        }
-
-        return new SelectStatement(tableNameToken.getTokenText(),
-                attributeNames, predicates);
+        return new SelectParser(line).parse();
     }
 
     private boolean matchToken(Token token, TokenKind tokenKind, String text) throws DBError {
@@ -454,7 +409,7 @@ public class Parser {
                 throw new DBError("Error parsing the statement. Expected a literal" +
                         " token.");
             }
-            predicates.add(parsePredicate(attributeNameToken, operatorToken, literalToken));
+            predicates.add(parsePredicate(attributeNameToken.getTokenText(), operatorToken.getTokenText(), literalToken));
 
             Token optionalComma = nextToken();
             if (optionalComma == null || matchToken(this.position, TokenKind.KeywordToken, "where"))
@@ -479,16 +434,36 @@ public class Parser {
         return tokenVector.elementAt(i).getTokenText().equals(tokenText);
     }
 
-    private Predicate parsePredicate(Token attributeNameToken, Token operatorToken, Token valueToken) {
-        String attributeName = attributeNameToken.getTokenText();
-        Object value = valueToken.getValue();
-        return switch (operatorToken.getKind()) {
-            case EqualsToken -> new EqualsPredicate(attributeName, value);
-            case NotEqualsToken -> new NotEqualsPredicate(attributeName, value);
-            case GreaterToken -> new GreaterThanPredicate(attributeName, value);
-            case GreaterEqualsToken -> new GreaterThanEqualPredicate(attributeName, value);
-            case LessToken -> new LessThanPredicate(attributeName, value);
-            case LessEqualsToken -> new LessThanEqualPredicate(attributeName, value);
+    enum OperatorKind {
+        EqualsOperator,
+        NotEqualsOperator,
+        GreaterOperator,
+        GreaterEqualsOperator,
+        LessOperator,
+        LessEqualsOperator,
+        UnsupportedOperator,
+    }
+
+    private OperatorKind getOperatorKind(String op) {
+        return switch (op) {
+            case "=" -> OperatorKind.EqualsOperator;
+            case "!=" -> OperatorKind.NotEqualsOperator;
+            case ">" -> OperatorKind.GreaterOperator;
+            case ">=" -> OperatorKind.GreaterEqualsOperator;
+            case "<" -> OperatorKind.LessOperator;
+            case "<=" -> OperatorKind.LessEqualsOperator;
+            default -> OperatorKind.UnsupportedOperator;
+        };
+    }
+
+    private Predicate parsePredicate(String attributeName, String operator, Object value) {
+        return switch (getOperatorKind(operator)) {
+            case EqualsOperator -> new EqualsPredicate(attributeName, value);
+            case NotEqualsOperator -> new NotEqualsPredicate(attributeName, value);
+            case GreaterOperator -> new GreaterThanPredicate(attributeName, value);
+            case GreaterEqualsOperator -> new GreaterThanEqualPredicate(attributeName, value);
+            case LessOperator -> new LessThanPredicate(attributeName, value);
+            case LessEqualsOperator -> new LessThanEqualPredicate(attributeName, value);
             default -> null;
         };
     }
