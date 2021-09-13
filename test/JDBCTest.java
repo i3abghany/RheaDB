@@ -341,4 +341,60 @@ public class JDBCTest {
             Assertions.fail();
         }
     }
+
+    @Test
+    void updateAllRows() {
+        try {
+            createTestingTable("UpdateAllRowsTable");
+            Statement statement = conn.createStatement();
+            for (int i = 0; i < 10; i++) {
+                statement.executeQuery("INSERT INTO UpdateAllRowsTable VALUES (" + i + ", \"Random String\", 42.69" + ");");
+            }
+
+            statement.executeQuery("UPDATE UpdateAllRowsTable SET name = \"Not a random string\";");
+
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM UpdateAllRowsTable;");
+            Assertions.assertNotNull(resultSet.getIterator());
+
+            while (resultSet.next()) {
+                Assertions.assertEquals(resultSet.getString("name"), "Not a random string");
+                Assertions.assertEquals(resultSet.getFloat("mass"), 42.69, 0.001);
+            }
+
+            dropTestTable("UpdateAllRowsTable");
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+            Assertions.fail();
+        }
+    }
+
+    @Test
+    void updateRowsWithPredicates() {
+        try {
+            createTestingTable("UpdateRowsWithPredicatesTable");
+            Statement statement = conn.createStatement();
+            for (int i = 0; i < 10; i++) {
+                statement.executeQuery("INSERT INTO UpdateRowsWithPredicatesTable VALUES (" + i + ", \"Random String\", 42.69" + ");");
+            }
+
+            statement.executeQuery("UPDATE UpdateRowsWithPredicatesTable SET name = \"Not a random string\" WHERE id = 4;");
+
+            JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM UpdateRowsWithPredicatesTable;");
+            Assertions.assertNotNull(resultSet.getIterator());
+
+            while (resultSet.next()) {
+                if (resultSet.getInt("id") == 4) {
+                    Assertions.assertEquals(resultSet.getString("name"), "Not a random string");
+                } else {
+                    Assertions.assertEquals(resultSet.getString("name"), "Random String");
+                }
+                Assertions.assertEquals(resultSet.getFloat("mass"), 42.69, 0.001);
+            }
+
+            dropTestTable("UpdateRowsWithPredicates");
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+            Assertions.fail();
+        }
+    }
 }
