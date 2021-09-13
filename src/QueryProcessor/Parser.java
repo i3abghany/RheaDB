@@ -1,18 +1,13 @@
 package QueryProcessor;
 
-import Predicate.*;
-import Predicate.Predicate;
 import QueryProcessor.StatementParsers.*;
 import RheaDB.DBError;
 
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-import QueryProcessor.InternalStatement.*;
-
 public class Parser {
     private final Vector<Token> tokenVector;
-    private int position;
     private final String line;
 
     public Parser(String line) {
@@ -22,7 +17,6 @@ public class Parser {
                 .stream()
                 .filter(tok -> tok.getKind() != TokenKind.WhiteSpaceToken)
                 .collect(Collectors.toCollection(Vector::new));
-        position = 0;
     }
 
     public SQLStatement parse() throws DBError {

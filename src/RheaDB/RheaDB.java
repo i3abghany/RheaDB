@@ -112,10 +112,9 @@ public class RheaDB {
 
         try {
             sqlStatement = new Parser(sql).parse();
-            assert sqlStatement != null;
             queryResult = executeStatement(sqlStatement);
-        } catch (DBError DBError) {
-            System.out.println(DBError.getMessage());
+        } catch (DBError dbError) {
+            System.out.println(dbError.getMessage());
         }
 
         return queryResult;
@@ -145,15 +144,38 @@ public class RheaDB {
 
         resolvePredicatesAttributes(table, setPredicates);
 
-        int affectedRows = 0;
-        if (wherePredicates.isEmpty()) {
-            affectedRows = updateAllRows(table, setPredicates);
-        } else {
-            // FIXME: implement.
-            assert false;
-        }
+        resolvePredicatesAttributes(table, wherePredicates);
+        int affectedRows = updatePredicatedRows(table, setPredicates,
+                wherePredicates);
 
         return new UpdateResult(affectedRows);
+    }
+
+    private int updatePredicatedRows(Table table, Vector<Predicate> setPredicates, Vector<Predicate> wherePredicates) {
+        int rows = 0;
+        for (int i = 1; i <= table.getNumPages(); i++) {
+            Page page = bufferPool.getPage(table, i);
+            for (Predicate predicate : setPredicates) {
+                for (RowRecord r : page.getRecords()) {
+                    boolean satisfy = false;
+                    for (Predicate wherePredicate : wherePredicates) {
+                        Object value =
+                                r.getValueOf(wherePredicate.getAttribute());
+                        satisfy |= wherePredicate.doesSatisfy(value);
+                    }
+                    if (satisfy) {
+                        r.setAttributeValue(predicate.getAttribute(),
+                                predicate.getValue());
+                        rows++;
+                    }
+                }
+            }
+            if (!lazyCommit) {
+                bufferPool.updatePage(table, page);
+            }
+        }
+
+        return rows;
     }
 
     private int updateAllRows(Table table, Vector<Predicate> setPredicates) {

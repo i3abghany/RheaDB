@@ -1,12 +1,7 @@
 package RheaDB;
 
 public class UpdateResult extends QueryResult {
-    private int affectedRows;
-
-    public UpdateResult() {
-
-        affectedRows = 0;
-    }
+    private final int affectedRows;
 
     public UpdateResult(int affectedRows) {
         this.affectedRows = affectedRows;
@@ -14,10 +9,6 @@ public class UpdateResult extends QueryResult {
 
     public int getAffectedRows() {
         return affectedRows;
-    }
-
-    public void setAffectedRows(int affectedRows) {
-        this.affectedRows = affectedRows;
     }
 
     @Override
