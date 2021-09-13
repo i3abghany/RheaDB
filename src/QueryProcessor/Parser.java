@@ -52,24 +52,7 @@ public class Parser {
     }
 
     private SQLStatement parseInternalStatement() throws DBError {
-        if (matchToken(0, TokenKind.KeywordToken, "describe"))
-            return parseDescribe();
-        else if (matchToken(0, TokenKind.KeywordToken, "compact"))
-            return parseCompact();
-        else
-            throw new DBError("Error parsing statement.");
-    }
-
-    private SQLStatement parseDescribe() throws DBError {
-        Token tableNameToken = tokenVector.get(1);
-        matchToken(tableNameToken, TokenKind.IdentifierToken);
-        return new DescribeStatement(tableNameToken.getTokenText());
-    }
-
-    private SQLStatement parseCompact() throws DBError {
-        Token tableNameToken = tokenVector.get(1);
-        matchToken(tableNameToken, TokenKind.IdentifierToken);
-        return new CompactStatement(tableNameToken.getTokenText());
+        return new InternalParser(line).parse();
     }
 
     private SQLStatement parseDDL() throws DBError {
@@ -149,31 +132,6 @@ public class Parser {
 
     private SQLStatement parseSelect() throws DBError {
         return new SelectParser(line).parse();
-    }
-
-    private boolean matchToken(Token token, TokenKind tokenKind, String text) throws DBError {
-        matchToken(token, tokenKind);
-        if (!token.getTokenText().equals(text)) {
-            throw new DBError("Unexpected token \"" + token.getTokenText() +
-                    "\" at position " + token.getPosition() + ". Expected a " +
-                    tokenKind + " with value \"" + text + "\".");
-        }
-        return true;
-    }
-
-    private boolean matchToken(Token token, TokenKind tokenKind) throws DBError {
-        if (token == null) {
-            throw new DBError("Error parsing the statement. Expected a " +
-                    tokenKind + ".");
-        }
-
-        if (token.getKind() != tokenKind) {
-            throw new DBError("Unexpected token \"" + token.getTokenText() + "\"" +
-                    " at position " + token.getPosition() + ". Expected a " +
-                    tokenKind);
-        }
-
-        return true;
     }
 
     private boolean matchToken(int i, TokenKind tokenKind) {

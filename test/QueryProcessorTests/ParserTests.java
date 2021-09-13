@@ -209,7 +209,7 @@ public class ParserTests {
 
     @Test
     public void parseDescribe() {
-        String sqlString = "DESCRIBE TableName";
+        String sqlString = "DESCRIBE TableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();
@@ -226,7 +226,7 @@ public class ParserTests {
 
     @Test
     public void parseCompact() {
-        String sqlString = "COMPACT TableName";
+        String sqlString = "COMPACT TableName;";
         SQLStatement sqlStatement = null;
         try {
             sqlStatement = new Parser(sqlString).parse();

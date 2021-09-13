@@ -293,7 +293,7 @@ public class JDBCTest {
                 statement.executeQuery("DELETE FROM TableCompactTest WHERE id = " + i + ";");
             }
 
-            statement.executeQuery("COMPACT TableCompactTest");
+            statement.executeQuery("COMPACT TableCompactTest;");
             JCResultSet resultSet = (JCResultSet) statement.executeQuery("SELECT * FROM TableCompactTest;");
             Assertions.assertNotNull(resultSet.getIterator());
 
