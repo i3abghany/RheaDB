@@ -157,7 +157,7 @@ public class RheaDB {
             Page page = bufferPool.getPage(table, i);
             for (Predicate predicate : setPredicates) {
                 for (RowRecord r : page.getRecords()) {
-                    boolean satisfy = false;
+                    boolean satisfy = wherePredicates.isEmpty();
                     for (Predicate wherePredicate : wherePredicates) {
                         Object value =
                                 r.getValueOf(wherePredicate.getAttribute());
@@ -172,24 +172,6 @@ public class RheaDB {
             }
             if (!lazyCommit) {
                 bufferPool.updatePage(table, page);
-            }
-        }
-
-        return rows;
-    }
-
-    private int updateAllRows(Table table, Vector<Predicate> setPredicates) {
-        int rows = 0;
-        for (int i = 1; i <= table.getNumPages(); i++) {
-            Page page = bufferPool.getPage(table, i);
-            for (Predicate predicate : setPredicates) {
-                for (RowRecord r : page.getRecords()) {
-                    r.setAttributeValue(predicate.getAttribute(), predicate.getValue());
-                }
-                if (!lazyCommit) {
-                    bufferPool.updatePage(table, page);
-                }
-                rows += page.getRecords().size();
             }
         }
 
