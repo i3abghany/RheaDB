@@ -1,4 +1,4 @@
-package QueryProcessor;
+package QueryParser;
 
 public abstract class SQLStatement {
     public enum SQLStatementKind {

@@ -1,4 +1,4 @@
-package QueryProcessor;
+package QueryParser;
 
 public abstract class InternalStatement extends SQLStatement {
     public enum InternalStatementKind {

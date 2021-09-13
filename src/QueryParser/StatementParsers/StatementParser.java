@@ -1,8 +1,8 @@
-package QueryProcessor.StatementParsers;
+package QueryParser.StatementParsers;
 
 import Predicate.*;
 import Predicate.Predicate;
-import QueryProcessor.*;
+import QueryParser.*;
 import RheaDB.DBError;
 
 import java.util.Vector;

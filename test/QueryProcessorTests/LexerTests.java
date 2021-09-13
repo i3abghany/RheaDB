@@ -1,8 +1,8 @@
 package QueryProcessorTests;
 
-import QueryProcessor.Lexer;
-import QueryProcessor.Token;
-import QueryProcessor.TokenKind;
+import QueryParser.Lexer;
+import QueryParser.Token;
+import QueryParser.TokenKind;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

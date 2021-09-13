@@ -1,4 +1,4 @@
-package QueryProcessor;
+package QueryParser;
 
 import java.util.HashSet;
 import java.util.Locale;

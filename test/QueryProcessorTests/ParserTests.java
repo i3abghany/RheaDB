@@ -1,11 +1,11 @@
 package QueryProcessorTests;
 
 import Predicate.Predicate;
-import QueryProcessor.DDLStatement.*;
-import QueryProcessor.DMLStatement.*;
-import QueryProcessor.InternalStatement.*;
-import QueryProcessor.Parser;
-import QueryProcessor.SQLStatement;
+import QueryParser.DDLStatement.*;
+import QueryParser.DMLStatement.*;
+import QueryParser.InternalStatement.*;
+import QueryParser.Parser;
+import QueryParser.SQLStatement;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
 import RheaDB.DBError;

@@ -2,10 +2,10 @@ package RheaDB;
 
 import BPlusTree.BPlusTree;
 import Predicate.Predicate;
-import QueryProcessor.*;
-import QueryProcessor.DDLStatement.*;
-import QueryProcessor.DMLStatement.*;
-import QueryProcessor.InternalStatement.*;
+import QueryParser.*;
+import QueryParser.DDLStatement.*;
+import QueryParser.DMLStatement.*;
+import QueryParser.InternalStatement.*;
 import RheaDB.StorageManagement.BufferPool;
 import RheaDB.StorageManagement.DiskManager;
 

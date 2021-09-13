@@ -1,4 +1,4 @@
-package QueryProcessor;
+package QueryParser;
 
 public class Token {
     private final int position;

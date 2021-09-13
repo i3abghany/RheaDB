@@ -1,8 +1,7 @@
-package QueryProcessor.StatementParsers;
+package QueryParser.StatementParsers;
 
-import QueryProcessor.DMLStatement;
-import QueryProcessor.InternalStatement;
-import QueryProcessor.SQLStatement;
+import QueryParser.InternalStatement;
+import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
 import java.util.Locale;

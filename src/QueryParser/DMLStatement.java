@@ -1,4 +1,4 @@
-package QueryProcessor;
+package QueryParser;
 
 import Predicate.Predicate;
 

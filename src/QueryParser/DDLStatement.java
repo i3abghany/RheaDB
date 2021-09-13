@@ -1,4 +1,4 @@
-package QueryProcessor;
+package QueryParser;
 
 import RheaDB.Attribute;
 import java.util.Vector;

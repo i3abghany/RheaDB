@@ -1,20 +1,20 @@
-package QueryProcessor.StatementParsers;
+package QueryParser.StatementParsers;
 
-import QueryProcessor.DDLStatement;
-import QueryProcessor.SQLStatement;
+import QueryParser.DMLStatement;
+import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CreateIndexParser extends StatementParser {
+public class DropIndexParser extends StatementParser {
 
     private final int TABLENAME_GROUP = 1;
     private final int ATTRIBUTE_GROUP = 2;
 
-    public CreateIndexParser(String line) {
+    public DropIndexParser(String line) {
         super(line);
-        this.regex = "create\\s+index\\s+(.*)\\s+(.*)\\s*;";
+        this.regex = "drop\\s+index\\s+(.*)\\s+(.*)\\s*;";
     }
 
     @Override
@@ -29,6 +29,6 @@ public class CreateIndexParser extends StatementParser {
         String tableName = matcher.group(TABLENAME_GROUP);
         String attributeName = matcher.group(ATTRIBUTE_GROUP);
 
-        return new DDLStatement.CreateIndexStatement(tableName, attributeName);
+        return new DMLStatement.DropIndexStatement(tableName, attributeName);
     }
 }

@@ -1,6 +1,6 @@
-package QueryProcessor.StatementParsers;
+package QueryParser.StatementParsers;
 
-import QueryProcessor.*;
+import QueryParser.*;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
 import RheaDB.DBError;

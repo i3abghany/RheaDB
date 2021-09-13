@@ -1,4 +1,4 @@
-package QueryProcessor;
+package QueryParser;
 
 public enum TokenKind {
     BadToken,
