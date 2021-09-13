@@ -4,9 +4,15 @@ A simple disk-based DBMS that supports simple SQL-like querying statements.
 
 ## What's currently implemented?
 * Simple SQL-like queries
+    * Creating & dropping tables
+    * Deleting from tables
+    * Updating tables
+    * Simple selection queries
+    * Creating & deleting indices
 * Disk-based storage
 * In-memory buffer pool caching
-* JDBC Driver
+* JDBC driver
+* B+Tree indexing
 
 ### JDBC driver loading and usage
 The connection url passed to `DriverManager.getConnection()` must be in the
