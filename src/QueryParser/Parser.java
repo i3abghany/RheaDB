@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 public class Parser {
     private final Vector<Token> tokenVector;
     private final String line;
+    private int position = 0;
 
     public Parser(String line) {
         this.line = line;
@@ -34,11 +35,13 @@ public class Parser {
                     "\" at position: " + badToken.getPosition());
         }
 
-        if (SQLStatement.isDDLKeyword(tokenVector.get(0)))
+        Token token = getCurrent();
+
+        if (SQLStatement.isDDLKeyword(token))
             return parseDDL();
-        else if (SQLStatement.isDMLKeyword(tokenVector.get(0)))
+        else if (SQLStatement.isDMLKeyword(token))
             return parseDML();
-        else if (SQLStatement.isInternalKeyword(tokenVector.get(0)))
+        else if (SQLStatement.isInternalKeyword(token))
             return parseInternalStatement();
         else
             throw new DBError("Unexpected token: \"" +
@@ -50,19 +53,25 @@ public class Parser {
     }
 
     private SQLStatement parseDDL() throws DBError {
-        if (tokenVector.size() == 1) {
-            throw new DBError("Error parsing statement.");
+
+        if (matchToken(TokenKind.CreateToken)) {
+            return parseCreate();
+        } else {
+            throw new DBError("Unexpected token: \"" + getCurrent().getTokenText()
+                    + "\" at position " + getCurrent().getPosition());
         }
+    }
 
-        Token typeToken = tokenVector.elementAt(1);
+    private SQLStatement parseCreate() throws DBError {
+        Token typeToken = nextToken();
 
-        if (matchToken(1, TokenKind.KeywordToken, "table"))
+        if (matchToken(TokenKind.TableToken))
             return parseCreateTable();
-        else if (matchToken(1, TokenKind.KeywordToken, "index"))
+        else if (matchToken(TokenKind.IndexToken))
             return parseCreateIndex();
         else
             throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
-                + "\" at position " + typeToken.getPosition());
+                    + "\" at position " + typeToken.getPosition());
     }
 
     private SQLStatement parseCreateTable() throws DBError {
@@ -74,21 +83,17 @@ public class Parser {
     }
 
     private SQLStatement parseDML() throws DBError {
-        if (tokenVector.size() <= 1) {
-            throw new DBError("Error parsing statement.");
-        }
+        Token typeToken = getCurrent();
 
-        Token typeToken = tokenVector.elementAt(0);
-
-        if (matchToken(0, TokenKind.KeywordToken, "select"))
+        if (matchToken(TokenKind.SelectToken))
             return parseSelect();
-        else if (matchToken(0, TokenKind.KeywordToken, "insert"))
+        else if (matchToken(TokenKind.InsertToken))
             return parseInsert();
-        else if (matchToken(0, TokenKind.KeywordToken, "delete"))
+        else if (matchToken(TokenKind.DeleteToken))
             return parseDelete();
-        else if (matchToken(0, TokenKind.KeywordToken, "drop"))
+        else if (matchToken(TokenKind.DropToken))
             return parseDrop();
-        else if (matchToken(0, TokenKind.KeywordToken, "update"))
+        else if (matchToken(TokenKind.UpdateToken))
             return parseUpdate();
         else
             throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
@@ -100,12 +105,14 @@ public class Parser {
     }
 
     private SQLStatement parseDrop() throws DBError {
-        if (matchToken(1, TokenKind.KeywordToken, "table"))
+        Token typeToken = nextToken();
+        if (matchToken(TokenKind.TableToken))
             return parseDropTable();
-        else if (matchToken(1, TokenKind.KeywordToken, "index"))
+        else if (matchToken(TokenKind.IndexToken))
             return parseDropIndex();
         else
-            throw new DBError("Error parsing statement.");
+            throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
+                    + "\" at position " + typeToken.getPosition());
     }
 
     private SQLStatement parseDropIndex() throws DBError {
@@ -128,17 +135,32 @@ public class Parser {
         return new SelectParser(line).parse();
     }
 
-    private boolean matchToken(int i, TokenKind tokenKind) {
-        if (i >= tokenVector.size())
-            return false;
+    private boolean matchToken(TokenKind tokenKind) {
+        Token currentToken = getCurrent();
 
-        return tokenVector.elementAt(i).getKind() == tokenKind;
+        if (currentToken == null) {
+            return false;
+        }
+
+        return currentToken.getKind() == tokenKind;
     }
 
-    private boolean matchToken(int i, TokenKind tokenKind, String tokenText) {
-        if (!matchToken(i, tokenKind))
-            return false;
-        return tokenVector.elementAt(i).getTokenText().equals(tokenText);
+    private Token getCurrent() {
+        return peekToken(0);
     }
 
+    private Token nextToken() {
+        Token token = getCurrent();
+        position++;
+        return token;
+    }
+
+    private Token peekToken(int offset) {
+        int index = position + offset;
+
+        if (index >= tokenVector.size())
+            return null;
+
+        return tokenVector.get(index);
+    }
 }

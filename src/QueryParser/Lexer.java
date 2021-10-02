@@ -51,6 +51,27 @@ public class Lexer {
         keywordSet.add("where");
     }
 
+    private TokenKind getKeywordTokenKind(String keyword) {
+        return switch (keyword.toLowerCase(Locale.ROOT)) {
+            case "compact" -> TokenKind.CompactToken;
+            case "create" -> TokenKind.CreateToken;
+            case "delete" -> TokenKind.DeleteToken;
+            case "describe" -> TokenKind.DescribeToken;
+            case "drop" -> TokenKind.DropToken;
+            case "from" -> TokenKind.FromToken;
+            case "index" -> TokenKind.IndexToken;
+            case "insert" -> TokenKind.InsertToken;
+            case "into" -> TokenKind.IntoToken;
+            case "select" -> TokenKind.SelectToken;
+            case "set" -> TokenKind.SetTotken;
+            case "table" -> TokenKind.TableToken;
+            case "update" -> TokenKind.UpdateToken;
+            case "values" -> TokenKind.ValuesToken;
+            case "where" -> TokenKind.WhereToken;
+            default -> null;
+        };
+    }
+
     private Token lexWhiteSpaceToken(int tokenPosition) {
         while (Character.isWhitespace(getCurr()))
             advance();
@@ -79,7 +100,7 @@ public class Lexer {
         String tokenText = text.substring(tokenPosition, position);
         if (isKeyword(tokenText))
             return new Token(tokenPosition, tokenText.toLowerCase(Locale.ROOT),
-                    tokenText.toLowerCase(Locale.ROOT),  TokenKind.KeywordToken);
+                    tokenText.toLowerCase(Locale.ROOT),  getKeywordTokenKind(tokenText));
         else if (isDataType(tokenText))
             return new Token(tokenPosition, tokenText.toLowerCase(Locale.ROOT),
                     tokenText.toLowerCase(Locale.ROOT), TokenKind.DataTypeToken);

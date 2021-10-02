@@ -3,7 +3,6 @@ package QueryParser;
 public enum TokenKind {
     BadToken,
     WhiteSpaceToken,
-    KeywordToken,
     IdentifierToken,
     IntegralToken,
     FloatingPointToken,
@@ -19,4 +18,23 @@ public enum TokenKind {
     OpenParenToken,
     ClosedParenToken,
     SemiColonToken,
+
+    // Keywords
+
+
+    CompactToken,
+    CreateToken,
+    DeleteToken,
+    DescribeToken,
+    DropToken,
+    FromToken,
+    IndexToken,
+    InsertToken,
+    IntoToken,
+    SelectToken,
+    SetTotken,
+    TableToken,
+    UpdateToken,
+    ValuesToken,
+    WhereToken,
 }

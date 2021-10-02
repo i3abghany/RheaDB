@@ -53,8 +53,19 @@ public class LexerTests {
                 .map(s -> s.toLowerCase(Locale.ROOT))
                 .toArray(String[]::new);
 
+        TokenKind[] kinds = {
+                TokenKind.SelectToken,
+                TokenKind.TableToken,
+                TokenKind.ValuesToken,
+                TokenKind.DeleteToken,
+                TokenKind.IndexToken,
+                TokenKind.IntoToken,
+                TokenKind.WhereToken,
+                TokenKind.DropToken
+        };
+
         for (int i = 0; i < tokenTexts.length; i++) {
-            Assertions.assertTrue(matchToken(tokenVector.get(i), TokenKind.KeywordToken, tokenTexts[i]));
+            Assertions.assertTrue(matchToken(tokenVector.get(i), kinds[i], tokenTexts[i]));
         }
     }
 
