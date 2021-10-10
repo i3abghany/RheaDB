@@ -17,11 +17,11 @@ public enum TokenKind {
     CommaToken,
     OpenParenToken,
     ClosedParenToken,
+    AmpersandAmpersandToken,
+    BarBarToken,
     SemiColonToken,
 
     // Keywords
-
-
     CompactToken,
     CreateToken,
     DeleteToken,

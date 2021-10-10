@@ -215,6 +215,32 @@ public class Lexer {
                 TokenKind.SemiColonToken);
     }
 
+    private Token lexStartingWithBar(int tokenPosition) {
+        advance();
+        if (getCurr() == '|') {
+            advance();
+            String tokenText = "||";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.BarBarToken);
+        } else {
+            String tokenText = "|";
+            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+        }
+    }
+
+    private Token lexStartingWithAmpersand(int tokenPosition) {
+        advance();
+        if (getCurr() == '&') {
+            advance();
+            String tokenText = "&&";
+            return new Token(tokenPosition, tokenText, tokenText,
+                    TokenKind.AmpersandAmpersandToken);
+        } else {
+            String tokenText = "&";
+            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+        }
+    }
+
     private Token lexBadToken(int tokenPosition) {
         advance();
         return new Token(tokenPosition, Character.toString(getCurr()),
@@ -233,7 +259,7 @@ public class Lexer {
                     tokens.add(lexNumericLiteral(tokenPosition));
                 else if (Character.isAlphabetic(getCurr()) || getCurr() == '_')
                     tokens.add(lexAlphabeticalToken(tokenPosition));
-                else if (isOperator(getCurr()))
+                else if (isComparisonOperator(getCurr()))
                     tokens.add(lexOperatorToken(tokenPosition));
                 else if (getCurr() == '"')
                     tokens.add(lexStringLiteral(tokenPosition));
@@ -247,6 +273,10 @@ public class Lexer {
                     tokens.add(lexStarToken(tokenPosition));
                 else if (getCurr() == ';')
                     tokens.add(lexSemiColon(tokenPosition));
+                else if (getCurr() == '&')
+                    tokens.add(lexStartingWithAmpersand(tokenPosition));
+                else if (getCurr() == '|')
+                    tokens.add(lexStartingWithBar(tokenPosition));
                 else if (!inBounds())
                     break;
                 else
@@ -256,7 +286,7 @@ public class Lexer {
         return tokens;
     }
 
-    private boolean isOperator(char curr) {
+    private boolean isComparisonOperator(char curr) {
         return operatorSet.contains(curr);
     }
 

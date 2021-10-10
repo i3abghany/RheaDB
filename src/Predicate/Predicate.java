@@ -1,8 +1,9 @@
 package Predicate;
 
+import QueryParser.PredicateParser.ASTNode;
 import RheaDB.Attribute;
 
-public abstract class Predicate {
+public abstract class Predicate extends ASTNode {
     protected Attribute attribute;
     protected final String attributeName;
     protected final Object value;
