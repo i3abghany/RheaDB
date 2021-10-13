@@ -45,9 +45,7 @@ public class PredicateParser {
             return parseParenthesizedExpression();
         } else if (token.getKind() == TokenKind.IdentifierToken) {
             return parseIdentifierExpression();
-        } else if (token.getKind() == TokenKind.StringLiteralToken ||
-                   token.getKind() == TokenKind.IntegralToken ||
-                   token.getKind() == TokenKind.FloatingPointToken) {
+        } else if (token.isLiteral()) {
             return parseLiteralExpression();
         } else {
             throw new Exception("Unexpected token: \"" + token.getTokenText() +
@@ -57,9 +55,7 @@ public class PredicateParser {
 
     private ASTNode parseLiteralExpression() throws Exception {
         Token token = nextToken();
-        if (token.getKind() != TokenKind.IntegralToken &&
-            token.getKind() != TokenKind.FloatingPointToken &&
-            token.getKind() != TokenKind.StringLiteralToken) {
+        if (!token.isLiteral()) {
             throw new Exception("Unexpected token: \"" + token.getTokenText() + "\", Expected a literal token.");
         } else {
             return new LiteralExpression(token);
@@ -86,7 +82,7 @@ public class PredicateParser {
                 throw new Exception("Expected a ClosedParenToken.");
             }
 
-            return expression;
+            return new ParenthesizedExpression(openParen, expression, closeParen);
         }
     }
 
