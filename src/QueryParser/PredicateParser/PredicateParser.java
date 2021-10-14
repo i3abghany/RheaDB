@@ -1,7 +1,5 @@
 package QueryParser.PredicateParser;
 
-import Predicate.Predicate;
-import Predicate.PredicateFactory;
 import QueryParser.Lexer;
 import QueryParser.Token;
 import QueryParser.TokenKind;
@@ -17,8 +15,23 @@ public class PredicateParser {
                 .toArray(Token[]::new);
     }
 
+    /**
+     * Checks whether a tree contains at least one predicate or a binary expression.
+     *
+     * @param node The node to recurse from.
+     * @return Whether the tree has at least one binary expression.
+     */
+    private boolean isPredicate(ASTNode node) {
+        if (node instanceof ParenthesizedExpression parenthesizedExpression) {
+            return isPredicate(parenthesizedExpression);
+        } else {
+            return node instanceof BinaryLogicalExpression;
+        }
+    }
+
     public PredicateAST parse() throws Exception {
-        return new PredicateAST(parseExpression());
+        ASTNode root = parseExpression();
+        return isPredicate(root) ? new PredicateAST(root) : null;
     }
 
     private ASTNode parseExpression() throws Exception {

@@ -21,12 +21,7 @@ import static RheaDB.AttributeType.*;
 public class ParserTests {
     @Test
     public void parseEmptyStatement() {
-        try {
-            SQLStatement sqlStatement = new Parser("").parse();
-            Assertions.fail();
-        } catch (DBError ignored) {
-
-        }
+        Assertions.assertThrows(DBError.class, () -> new Parser("").parse());
     }
 
     @Test
@@ -343,5 +338,23 @@ public class ParserTests {
         Assertions.assertEquals(lessEquals.getKind(), TokenKind.LessEqualsToken);
         Assertions.assertTrue(twelveLiteral instanceof LiteralExpression);
         Assertions.assertEquals(((LiteralExpression) twelveLiteral).getValueToken().getValue(), 12);
+    }
+
+    @Test
+    void testIdentifierParsesAsNullPredicate() throws Exception {
+        var result = new PredicateParser("identifierName").parse();
+        Assertions.assertNull(result);
+    }
+
+    @Test
+    void testLiteralsParseAsNullPredicate() throws Exception {
+        var result = new PredicateParser("123").parse();
+        Assertions.assertNull(result);
+
+        result = new PredicateParser("\"HELLO\"").parse();
+        Assertions.assertNull(result);
+
+        result = new PredicateParser("3.1415296").parse();
+        Assertions.assertNull(result);
     }
 }
