@@ -1,6 +1,6 @@
 package QueryProcessorTests;
 
-import Predicate.Predicate;
+import Predicate.*;
 import QueryParser.DDLStatement.*;
 import QueryParser.DMLStatement.*;
 import QueryParser.InternalStatement.*;
@@ -31,23 +31,28 @@ public class ParserTests {
 
     @Test
     public void parseIncompleteStatement() {
-        try {
-            SQLStatement sqlStatement = new Parser("SELECT").parse();
-            Assertions.fail();
-        } catch (DBError ignored) {
 
+        String[] incompleteStatements = {
+                "SELECT",
+                "SELECT FROM",
+                "SELECT *",
+                "SELECT * FROM",
+                "SELECT * FROM TABLENAME",
+                "CREATE",
+                "CREATE TABLE",
+                "CREATE TABLE TABLENAME (I INT, J INT)"
+        };
+
+        for (var statement : incompleteStatements) {
+            Assertions.assertThrows(DBError.class, () ->
+                    new Parser(statement).parse());
         }
     }
 
     @Test
-    public void parseCreateTableStatement() {
+    public void parseCreateTableStatement() throws DBError {
         String sqlString = "CREATE TABLE FancyTable (id INT, name STRING, mass FLOAT);";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof CreateTableStatement);
         CreateTableStatement createTableStatement = (CreateTableStatement) sqlStatement;
@@ -68,14 +73,9 @@ public class ParserTests {
     }
 
     @Test
-    public void parseCreateIndexStatement() {
+    public void parseCreateIndexStatement() throws DBError {
         String sqlString = "CREATE INDEX FancyTable attributeName;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof CreateIndexStatement);
         CreateIndexStatement createIndexStatement = (CreateIndexStatement) sqlStatement;
@@ -86,14 +86,9 @@ public class ParserTests {
     }
 
     @Test
-    public void parseSelectStatementWithoutPredicates() {
+    public void parseSelectStatementWithoutPredicates() throws DBError {
         String sqlString = "SELECT attrA, attrB, attrC FROM tableName;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof SelectStatement);
         SelectStatement selectStatement = (SelectStatement) sqlStatement;
@@ -109,14 +104,9 @@ public class ParserTests {
     }
 
     @Test
-    public void parseSelectStatementWithAttributes() {
+    public void parseSelectStatementWithAttributes() throws DBError {
         String sqlString = "SELECT attrA, attrB, attrC FROM tableName where attrA = 1, attrB = 2, attrC = \"Hello World\";";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof SelectStatement);
         SelectStatement selectStatement = (SelectStatement) sqlStatement;
@@ -138,14 +128,9 @@ public class ParserTests {
     }
 
     @Test
-    public void parseSelectWithStarAttribute() {
+    public void parseSelectWithStarAttribute() throws DBError {
         String sqlString = "SELECT * FROM tableName;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof SelectStatement);
         SelectStatement selectStatement = (SelectStatement) sqlStatement;
@@ -153,14 +138,10 @@ public class ParserTests {
     }
 
     @Test
-    public void parseDeleteWithoutPredicates() {
+    public void parseDeleteWithoutPredicates() throws DBError {
         String sqlString = "DELETE FROM tableName;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
+
 
         Assertions.assertTrue(sqlStatement instanceof DeleteStatement);
         DeleteStatement deleteStatement = (DeleteStatement) sqlStatement;
@@ -170,14 +151,9 @@ public class ParserTests {
     }
 
     @Test
-    public void parseDeleteWithPredicates() {
+    public void parseDeleteWithPredicates() throws DBError {
         String sqlString = "DELETE FROM tableName WHERE attrA = 1, attrB = 2;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof DeleteStatement);
         DeleteStatement deleteStatement = (DeleteStatement) sqlStatement;
@@ -195,14 +171,9 @@ public class ParserTests {
     }
 
     @Test
-    public void parseDropTable() {
+    public void parseDropTable() throws DBError {
         String sqlString = "DROP TABLE TableName;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof DropTableStatement);
         DropTableStatement dropTableStatement = (DropTableStatement) sqlStatement;
@@ -210,14 +181,9 @@ public class ParserTests {
     }
 
     @Test
-    public void parseDescribe() {
+    public void parseDescribe() throws DBError {
         String sqlString = "DESCRIBE TableName;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof DescribeStatement);
         DescribeStatement describeStatement = (DescribeStatement) sqlStatement;
@@ -227,14 +193,9 @@ public class ParserTests {
     }
 
     @Test
-    public void parseCompact() {
+    public void parseCompact() throws DBError {
         String sqlString = "COMPACT TableName;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof CompactStatement);
         CompactStatement compactStatement = (CompactStatement) sqlStatement;
@@ -244,14 +205,9 @@ public class ParserTests {
     }
 
     @Test
-    void parseDropIndex() {
+    void parseDropIndex() throws DBError {
         String sqlString = "DROP INDEX FancyTable attributeName;";
-        SQLStatement sqlStatement = null;
-        try {
-            sqlStatement = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof DropIndexStatement);
         DropIndexStatement dropIndexStatement = (DropIndexStatement) sqlStatement;
@@ -284,16 +240,11 @@ public class ParserTests {
     }
 
     @Test
-    void parseUpdateWithPredicates() {
+    void parseUpdateWithPredicates() throws DBError {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
                 + "\"Random String\" WHERE x <= 10, y > 2;";
 
-        UpdateStatement updateStatement = null;
-        try {
-            updateStatement = testInitialPartOfUpdate(sqlString);
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var updateStatement = testInitialPartOfUpdate(sqlString);
 
         Assertions.assertEquals(updateStatement.getWherePredicates().size(), 2);
 
@@ -309,28 +260,17 @@ public class ParserTests {
     }
 
     @Test
-    void parseInvalidUpdateWithoutWherePredicates() {
+    void parseInvalidUpdateWithoutWherePredicates() throws DBError {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
                 + "\"Random String\" WHERE";
 
-        try {
-            new Parser(sqlString).parse();
-            Assertions.fail("Should not parse correctly. A trailing WHERE exists");
-        } catch (DBError ignored) {
-
-        }
+        Assertions.assertThrows(DBError.class, () -> new Parser(sqlString).parse());
     }
 
     @Test
-    void parseInsert() {
+    void parseInsert() throws DBError {
         String sqlString = "INSERT INTO TableName VALUES(1, 2, \"Hello\");";
-
-        SQLStatement sqlStatement  = null;
-        try {
-            sqlStatement  = new Parser(sqlString).parse();
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
+        var sqlStatement  = new Parser(sqlString).parse();
 
         Assertions.assertTrue(sqlStatement instanceof InsertStatement);
 
@@ -346,17 +286,11 @@ public class ParserTests {
     }
 
     @Test
-    void parseUpdateAllRows() {
+    void parseUpdateAllRows() throws DBError {
         String sqlString = "UPDATE FancyTable SET intAttribute = 1, stringAttribute = "
                 + "\"Random String\";";
 
-        UpdateStatement updateStatement = null;
-        try {
-            updateStatement = testInitialPartOfUpdate(sqlString);
-        } catch (DBError ex) {
-            Assertions.fail(ex.getMessage());
-        }
-
+        var updateStatement = testInitialPartOfUpdate(sqlString);
         Assertions.assertTrue(updateStatement.getWherePredicates().isEmpty());
     }
 
