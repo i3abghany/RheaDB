@@ -1,5 +1,7 @@
 package QueryParser.PredicateParser;
 
+import Predicate.Predicate;
+import Predicate.PredicateFactory;
 import QueryParser.Lexer;
 import QueryParser.Token;
 import QueryParser.TokenKind;
@@ -25,6 +27,7 @@ public class PredicateParser {
 
     private ASTNode parseExpression(int parentPrecedence) throws Exception {
         ASTNode left = parsePrimaryExpression();
+
         while (true) {
             Token operatorToken = getCurrent();
             int precedence = SyntaxFacts.binaryOperatorPrecedence(operatorToken.getKind());
@@ -100,5 +103,9 @@ public class PredicateParser {
             return tokenList[tokenList.length - 1];
 
         return tokenList[position];
+    }
+
+    public static void main(String[] args) throws Exception {
+        var c = new PredicateParser("a").parse();
     }
 }
