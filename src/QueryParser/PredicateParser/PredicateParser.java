@@ -3,6 +3,7 @@ package QueryParser.PredicateParser;
 import QueryParser.Lexer;
 import QueryParser.Token;
 import QueryParser.TokenKind;
+import RheaDB.DBError;
 
 public class PredicateParser {
     private final Token[] tokenList;
@@ -29,16 +30,16 @@ public class PredicateParser {
         }
     }
 
-    public PredicateAST parse() throws Exception {
+    public PredicateAST parse() throws DBError {
         ASTNode root = parseExpression();
         return isPredicate(root) ? new PredicateAST(root) : null;
     }
 
-    private ASTNode parseExpression() throws Exception {
+    private ASTNode parseExpression() throws DBError {
         return parseExpression(0);
     }
 
-    private ASTNode parseExpression(int parentPrecedence) throws Exception {
+    private ASTNode parseExpression(int parentPrecedence) throws DBError {
         ASTNode left = parsePrimaryExpression();
 
         while (true) {
@@ -55,7 +56,7 @@ public class PredicateParser {
         return left;
     }
 
-    private ASTNode parsePrimaryExpression() throws Exception {
+    private ASTNode parsePrimaryExpression() throws DBError {
         Token token = getCurrent();
         if (token.getKind() == TokenKind.OpenParenToken) {
             return parseParenthesizedExpression();
@@ -64,38 +65,38 @@ public class PredicateParser {
         } else if (token.isLiteral()) {
             return parseLiteralExpression();
         } else {
-            throw new Exception("Unexpected token: \"" + token.getTokenText() +
+            throw new DBError("Unexpected token: \"" + token.getTokenText() +
                     "\", Expected a primary expression token.");
         }
     }
 
-    private ASTNode parseLiteralExpression() throws Exception {
+    private ASTNode parseLiteralExpression() throws DBError {
         Token token = nextToken();
         if (!token.isLiteral()) {
-            throw new Exception("Unexpected token: \"" + token.getTokenText() + "\", Expected a literal token.");
+            throw new DBError("Unexpected token: \"" + token.getTokenText() + "\", Expected a literal token.");
         } else {
             return new LiteralExpression(token);
         }
     }
 
-    private ASTNode parseIdentifierExpression() throws Exception {
+    private ASTNode parseIdentifierExpression() throws DBError {
         Token token = nextToken();
         if (token.getKind() != TokenKind.IdentifierToken) {
-            throw new Exception("Expected an IdentifierToken.");
+            throw new DBError("Expected an IdentifierToken.");
         } else {
             return new IdentifierExpression(token);
         }
     }
 
-    private ASTNode parseParenthesizedExpression() throws Exception {
+    private ASTNode parseParenthesizedExpression() throws DBError {
         Token openParen = nextToken();
         if (openParen.getKind() != TokenKind.OpenParenToken) {
-            throw new Exception("Expected an OpenParenToken.");
+            throw new DBError("Expected an OpenParenToken.");
         } else {
             ASTNode expression = parseExpression();
             Token closeParen = nextToken();
             if (closeParen.getKind() != TokenKind.ClosedParenToken) {
-                throw new Exception("Expected a ClosedParenToken.");
+                throw new DBError("Expected a ClosedParenToken.");
             }
 
             return new ParenthesizedExpression(openParen, expression, closeParen);
