@@ -78,7 +78,7 @@ public class PredicateEvaluator {
             var predicate = PredicateFactory.of(identifierExpression, node.getOperatorToken(), literalExpression);
             return predicate.doesSatisfy(identifierValues.get(identifierExpression.getIdentifierToken().getTokenText()));
         } else {
-            return Evaluate(node.getLhs());
+            lhs = Evaluate(node.getLhs());
         }
 
         if (node.getRhs() instanceof BinaryLogicalExpression rhsPredicate) {
@@ -90,7 +90,7 @@ public class PredicateEvaluator {
             var predicate = PredicateFactory.of(identifierExpression, node.getOperatorToken(), literalExpression);
             rhs = predicate.doesSatisfy(identifierValues.get(identifierExpression.getIdentifierToken().getTokenText()));
         } else {
-            return Evaluate(node.getRhs());
+            rhs = Evaluate(node.getRhs());
         }
 
         return switch (node.getOperatorToken().getKind()) {

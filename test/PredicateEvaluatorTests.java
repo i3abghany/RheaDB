@@ -28,5 +28,10 @@ public class PredicateEvaluatorTests {
         values.put("b", new PredicateEvaluator.IdentifierValue(3, AttributeType.INT));
 
         Assertions.assertFalse(new PredicateEvaluator(p, values).Evaluate());
+
+        values.put("a", new PredicateEvaluator.IdentifierValue(3, AttributeType.INT));
+        values.put("b", new PredicateEvaluator.IdentifierValue(1, AttributeType.INT));
+
+        Assertions.assertTrue(new PredicateEvaluator(p, values).Evaluate());
     }
 }
