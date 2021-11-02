@@ -391,7 +391,7 @@ public class JDBCTest {
                 Assertions.assertEquals(resultSet.getFloat("mass"), 42.69, 0.001);
             }
 
-            dropTestTable("UpdateRowsWithPredicates");
+            dropTestTable("UpdateRowsWithPredicatesTable");
         } catch (Exception exception) {
             System.out.println(exception.getMessage());
             Assertions.fail();

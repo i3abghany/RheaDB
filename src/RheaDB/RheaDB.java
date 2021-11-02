@@ -3,9 +3,13 @@ package RheaDB;
 import BPlusTree.BPlusTree;
 import Predicate.Predicate;
 import QueryParser.*;
-import QueryParser.DDLStatement.*;
-import QueryParser.DMLStatement.*;
-import QueryParser.InternalStatement.*;
+import QueryParser.DDLStatements.CreateIndexStatement;
+import QueryParser.DDLStatements.CreateTableStatement;
+import QueryParser.DDLStatements.DDLStatement;
+import QueryParser.DMLStatements.*;
+import QueryParser.InternalStatements.CompactStatement;
+import QueryParser.InternalStatements.DescribeStatement;
+import QueryParser.InternalStatements.InternalStatement;
 import RheaDB.StorageManagement.BufferPool;
 import RheaDB.StorageManagement.DiskManager;
 

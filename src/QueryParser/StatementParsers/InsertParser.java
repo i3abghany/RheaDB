@@ -1,6 +1,6 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.DMLStatement;
+import QueryParser.DMLStatements.DMLStatement;
 import QueryParser.Lexer;
 import QueryParser.SQLStatement;
 import QueryParser.Token;

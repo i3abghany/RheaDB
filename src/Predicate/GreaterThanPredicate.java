@@ -1,5 +1,6 @@
 package Predicate;
 
+import RheaDB.AttributeType;
 import RheaDB.PredicateEvaluator;
 
 public class GreaterThanPredicate extends Predicate {
@@ -10,7 +11,11 @@ public class GreaterThanPredicate extends Predicate {
 
     @Override
     public boolean doesSatisfy(Object comp) {
-        return switch (this.attribute.getType()) {
+        return doesSatisfy(this.attribute.getType(), comp);
+    }
+
+    private boolean doesSatisfy(AttributeType type, Object comp) {
+        return switch (type) {
             case INT -> ((Integer) value).compareTo((Integer) comp) < 0;
             case STRING -> ((String) value).compareTo((String) comp) < 0;
             case FLOAT -> ((Float) value).compareTo((Float) comp) < 0;
@@ -19,11 +24,7 @@ public class GreaterThanPredicate extends Predicate {
 
     @Override
     public boolean doesSatisfy(PredicateEvaluator.IdentifierValue identifierValue) {
-        return switch (identifierValue.type) {
-            case INT -> ((Integer) value).compareTo((Integer) identifierValue.value) < 0;
-            case STRING -> ((String) value).compareTo((String) identifierValue.value) < 0;
-            case FLOAT -> ((Float) value).compareTo((Float) identifierValue.value) < 0;
-        };
+        return doesSatisfy(identifierValue.type, identifierValue.value);
     }
 
     @Override

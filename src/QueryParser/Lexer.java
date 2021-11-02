@@ -110,7 +110,7 @@ public class Lexer {
 
     private Token lexStringLiteral(int tokenPosition) {
         advance();
-        while (getCurr() != '"')
+        while (getCurr() != '"' && inBounds())
             advance();
         if (inBounds()) {
             String tokenText = text.substring(tokenPosition + 1, position);

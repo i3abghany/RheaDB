@@ -1,6 +1,7 @@
 package QueryParser.StatementParsers;
 
 import QueryParser.*;
+import QueryParser.DDLStatements.CreateTableStatement;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
 import RheaDB.DBError;
@@ -63,6 +64,6 @@ public class CreateTableParser extends StatementParser {
                         attributeNameToken.getTokenText().toLowerCase(Locale.ROOT)));
         }
 
-        return new DDLStatement.CreateTableStatement(tableName, attributes);
+        return new CreateTableStatement(tableName, attributes);
     }
 }

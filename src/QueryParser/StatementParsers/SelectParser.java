@@ -1,7 +1,7 @@
 package QueryParser.StatementParsers;
 
 import Predicate.Predicate;
-import QueryParser.DMLStatement;
+import QueryParser.DMLStatements.DMLStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 

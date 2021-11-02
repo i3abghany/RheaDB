@@ -1,6 +1,6 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.DDLStatement;
+import QueryParser.DDLStatements.DDLStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
