@@ -1,6 +1,7 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.InternalStatements.InternalStatement;
+import QueryParser.InternalStatements.CompactStatement;
+import QueryParser.InternalStatements.DescribeStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
@@ -31,9 +32,9 @@ public class InternalParser extends StatementParser {
         String tableName = matcher.group(TABLENAME_GROUP);
 
         if (statement.toLowerCase(Locale.ROOT).equals("describe")) {
-            return new InternalStatement.DescribeStatement(tableName);
+            return new DescribeStatement(tableName);
         } else {
-            return new InternalStatement.CompactStatement(tableName);
+            return new CompactStatement(tableName);
         }
     }
 }

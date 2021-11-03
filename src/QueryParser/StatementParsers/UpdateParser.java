@@ -1,7 +1,7 @@
 package QueryParser.StatementParsers;
 
 import Predicate.Predicate;
-import QueryParser.DMLStatements.DMLStatement;
+import QueryParser.DMLStatements.UpdateStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
@@ -37,7 +37,7 @@ public class UpdateParser extends StatementParser {
                 getPredicates(setPredicatesString.split(","));
 
         if (!usePredicates) {
-            return new DMLStatement.UpdateStatement(tableName, setPredicates,
+            return new UpdateStatement(tableName, setPredicates,
                     new Vector<>());
         }
 
@@ -49,7 +49,7 @@ public class UpdateParser extends StatementParser {
 
         Vector<Predicate> predicates = getPredicates(predicateStrings);
 
-        return new DMLStatement.UpdateStatement(tableName, setPredicates,
+        return new UpdateStatement(tableName, setPredicates,
                 predicates);
     }
 }

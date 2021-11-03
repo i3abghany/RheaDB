@@ -1,6 +1,6 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.DMLStatements.DMLStatement;
+import QueryParser.DMLStatements.InsertStatement;
 import QueryParser.Lexer;
 import QueryParser.SQLStatement;
 import QueryParser.Token;
@@ -43,6 +43,6 @@ public class InsertParser extends StatementParser {
                         .map(Token::getValue)
                         .collect(Collectors.toCollection(Vector::new));
 
-        return new DMLStatement.InsertStatement(tableName, valueObjects);
+        return new InsertStatement(tableName, valueObjects);
     }
 }

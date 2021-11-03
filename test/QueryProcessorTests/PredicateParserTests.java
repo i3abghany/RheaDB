@@ -86,5 +86,6 @@ public class PredicateParserTests {
         Assertions.assertThrows(DBError.class, () -> new PredicateParser("a >= 5 && b >").parse());
         Assertions.assertThrows(DBError.class, () -> new PredicateParser("b != 5 && a !=").parse());
         Assertions.assertThrows(DBError.class, () -> new PredicateParser("b = \" && a !=").parse());
+        Assertions.assertThrows(DBError.class, () -> new PredicateParser("b = \" && a != 6").parse());
     }
 }

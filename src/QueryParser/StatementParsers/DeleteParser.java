@@ -1,7 +1,7 @@
 package QueryParser.StatementParsers;
 
 import Predicate.Predicate;
-import QueryParser.DMLStatements.DMLStatement;
+import QueryParser.DMLStatements.DeleteStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
@@ -32,13 +32,13 @@ public class DeleteParser extends StatementParser {
         boolean usePredicates = matcher.group(PREDICATES_GROUP) != null;
 
         if (!usePredicates) {
-            return new DMLStatement.DeleteStatement(tableName, new Vector<>());
+            return new DeleteStatement(tableName, new Vector<>());
         }
 
         String[] predicateStrings = matcher.group(PREDICATES_GROUP).split(",");
         predicateStrings[0] = predicateStrings[0].split(" ", 2)[1];
 
         Vector<Predicate> predicates = getPredicates(predicateStrings);
-        return new DMLStatement.DeleteStatement(tableName, predicates);
+        return new DeleteStatement(tableName, predicates);
     }
 }
