@@ -37,7 +37,18 @@ public class ParserTests {
                 "SELECT * FROM TABLENAME",
                 "CREATE",
                 "CREATE TABLE",
-                "CREATE TABLE TABLENAME (I INT, J INT)"
+                "CREATE TABLE TABLENAME (I INT, J INT)",
+                "CREATE TABLE TABLENAME (I XYZ, J INT)",
+                "CREATE TABLENAME (I XYZ, J INT)",
+                "CREATE INDEX",
+                "CREATE INDEX ABC",
+                "CREATE INDEX ABC I",
+                "UPDATE",
+                "INSERT",
+                "DROP",
+                "DROP TABLE",
+                "DROP INDEX",
+                "DROP INDEX XXX",
         };
 
         for (var statement : incompleteStatements) {
