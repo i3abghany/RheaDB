@@ -142,9 +142,15 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K> {
 
     private void sortLists() {
         Arrays.sort(this.valueLists, (o1, o2) -> {
-            if (o1 == null && o2 == null) { return 0; }
-            if (o1 == null) { return 1; }
-            if (o2 == null) { return -1; }
+            if (o1 == null && o2 == null) {
+                return 0;
+            }
+            if (o1 == null) {
+                return 1;
+            }
+            if (o2 == null) {
+                return -1;
+            }
             return o1.compareTo(o2);
         });
     }

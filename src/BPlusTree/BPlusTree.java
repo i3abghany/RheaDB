@@ -1,10 +1,13 @@
 package BPlusTree;
 
+import Predicate.Predicate;
+
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.*;
-import java.lang.*;
-import Predicate.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Vector;
 
 public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     @Serial
@@ -117,7 +120,7 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
             parent.insertAt(sib, childIdx + 1);
             sib.setParent(parent);
         } else {
-            K[] keys = (K[])new Comparable[this.order];
+            K[] keys = (K[]) new Comparable[this.order];
             keys[0] = parentNewKey;
             InnerNode<K> newParent = new InnerNode<>(this.order, keys);
 
@@ -211,14 +214,15 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         LeafNode<K, V> lf = firstLeaf;
         Vector<V> allRecords = new Vector<>();
 
-        loop: while (lf != null) {
+        loop:
+        while (lf != null) {
             for (int i = 0; i < lf.getNumberOfLists(); i++) {
                 ValueList<K, V> valueList = lf.getLists()[i];
                 if (valueList.getKey().compareTo(key) >= 0)
                     break loop;
                 allRecords.addAll(valueList);
             }
-            lf = (LeafNode<K, V>)lf.getRightSibling();
+            lf = (LeafNode<K, V>) lf.getRightSibling();
         }
         return allRecords;
     }
@@ -299,7 +303,7 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
             printDataInOrder();
             return;
         }
-        var curr = (Node<K>)this.root;
+        var curr = (Node<K>) this.root;
         while (true) {
             if (curr instanceof InnerNode) {
                 var nxt = curr;
@@ -378,8 +382,8 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         int lfIdx = par.indexOfPointer(lf);
 
         if (leftSib != null &&
-            leftSib.canGiveToSibling() &&
-            leftSib.getParent() == lf.getParent()) {
+                leftSib.canGiveToSibling() &&
+                leftSib.getParent() == lf.getParent()) {
             ValueList<K, V> borrowedPair = leftSib.getLists()[leftSib.getNumberOfLists() - 1];
             lf.insert(borrowedPair);
             leftSib.deleteByIndex(leftSib.getNumberOfLists() - 1);
@@ -388,8 +392,8 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
             }
             replaceWithSuccessor(indexNode, key);
         } else if (rightSib != null &&
-                   rightSib.canGiveToSibling() &&
-                   rightSib.getParent() == lf.getParent()) {
+                rightSib.canGiveToSibling() &&
+                rightSib.getParent() == lf.getParent()) {
             ValueList<K, V> borrowedPair = rightSib.getLists()[0];
             lf.insert(borrowedPair);
             rightSib.deleteByIndex(0);
@@ -398,8 +402,8 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
             }
             replaceWithSuccessor(indexNode, key);
         } else if (leftSib != null &&
-                   leftSib.canBeMerged() &&
-                   leftSib.getParent() == par) {
+                leftSib.canBeMerged() &&
+                leftSib.getParent() == par) {
             leftSib.merge(lf);
             par.removePointer(lfIdx);
             par.removeKey(lfIdx - 1);
@@ -414,8 +418,8 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
                 afterDeleteFix(par);
 
         } else if (rightSib != null &&
-                   rightSib.canBeMerged() &&
-                   rightSib.getParent() == par) {
+                rightSib.canBeMerged() &&
+                rightSib.getParent() == par) {
             rightSib.merge(lf);
 
             par.removePointer(lfIdx);
