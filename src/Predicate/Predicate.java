@@ -40,8 +40,12 @@ public abstract class Predicate extends ASTNode {
         return value;
     }
 
-    public boolean doesSatisfy(PredicateEvaluator.IdentifierValue identifierValue) { return false; };
+    public boolean doesSatisfy(PredicateEvaluator.IdentifierValue identifierValue) {
+        return false;
+    }
+
     public abstract boolean doesSatisfy(Object comp);
+
     public abstract Operation getOperation();
 }
 
