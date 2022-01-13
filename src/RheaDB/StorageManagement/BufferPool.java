@@ -14,6 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class BufferPool {
 
+    private final static int maxPagesInCache = 16;
+    private final ConcurrentHashMap<PageIdentifier, Page> pageHashMap;
+
     private record PageIdentifier(Table table, int pageIdx) {
         @Override
         public boolean equals(Object o) {
@@ -29,9 +32,6 @@ public class BufferPool {
         }
     }
 
-    private final static int maxPagesInCache = 16;
-    private final ConcurrentHashMap<PageIdentifier, Page> pageHashMap;
-
     public void commitAllPages() {
         pageHashMap.forEach((PageIdentifier pi, Page page) -> {
             updatePage(pi.table, page);
@@ -45,7 +45,7 @@ public class BufferPool {
 
         table.getAttributeList()
                 .stream()
-                .filter(attr -> attr.getIsIndexed())
+                .filter(Attribute::getIsIndexed)
                 .forEach(attr -> deleteIndex(table, attr));
 
         String pageDir = table.getPageDirectory();
@@ -66,7 +66,7 @@ public class BufferPool {
 
         pageHashMap.keySet().removeIf(p -> p.table == t);
         for (int i : pages) {
-            insertPage(t, i);
+            getPageFromStorage(t, i);
         }
     }
 
@@ -126,7 +126,7 @@ public class BufferPool {
     public Page getPage(Table table, int pageIdx) {
         PageIdentifier pageIdentifier = new PageIdentifier(table, pageIdx);
         if (!pageHashMap.containsKey(pageIdentifier))
-            return insertPage(table, pageIdx);
+            return getPageFromStorage(table, pageIdx);
         else
             return pageHashMap.get(pageIdentifier);
     }
@@ -138,7 +138,7 @@ public class BufferPool {
      * @param pageIdx The index of the page that's use to construct an identifier.
      * @return Returns the page JIC the caller may want to search for it in the hash table.
      */
-    private Page insertPage(Table table, int pageIdx) {
+    private Page getPageFromStorage(Table table, int pageIdx) {
         Page page = DiskManager.getPage(table, pageIdx);
         return page == null ? null : insertPage(table, page);
     }
