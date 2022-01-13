@@ -1,7 +1,10 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.*;
 import QueryParser.DDLStatements.CreateTableStatement;
+import QueryParser.Lexer;
+import QueryParser.SQLStatement;
+import QueryParser.Token;
+import QueryParser.TokenKind;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
 import RheaDB.DBError;

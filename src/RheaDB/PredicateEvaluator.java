@@ -1,12 +1,10 @@
 package RheaDB;
 
 import Predicate.PredicateFactory;
-import QueryParser.Parser;
 import QueryParser.PredicateParser.*;
 import QueryParser.Token;
 import QueryParser.TokenKind;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class PredicateEvaluator {

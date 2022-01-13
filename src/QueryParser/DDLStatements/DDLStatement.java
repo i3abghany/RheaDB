@@ -1,8 +1,6 @@
 package QueryParser.DDLStatements;
 
 import QueryParser.SQLStatement;
-import RheaDB.Attribute;
-import java.util.Vector;
 
 public abstract class DDLStatement extends SQLStatement {
 

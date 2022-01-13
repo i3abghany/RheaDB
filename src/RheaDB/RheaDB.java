@@ -2,7 +2,6 @@ package RheaDB;
 
 import BPlusTree.BPlusTree;
 import Predicate.Predicate;
-import QueryParser.*;
 import QueryParser.DDLStatements.CreateIndexStatement;
 import QueryParser.DDLStatements.CreateTableStatement;
 import QueryParser.DDLStatements.DDLStatement;
@@ -10,12 +9,17 @@ import QueryParser.DMLStatements.*;
 import QueryParser.InternalStatements.CompactStatement;
 import QueryParser.InternalStatements.DescribeStatement;
 import QueryParser.InternalStatements.InternalStatement;
+import QueryParser.Parser;
+import QueryParser.SQLStatement;
 import RheaDB.StorageManagement.BufferPool;
 import RheaDB.StorageManagement.DiskManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class RheaDB {

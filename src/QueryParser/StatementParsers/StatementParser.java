@@ -1,8 +1,11 @@
 package QueryParser.StatementParsers;
 
-import Predicate.*;
 import Predicate.Predicate;
-import QueryParser.*;
+import Predicate.PredicateFactory;
+import QueryParser.Lexer;
+import QueryParser.SQLStatement;
+import QueryParser.Token;
+import QueryParser.TokenKind;
 import RheaDB.DBError;
 
 import java.util.Vector;
