@@ -51,8 +51,8 @@ public class CreateTableParser extends StatementParser {
             Token attributeTypeToken = tokens.get(i + 1);
 
             if (attributeTypeToken == null ||
-                attributeNameToken.getKind() != TokenKind.IdentifierToken ||
-                attributeTypeToken.getKind() != TokenKind.DataTypeToken) {
+                    attributeNameToken.getKind() != TokenKind.IdentifierToken ||
+                    attributeTypeToken.getKind() != TokenKind.DataTypeToken) {
                 throw new DBError("Error parsing the statement.");
             }
 
@@ -64,8 +64,8 @@ public class CreateTableParser extends StatementParser {
                         default -> null;
                     };
 
-                attributes.add(new Attribute(type,
-                        attributeNameToken.getTokenText().toLowerCase(Locale.ROOT)));
+            attributes.add(new Attribute(type,
+                    attributeNameToken.getTokenText().toLowerCase(Locale.ROOT)));
         }
 
         return new CreateTableStatement(tableName, attributes);

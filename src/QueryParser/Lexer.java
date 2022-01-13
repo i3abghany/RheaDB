@@ -102,7 +102,7 @@ public class Lexer {
         String tokenText = text.substring(tokenPosition, position);
         if (isKeyword(tokenText))
             return new Token(tokenPosition, tokenText.toLowerCase(Locale.ROOT),
-                    tokenText.toLowerCase(Locale.ROOT),  getKeywordTokenKind(tokenText));
+                    tokenText.toLowerCase(Locale.ROOT), getKeywordTokenKind(tokenText));
         else if (isDataType(tokenText))
             return new Token(tokenPosition, tokenText.toLowerCase(Locale.ROOT),
                     tokenText.toLowerCase(Locale.ROOT), TokenKind.DataTypeToken);
@@ -238,52 +238,55 @@ public class Lexer {
                     TokenKind.AmpersandAmpersandToken);
         } else {
             String tokenText = "&";
-            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+            return addBadTokenToDiagnostics(new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken));
         }
     }
 
     private Token lexBadToken(int tokenPosition) {
         advance();
-        return new Token(tokenPosition, Character.toString(getCurr()),
-                Character.toString(getCurr()), TokenKind.BadToken);
+        return addBadTokenToDiagnostics(new Token(tokenPosition, Character.toString(getCurr()), Character.toString(getCurr()), TokenKind.BadToken));
+    }
+
+    public Vector<String> getDiagnostics() {
+        return diagnostics;
     }
 
     public Vector<Token> lex() {
-            Vector<Token> tokens = new Vector<>();
+        Vector<Token> tokens = new Vector<>();
 
-            while (position < text.length()) {
-                int tokenPosition = position;
+        while (position < text.length()) {
+            int tokenPosition = position;
 
-                if (Character.isWhitespace(getCurr()))
-                    tokens.add(lexWhiteSpaceToken(tokenPosition));
-                else if (Character.isDigit(getCurr()))
-                    tokens.add(lexNumericLiteral(tokenPosition));
-                else if (Character.isAlphabetic(getCurr()) || getCurr() == '_')
-                    tokens.add(lexAlphabeticalToken(tokenPosition));
-                else if (isComparisonOperator(getCurr()))
-                    tokens.add(lexOperatorToken(tokenPosition));
-                else if (getCurr() == '"')
-                    tokens.add(lexStringLiteral(tokenPosition));
-                else if (getCurr() == ',')
-                    tokens.add(lexCommaToken(tokenPosition));
-                else if (getCurr() == '(')
-                    tokens.add(lexOpenParen(tokenPosition));
-                else if (getCurr() == ')')
-                    tokens.add(lexClosedParen(tokenPosition));
-                else if (getCurr() == '*')
-                    tokens.add(lexStarToken(tokenPosition));
-                else if (getCurr() == ';')
-                    tokens.add(lexSemiColon(tokenPosition));
-                else if (getCurr() == '&')
-                    tokens.add(lexStartingWithAmpersand(tokenPosition));
-                else if (getCurr() == '|')
-                    tokens.add(lexStartingWithBar(tokenPosition));
-                else if (!inBounds())
-                    break;
-                else
-                    tokens.add(lexBadToken(tokenPosition));
+            if (Character.isWhitespace(getCurr()))
+                tokens.add(lexWhiteSpaceToken(tokenPosition));
+            else if (Character.isDigit(getCurr()))
+                tokens.add(lexNumericLiteral(tokenPosition));
+            else if (Character.isAlphabetic(getCurr()) || getCurr() == '_')
+                tokens.add(lexAlphabeticalToken(tokenPosition));
+            else if (isComparisonOperator(getCurr()))
+                tokens.add(lexOperatorToken(tokenPosition));
+            else if (getCurr() == '"')
+                tokens.add(lexStringLiteral(tokenPosition));
+            else if (getCurr() == ',')
+                tokens.add(lexCommaToken(tokenPosition));
+            else if (getCurr() == '(')
+                tokens.add(lexOpenParen(tokenPosition));
+            else if (getCurr() == ')')
+                tokens.add(lexClosedParen(tokenPosition));
+            else if (getCurr() == '*')
+                tokens.add(lexStarToken(tokenPosition));
+            else if (getCurr() == ';')
+                tokens.add(lexSemiColon(tokenPosition));
+            else if (getCurr() == '&')
+                tokens.add(lexStartingWithAmpersand(tokenPosition));
+            else if (getCurr() == '|')
+                tokens.add(lexStartingWithBar(tokenPosition));
+            else if (!inBounds())
+                break;
+            else {
+                tokens.add(lexBadToken(tokenPosition));
             }
-
+        }
         return tokens;
     }
 

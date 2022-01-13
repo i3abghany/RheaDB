@@ -77,7 +77,10 @@ public class RheaDB {
      * To support their interface in JDBC, only save the data as if the DB was
      * really closed.
      */
-    public boolean isClosed() { return isClosed; }
+    public boolean isClosed() {
+        return isClosed;
+    }
+
     public void close() {
         isClosed = true;
         saveMetadata();
@@ -385,7 +388,7 @@ public class RheaDB {
             Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
             if (attribute == null) {
                 throw new DBError("Invalid attribute: \"" + predicate.getAttributeName()
-                    + "\"");
+                        + "\"");
             }
             predicate.setAttribute(attribute);
             if (attribute.getIsIndexed()) {
@@ -432,7 +435,7 @@ public class RheaDB {
     private void verifySelectedAttributesExist(Table table, Vector<String> selectedAttributes) throws DBError {
         for (String attributeName : selectedAttributes) {
             if (!attributeName.equals("*") &&
-                table.getAttributeWithName(attributeName) == null) {
+                    table.getAttributeWithName(attributeName) == null) {
                 throw new DBError("Invalid attribute name " + attributeName);
             }
         }
@@ -446,7 +449,7 @@ public class RheaDB {
         }
 
         return result.size() == 0 ? null :
-            new QueryResult(result, table.getAttributeList(), selectedAttributes);
+                new QueryResult(result, table.getAttributeList(), selectedAttributes);
     }
 
     private QueryResult executeDeleteFrom(DeleteStatement deleteStatement) throws DBError {
@@ -538,7 +541,7 @@ public class RheaDB {
                         int testObject = (int) value;
                         break;
                     }
-                    case FLOAT:{
+                    case FLOAT: {
                         float testObject = (float) value;
                         break;
                     }
@@ -546,7 +549,8 @@ public class RheaDB {
                         String testObject = (String) value;
                         break;
                     }
-                    default: assert false;
+                    default:
+                        assert false;
                 }
             } catch (Exception e) {
                 throw new DBError("Invalid value(" + value + ") provided " +
@@ -588,7 +592,7 @@ public class RheaDB {
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
             page.getRecords().forEach(
-                r -> bPlusTree.insert(r.getValueOf(attribute), r)
+                    r -> bPlusTree.insert(r.getValueOf(attribute), r)
             );
         }
 

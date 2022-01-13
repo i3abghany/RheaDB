@@ -64,7 +64,7 @@ public class BufferPool {
             }
         });
 
-        pageHashMap.keySet().removeIf( p -> p.table == t);
+        pageHashMap.keySet().removeIf(p -> p.table == t);
         for (int i : pages) {
             insertPage(t, i);
         }
@@ -81,7 +81,7 @@ public class BufferPool {
     public BPlusTree<?, RowRecord> getIndex(Table table, Attribute attribute) {
         String indexFullPath =
                 table.getPageDirectory() + File.separator + "index" +
-                File.separator + attribute.getName() + ".idx";
+                        File.separator + attribute.getName() + ".idx";
 
         return DiskManager.deserializeIndex(indexFullPath);
     }
@@ -118,7 +118,8 @@ public class BufferPool {
 
     /**
      * Searches for the page in the hash table, if not existent, deserialize it.
-     * @param table The table to which the page belong to.
+     *
+     * @param table   The table to which the page belong to.
      * @param pageIdx Page index in table that's used to construct an identifier.
      * @return The requested page.
      */
@@ -132,7 +133,8 @@ public class BufferPool {
 
     /**
      * Deserializes the page and inserts it into the hash table.
-     * @param table The table to which the page belong to.
+     *
+     * @param table   The table to which the page belong to.
      * @param pageIdx The index of the page that's use to construct an identifier.
      * @return Returns the page JIC the caller may want to search for it in the hash table.
      */

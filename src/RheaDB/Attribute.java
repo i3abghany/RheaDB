@@ -29,8 +29,8 @@ public class Attribute implements Serializable {
             return false;
 
         return this.type == other.type &&
-               this.name.equals(other.name) &&
-               this.isPrimaryKey == other.isPrimaryKey;
+                this.name.equals(other.name) &&
+                this.isPrimaryKey == other.isPrimaryKey;
     }
 
     public String getName() {

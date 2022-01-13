@@ -37,8 +37,8 @@ public class JCDriver implements Driver {
     public Connection connect(String url, Properties info) throws SQLException {
         String[] tokens = url.split(":");
         if (tokens.length < 2 ||
-            !tokens[0].toLowerCase(Locale.ROOT).equals("jdbc") ||
-            !tokens[1].toLowerCase(Locale.ROOT).equals("rhea")) {
+                !tokens[0].toLowerCase(Locale.ROOT).equals("jdbc") ||
+                !tokens[1].toLowerCase(Locale.ROOT).equals("rhea")) {
             return null;
         }
 

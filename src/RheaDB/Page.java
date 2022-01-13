@@ -63,8 +63,8 @@ public class Page implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         Page page = (Page) o;
         return maxRows == page.maxRows &&
-               pageIdx == page.pageIdx &&
-               tableName.equals(page.tableName);
+                pageIdx == page.pageIdx &&
+                tableName.equals(page.tableName);
     }
 
     @Override
