@@ -1,6 +1,6 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.DDLStatement;
+import QueryParser.DDLStatements.CreateIndexStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
@@ -23,12 +23,13 @@ public class CreateIndexParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing create index statement.");
+            return null;
         }
 
         String tableName = matcher.group(TABLENAME_GROUP);
         String attributeName = matcher.group(ATTRIBUTE_GROUP);
 
-        return new DDLStatement.CreateIndexStatement(tableName, attributeName);
+        return new CreateIndexStatement(tableName, attributeName);
     }
 }

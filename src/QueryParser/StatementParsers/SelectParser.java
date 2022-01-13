@@ -1,7 +1,7 @@
 package QueryParser.StatementParsers;
 
 import Predicate.Predicate;
-import QueryParser.DMLStatement;
+import QueryParser.DMLStatements.SelectStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
@@ -27,7 +27,8 @@ public class SelectParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing select statement.");
+            return null;
         }
 
         Vector<String> attributeNames =
@@ -38,7 +39,7 @@ public class SelectParser extends StatementParser {
         boolean usePredicates = matcher.group(PREDICATES_GROUP) != null;
 
         if (!usePredicates) {
-            return new DMLStatement.SelectStatement(tableName, attributeNames
+            return new SelectStatement(tableName, attributeNames
                     , new Vector<>());
         }
 
@@ -47,7 +48,7 @@ public class SelectParser extends StatementParser {
 
         Vector<Predicate> predicates = getPredicates(predicateStrings);
 
-        return new DMLStatement.SelectStatement(tableName, attributeNames,
+        return new SelectStatement(tableName, attributeNames,
                 predicates);
     }
 }

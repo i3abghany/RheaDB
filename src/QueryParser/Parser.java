@@ -8,44 +8,48 @@ import java.util.stream.Collectors;
 
 public class Parser {
     private final Vector<Token> tokenVector;
+    private final Vector<String> diagnostics = new Vector<>();
+    private final Lexer lexer;
     private final String line;
     private int position = 0;
 
     public Parser(String line) {
         this.line = line;
-        tokenVector = new Lexer(line)
-                .lex()
+        this.lexer = new Lexer(line);
+        tokenVector = lexer.lex()
                 .stream()
                 .filter(tok -> tok.getKind() != TokenKind.WhiteSpaceToken)
                 .collect(Collectors.toCollection(Vector::new));
+        diagnostics.addAll(lexer.getDiagnostics());
     }
 
     public SQLStatement parse() throws DBError {
-        if (tokenVector.size() < 2)
-            throw new DBError("Error parsing the statement.");
-
-        Token badToken = tokenVector
-                .stream()
-                .filter(tok -> tok.getKind() == TokenKind.BadToken)
-                .findAny()
-                .orElse(null);
-
-        if (badToken != null) {
-            throw new DBError("Bad token: \"" + badToken.getTokenText() +
-                    "\" at position: " + badToken.getPosition());
-        }
-
+        throwIfAny();
         Token token = getCurrent();
 
+        /* Empty statement */
+        if (token == null) {
+            return null;
+        }
+
+        SQLStatement ret = null;
         if (SQLStatement.isDDLKeyword(token))
-            return parseDDL();
+            ret = parseDDL();
         else if (SQLStatement.isDMLKeyword(token))
-            return parseDML();
+            ret = parseDML();
         else if (SQLStatement.isInternalKeyword(token))
-            return parseInternalStatement();
+            ret = parseInternalStatement();
         else
-            throw new DBError("Unexpected token: \"" +
-                    tokenVector.get(0).getTokenText() + "\".");
+            diagnostics.add("Unexpected token: \"" + tokenVector.get(0).getTokenText() + "\".");
+
+        throwIfAny();
+        return ret;
+    }
+
+    private void throwIfAny() throws DBError {
+        if (!diagnostics.isEmpty()) {
+            throw new DBError(diagnostics.get(0));
+        }
     }
 
     private SQLStatement parseInternalStatement() throws DBError {
@@ -53,86 +57,124 @@ public class Parser {
     }
 
     private SQLStatement parseDDL() throws DBError {
-
+        SQLStatement ret = null;
         if (matchToken(TokenKind.CreateToken)) {
-            return parseCreate();
+            nextToken();
+            ret = parseCreate();
         } else {
-            throw new DBError("Unexpected token: \"" + getCurrent().getTokenText()
-                    + "\" at position " + getCurrent().getPosition());
+            diagnostics.add("Unexpected token: \"" + getCurrent().getTokenText() + "\" at position " + getCurrent().getPosition());
         }
+
+        return ret;
     }
 
     private SQLStatement parseCreate() throws DBError {
-        Token typeToken = nextToken();
+        Token typeToken = getCurrent();
 
+        if (typeToken == null) {
+            diagnostics.add("Expected TableToken or IndexToken.");
+            return null;
+        }
+
+        SQLStatement ret = null;
         if (matchToken(TokenKind.TableToken))
-            return parseCreateTable();
+            ret = parseCreateTable();
         else if (matchToken(TokenKind.IndexToken))
-            return parseCreateIndex();
+            ret = parseCreateIndex();
         else
-            throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
-                    + "\" at position " + typeToken.getPosition());
+            diagnostics.add("Unexpected token: \"" + typeToken.getTokenText() + "\" at position " + typeToken.getPosition());
+
+        return ret;
     }
 
     private SQLStatement parseCreateTable() throws DBError {
-        return new CreateTableParser(line).parse();
+        var p = new CreateTableParser(line);
+        var ret = p.parse();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private SQLStatement parseCreateIndex() throws DBError {
-        return new CreateIndexParser(line).parse();
+        var p = new CreateIndexParser(line);
+        var ret = p.parse();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private SQLStatement parseDML() throws DBError {
         Token typeToken = getCurrent();
+        SQLStatement ret = null;
 
         if (matchToken(TokenKind.SelectToken))
-            return parseSelect();
+            ret = parseSelect();
         else if (matchToken(TokenKind.InsertToken))
-            return parseInsert();
+            ret = parseInsert();
         else if (matchToken(TokenKind.DeleteToken))
-            return parseDelete();
+            ret = parseDelete();
         else if (matchToken(TokenKind.DropToken))
-            return parseDrop();
+            ret = parseDrop();
         else if (matchToken(TokenKind.UpdateToken))
-            return parseUpdate();
+            ret = parseUpdate();
         else
-            throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
-                    + "\" at position " + typeToken.getPosition());
+            diagnostics.add("Unexpected token: \"" + typeToken.getTokenText() + "\" at position " + typeToken.getPosition());
+
+        return ret;
     }
 
     private SQLStatement parseUpdate() throws DBError {
-        return new UpdateParser(line).parse();
+        var p = new UpdateParser(line);
+        var ret = p.parse();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private SQLStatement parseDrop() throws DBError {
         Token typeToken = nextToken();
+        SQLStatement ret = null;
+
         if (matchToken(TokenKind.TableToken))
-            return parseDropTable();
+            ret = parseDropTable();
         else if (matchToken(TokenKind.IndexToken))
-            return parseDropIndex();
+            ret = parseDropIndex();
         else
-            throw new DBError("Unexpected token: \"" + typeToken.getTokenText()
-                    + "\" at position " + typeToken.getPosition());
+            diagnostics.add("Unexpected token: \"" + typeToken.getTokenText() + "\" at position " + typeToken.getPosition());
+
+        return ret;
     }
 
     private SQLStatement parseDropIndex() throws DBError {
-        return new DropIndexParser(line).parse();
+        var p = new DropIndexParser(line);
+        var ret = p.parse();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private SQLStatement parseDropTable() throws DBError {
-        return new DropTableParser(line).parse();
+        var p = new DropTableParser(line);
+        var ret = p.parse();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private SQLStatement parseDelete() throws DBError {
-        return new DeleteParser(line).parse();
+        var p = new DeleteParser(line);
+        var ret = p.parse();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private SQLStatement parseInsert() throws DBError {
-        return new InsertParser(line).parse();
+        var p = new InsertParser(line);
+        var ret = p.parse();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private SQLStatement parseSelect() throws DBError {
-        return new SelectParser(line).parse();
+        var p = new SelectParser(line);
+        var ret = p.parse();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private boolean matchToken(TokenKind tokenKind) {
@@ -162,5 +204,9 @@ public class Parser {
             return null;
 
         return tokenVector.get(index);
+    }
+
+    public Vector<String> getDiagnostics() {
+        return diagnostics;
     }
 }

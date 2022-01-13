@@ -1,7 +1,7 @@
 package QueryParser.StatementParsers;
 
 import Predicate.Predicate;
-import QueryParser.DMLStatement;
+import QueryParser.DMLStatements.UpdateStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
@@ -26,7 +26,8 @@ public class UpdateParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing update statement.");
+            return null;
         }
 
         String tableName = matcher.group(TABLENAME_GROUP);
@@ -37,7 +38,7 @@ public class UpdateParser extends StatementParser {
                 getPredicates(setPredicatesString.split(","));
 
         if (!usePredicates) {
-            return new DMLStatement.UpdateStatement(tableName, setPredicates,
+            return new UpdateStatement(tableName, setPredicates,
                     new Vector<>());
         }
 
@@ -49,7 +50,7 @@ public class UpdateParser extends StatementParser {
 
         Vector<Predicate> predicates = getPredicates(predicateStrings);
 
-        return new DMLStatement.UpdateStatement(tableName, setPredicates,
+        return new UpdateStatement(tableName, setPredicates,
                 predicates);
     }
 }

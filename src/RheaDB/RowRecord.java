@@ -94,7 +94,7 @@ public class RowRecord implements Serializable {
             return false;
 
         if (this.attributeValues.size() != other.attributeValues.size() ||
-            this.attributeList.size() != other.attributeList.size())
+                this.attributeList.size() != other.attributeList.size())
             return false;
 
         for (int i = 0; i < attributeList.size(); i++) {

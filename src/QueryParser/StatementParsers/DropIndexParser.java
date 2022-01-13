@@ -1,6 +1,6 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.DMLStatement;
+import QueryParser.DMLStatements.DropIndexStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
@@ -23,12 +23,13 @@ public class DropIndexParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing drop index statement.");
+            return null;
         }
 
         String tableName = matcher.group(TABLENAME_GROUP);
         String attributeName = matcher.group(ATTRIBUTE_GROUP);
 
-        return new DMLStatement.DropIndexStatement(tableName, attributeName);
+        return new DropIndexStatement(tableName, attributeName);
     }
 }

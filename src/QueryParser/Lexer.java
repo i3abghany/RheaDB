@@ -8,6 +8,8 @@ public class Lexer {
     private final String text;
     private int position;
 
+    private final Vector<String> diagnostics = new Vector<>();
+
     private final HashSet<String> keywordSet = new HashSet<>();
     private final HashSet<String> dataTypeSet = new HashSet<>();
     private final HashSet<Character> operatorSet = new HashSet<>();
@@ -100,7 +102,7 @@ public class Lexer {
         String tokenText = text.substring(tokenPosition, position);
         if (isKeyword(tokenText))
             return new Token(tokenPosition, tokenText.toLowerCase(Locale.ROOT),
-                    tokenText.toLowerCase(Locale.ROOT),  getKeywordTokenKind(tokenText));
+                    tokenText.toLowerCase(Locale.ROOT), getKeywordTokenKind(tokenText));
         else if (isDataType(tokenText))
             return new Token(tokenPosition, tokenText.toLowerCase(Locale.ROOT),
                     tokenText.toLowerCase(Locale.ROOT), TokenKind.DataTypeToken);
@@ -110,7 +112,7 @@ public class Lexer {
 
     private Token lexStringLiteral(int tokenPosition) {
         advance();
-        while (getCurr() != '"')
+        while (getCurr() != '"' && inBounds())
             advance();
         if (inBounds()) {
             String tokenText = text.substring(tokenPosition + 1, position);
@@ -118,7 +120,7 @@ public class Lexer {
             return new Token(tokenPosition, tokenText, tokenText, TokenKind.StringLiteralToken);
         } else {
             String tokenText = text.substring(tokenPosition);
-            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+            return addBadTokenToDiagnostics(new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken));
         }
     }
 
@@ -137,8 +139,7 @@ public class Lexer {
                     TokenKind.NotEqualsToken);
         } else {
             String tokenText = "!";
-            return new Token(tokenPosition, tokenText, tokenText,
-                    TokenKind.BadToken);
+            return addBadTokenToDiagnostics(new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken));
         }
     }
 
@@ -224,7 +225,7 @@ public class Lexer {
                     TokenKind.BarBarToken);
         } else {
             String tokenText = "|";
-            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+            return addBadTokenToDiagnostics(new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken));
         }
     }
 
@@ -237,52 +238,55 @@ public class Lexer {
                     TokenKind.AmpersandAmpersandToken);
         } else {
             String tokenText = "&";
-            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+            return addBadTokenToDiagnostics(new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken));
         }
     }
 
     private Token lexBadToken(int tokenPosition) {
         advance();
-        return new Token(tokenPosition, Character.toString(getCurr()),
-                Character.toString(getCurr()), TokenKind.BadToken);
+        return addBadTokenToDiagnostics(new Token(tokenPosition, Character.toString(getCurr()), Character.toString(getCurr()), TokenKind.BadToken));
+    }
+
+    public Vector<String> getDiagnostics() {
+        return diagnostics;
     }
 
     public Vector<Token> lex() {
-            Vector<Token> tokens = new Vector<>();
+        Vector<Token> tokens = new Vector<>();
 
-            while (position < text.length()) {
-                int tokenPosition = position;
+        while (position < text.length()) {
+            int tokenPosition = position;
 
-                if (Character.isWhitespace(getCurr()))
-                    tokens.add(lexWhiteSpaceToken(tokenPosition));
-                else if (Character.isDigit(getCurr()))
-                    tokens.add(lexNumericLiteral(tokenPosition));
-                else if (Character.isAlphabetic(getCurr()) || getCurr() == '_')
-                    tokens.add(lexAlphabeticalToken(tokenPosition));
-                else if (isComparisonOperator(getCurr()))
-                    tokens.add(lexOperatorToken(tokenPosition));
-                else if (getCurr() == '"')
-                    tokens.add(lexStringLiteral(tokenPosition));
-                else if (getCurr() == ',')
-                    tokens.add(lexCommaToken(tokenPosition));
-                else if (getCurr() == '(')
-                    tokens.add(lexOpenParen(tokenPosition));
-                else if (getCurr() == ')')
-                    tokens.add(lexClosedParen(tokenPosition));
-                else if (getCurr() == '*')
-                    tokens.add(lexStarToken(tokenPosition));
-                else if (getCurr() == ';')
-                    tokens.add(lexSemiColon(tokenPosition));
-                else if (getCurr() == '&')
-                    tokens.add(lexStartingWithAmpersand(tokenPosition));
-                else if (getCurr() == '|')
-                    tokens.add(lexStartingWithBar(tokenPosition));
-                else if (!inBounds())
-                    break;
-                else
-                    tokens.add(lexBadToken(tokenPosition));
+            if (Character.isWhitespace(getCurr()))
+                tokens.add(lexWhiteSpaceToken(tokenPosition));
+            else if (Character.isDigit(getCurr()))
+                tokens.add(lexNumericLiteral(tokenPosition));
+            else if (Character.isAlphabetic(getCurr()) || getCurr() == '_')
+                tokens.add(lexAlphabeticalToken(tokenPosition));
+            else if (isComparisonOperator(getCurr()))
+                tokens.add(lexOperatorToken(tokenPosition));
+            else if (getCurr() == '"')
+                tokens.add(lexStringLiteral(tokenPosition));
+            else if (getCurr() == ',')
+                tokens.add(lexCommaToken(tokenPosition));
+            else if (getCurr() == '(')
+                tokens.add(lexOpenParen(tokenPosition));
+            else if (getCurr() == ')')
+                tokens.add(lexClosedParen(tokenPosition));
+            else if (getCurr() == '*')
+                tokens.add(lexStarToken(tokenPosition));
+            else if (getCurr() == ';')
+                tokens.add(lexSemiColon(tokenPosition));
+            else if (getCurr() == '&')
+                tokens.add(lexStartingWithAmpersand(tokenPosition));
+            else if (getCurr() == '|')
+                tokens.add(lexStartingWithBar(tokenPosition));
+            else if (!inBounds())
+                break;
+            else {
+                tokens.add(lexBadToken(tokenPosition));
             }
-
+        }
         return tokens;
     }
 
@@ -312,5 +316,9 @@ public class Lexer {
         if (position != text.length())
             position++;
     }
-}
 
+    private Token addBadTokenToDiagnostics(Token token) {
+        diagnostics.add("Bad token: \"" + token.getTokenText() + "\" at position: " + token.getPosition());
+        return token;
+    }
+}

@@ -1,3 +1,4 @@
 package QueryParser.PredicateParser;
 
-public class ASTNode {  }
+public class ASTNode {
+}

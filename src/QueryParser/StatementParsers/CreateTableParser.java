@@ -1,6 +1,10 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.*;
+import QueryParser.DDLStatements.CreateTableStatement;
+import QueryParser.Lexer;
+import QueryParser.SQLStatement;
+import QueryParser.Token;
+import QueryParser.TokenKind;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
 import RheaDB.DBError;
@@ -26,7 +30,8 @@ public class CreateTableParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing create table statement.");
+            return null;
         }
 
         String tableName = matcher.group(TABLENAME_GROUP);
@@ -46,8 +51,8 @@ public class CreateTableParser extends StatementParser {
             Token attributeTypeToken = tokens.get(i + 1);
 
             if (attributeTypeToken == null ||
-                attributeNameToken.getKind() != TokenKind.IdentifierToken ||
-                attributeTypeToken.getKind() != TokenKind.DataTypeToken) {
+                    attributeNameToken.getKind() != TokenKind.IdentifierToken ||
+                    attributeTypeToken.getKind() != TokenKind.DataTypeToken) {
                 throw new DBError("Error parsing the statement.");
             }
 
@@ -59,10 +64,10 @@ public class CreateTableParser extends StatementParser {
                         default -> null;
                     };
 
-                attributes.add(new Attribute(type,
-                        attributeNameToken.getTokenText().toLowerCase(Locale.ROOT)));
+            attributes.add(new Attribute(type,
+                    attributeNameToken.getTokenText().toLowerCase(Locale.ROOT)));
         }
 
-        return new DDLStatement.CreateTableStatement(tableName, attributes);
+        return new CreateTableStatement(tableName, attributes);
     }
 }

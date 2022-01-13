@@ -2,16 +2,24 @@ package RheaDB;
 
 import BPlusTree.BPlusTree;
 import Predicate.Predicate;
-import QueryParser.*;
-import QueryParser.DDLStatement.*;
-import QueryParser.DMLStatement.*;
-import QueryParser.InternalStatement.*;
+import QueryParser.DDLStatements.CreateIndexStatement;
+import QueryParser.DDLStatements.CreateTableStatement;
+import QueryParser.DDLStatements.DDLStatement;
+import QueryParser.DMLStatements.*;
+import QueryParser.InternalStatements.CompactStatement;
+import QueryParser.InternalStatements.DescribeStatement;
+import QueryParser.InternalStatements.InternalStatement;
+import QueryParser.Parser;
+import QueryParser.SQLStatement;
 import RheaDB.StorageManagement.BufferPool;
 import RheaDB.StorageManagement.DiskManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class RheaDB {
@@ -69,7 +77,10 @@ public class RheaDB {
      * To support their interface in JDBC, only save the data as if the DB was
      * really closed.
      */
-    public boolean isClosed() { return isClosed; }
+    public boolean isClosed() {
+        return isClosed;
+    }
+
     public void close() {
         isClosed = true;
         saveMetadata();
@@ -93,7 +104,7 @@ public class RheaDB {
                 return;
             }
 
-            if (statementStr.isEmpty())
+            if (statementStr.isBlank())
                 continue;
 
             QueryResult queryResult = executeStatement(statementStr);
@@ -109,12 +120,17 @@ public class RheaDB {
     public QueryResult executeStatement(String sql) {
         SQLStatement sqlStatement;
         QueryResult queryResult = null;
+        Parser parser = null;
 
         try {
-            sqlStatement = new Parser(sql).parse();
+            parser = new Parser(sql);
+            sqlStatement = parser.parse();
             queryResult = executeStatement(sqlStatement);
         } catch (DBError dbError) {
-            System.out.println(dbError.getMessage());
+            var diagnostics = parser.getDiagnostics();
+            for (var d : diagnostics) {
+                System.out.println(d);
+            }
         }
 
         return queryResult;
@@ -372,7 +388,7 @@ public class RheaDB {
             Attribute attribute = table.getAttributeWithName(predicate.getAttributeName());
             if (attribute == null) {
                 throw new DBError("Invalid attribute: \"" + predicate.getAttributeName()
-                    + "\"");
+                        + "\"");
             }
             predicate.setAttribute(attribute);
             if (attribute.getIsIndexed()) {
@@ -419,7 +435,7 @@ public class RheaDB {
     private void verifySelectedAttributesExist(Table table, Vector<String> selectedAttributes) throws DBError {
         for (String attributeName : selectedAttributes) {
             if (!attributeName.equals("*") &&
-                table.getAttributeWithName(attributeName) == null) {
+                    table.getAttributeWithName(attributeName) == null) {
                 throw new DBError("Invalid attribute name " + attributeName);
             }
         }
@@ -433,7 +449,7 @@ public class RheaDB {
         }
 
         return result.size() == 0 ? null :
-            new QueryResult(result, table.getAttributeList(), selectedAttributes);
+                new QueryResult(result, table.getAttributeList(), selectedAttributes);
     }
 
     private QueryResult executeDeleteFrom(DeleteStatement deleteStatement) throws DBError {
@@ -525,7 +541,7 @@ public class RheaDB {
                         int testObject = (int) value;
                         break;
                     }
-                    case FLOAT:{
+                    case FLOAT: {
                         float testObject = (float) value;
                         break;
                     }
@@ -533,7 +549,8 @@ public class RheaDB {
                         String testObject = (String) value;
                         break;
                     }
-                    default: assert false;
+                    default:
+                        assert false;
                 }
             } catch (Exception e) {
                 throw new DBError("Invalid value(" + value + ") provided " +
@@ -575,7 +592,7 @@ public class RheaDB {
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
             page.getRecords().forEach(
-                r -> bPlusTree.insert(r.getValueOf(attribute), r)
+                    r -> bPlusTree.insert(r.getValueOf(attribute), r)
             );
         }
 

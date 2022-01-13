@@ -110,7 +110,7 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
             this.keys[this.numberOfKeys] = node.getKeys()[i];
             this.numberOfKeys++;
         }
-        for (int i = 0; i < ((InnerNode<K>)node).getDegree(); i++) {
+        for (int i = 0; i < ((InnerNode<K>) node).getDegree(); i++) {
             this.children[this.degree] = node.getChildren()[i];
             node.getChildren()[i].setParent(this);
             this.degree++;

@@ -15,17 +15,17 @@ public class Token {
 
     public boolean isLiteral() {
         return kind == TokenKind.StringLiteralToken ||
-               kind == TokenKind.FloatingPointToken ||
-               kind == TokenKind.IntegralToken;
+                kind == TokenKind.FloatingPointToken ||
+                kind == TokenKind.IntegralToken;
     }
 
     public boolean isOperator() {
         return kind == TokenKind.LessToken ||
-               kind == TokenKind.LessEqualsToken ||
-               kind == TokenKind.EqualsToken ||
-               kind == TokenKind.GreaterToken ||
-               kind == TokenKind.GreaterEqualsToken ||
-               kind == TokenKind.NotEqualsToken;
+                kind == TokenKind.LessEqualsToken ||
+                kind == TokenKind.EqualsToken ||
+                kind == TokenKind.GreaterToken ||
+                kind == TokenKind.GreaterEqualsToken ||
+                kind == TokenKind.NotEqualsToken;
     }
 
     public int getPosition() {

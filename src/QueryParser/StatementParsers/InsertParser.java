@@ -1,6 +1,6 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.DMLStatement;
+import QueryParser.DMLStatements.InsertStatement;
 import QueryParser.Lexer;
 import QueryParser.SQLStatement;
 import QueryParser.Token;
@@ -26,7 +26,8 @@ public class InsertParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing insert statement.");
+            return null;
         }
 
         String tableName = matcher.group(TABLENAME_GROUP);
@@ -43,6 +44,6 @@ public class InsertParser extends StatementParser {
                         .map(Token::getValue)
                         .collect(Collectors.toCollection(Vector::new));
 
-        return new DMLStatement.InsertStatement(tableName, valueObjects);
+        return new InsertStatement(tableName, valueObjects);
     }
 }

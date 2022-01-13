@@ -4,6 +4,7 @@ import java.util.Vector;
 
 public class ValueList<K extends Comparable<K>, V> extends Vector<V> implements Comparable<ValueList<K, V>> {
     private final K key;
+
     public ValueList(K key, V initialValue) {
         this.key = key;
         this.add(initialValue);

@@ -1,14 +1,10 @@
 package RheaDB.JDBCDriver;
 
 import RheaDB.QueryResult;
-import RheaDB.UpdateResult;
 import RheaDB.RheaDB;
+import RheaDB.UpdateResult;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.Statement;
+import java.sql.*;
 
 public class JCStatement implements Statement {
     private final RheaDB rheaDB;

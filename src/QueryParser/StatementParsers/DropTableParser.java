@@ -1,6 +1,6 @@
 package QueryParser.StatementParsers;
 
-import QueryParser.DMLStatement;
+import QueryParser.DMLStatements.DropTableStatement;
 import QueryParser.SQLStatement;
 import RheaDB.DBError;
 
@@ -22,11 +22,12 @@ public class DropTableParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing drop table statement.");
+            return null;
         }
 
         String tableName = matcher.group(TABLENAME_GROUP);
 
-        return new DMLStatement.DropTableStatement(tableName);
+        return new DropTableStatement(tableName);
     }
 }

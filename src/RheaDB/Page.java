@@ -1,6 +1,7 @@
 package RheaDB;
 
-import java.io.*;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Vector;
 
@@ -62,8 +63,8 @@ public class Page implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         Page page = (Page) o;
         return maxRows == page.maxRows &&
-               pageIdx == page.pageIdx &&
-               tableName.equals(page.tableName);
+                pageIdx == page.pageIdx &&
+                tableName.equals(page.tableName);
     }
 
     @Override

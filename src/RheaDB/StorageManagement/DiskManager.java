@@ -7,7 +7,8 @@ import RheaDB.Table;
 
 import java.io.*;
 import java.util.HashMap;
-import java.util.logging.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DiskManager {
     private final static Logger LOGGER = Logger.getLogger(DiskManager.class.getName());

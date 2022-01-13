@@ -14,10 +14,10 @@ public abstract class SQLStatement {
     }
 
     public static boolean isDMLKeyword(Token token) {
-        return token.getKind() == TokenKind.InsertToken   ||
-                 token.getKind() == TokenKind.DeleteToken ||
-                token.getKind() == TokenKind.DropToken    ||
-                token.getKind() == TokenKind.UpdateToken  ||
+        return token.getKind() == TokenKind.InsertToken ||
+                token.getKind() == TokenKind.DeleteToken ||
+                token.getKind() == TokenKind.DropToken ||
+                token.getKind() == TokenKind.UpdateToken ||
                 token.getKind() == TokenKind.SelectToken;
     }
 
