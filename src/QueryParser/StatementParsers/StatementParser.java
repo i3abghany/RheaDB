@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 public abstract class StatementParser {
     protected String line;
     protected String regex;
+    protected final Vector<String> diagnostics = new Vector<>();
 
     public StatementParser(String line) {
         this.line = line;
@@ -39,5 +40,9 @@ public abstract class StatementParser {
                     tokens.elementAt(2).getValue()));
         }
         return predicates;
+    }
+
+    public Vector<String> getDiagnostics() {
+        return diagnostics;
     }
 }

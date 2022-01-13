@@ -26,7 +26,8 @@ public class UpdateParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing update statement.");
+            return null;
         }
 
         String tableName = matcher.group(TABLENAME_GROUP);

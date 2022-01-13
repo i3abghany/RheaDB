@@ -27,7 +27,8 @@ public class SelectParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing select statement.");
+            return null;
         }
 
         Vector<String> attributeNames =

@@ -8,6 +8,8 @@ public class Lexer {
     private final String text;
     private int position;
 
+    private final Vector<String> diagnostics = new Vector<>();
+
     private final HashSet<String> keywordSet = new HashSet<>();
     private final HashSet<String> dataTypeSet = new HashSet<>();
     private final HashSet<Character> operatorSet = new HashSet<>();
@@ -118,7 +120,7 @@ public class Lexer {
             return new Token(tokenPosition, tokenText, tokenText, TokenKind.StringLiteralToken);
         } else {
             String tokenText = text.substring(tokenPosition);
-            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+            return addBadTokenToDiagnostics(new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken));
         }
     }
 
@@ -137,8 +139,7 @@ public class Lexer {
                     TokenKind.NotEqualsToken);
         } else {
             String tokenText = "!";
-            return new Token(tokenPosition, tokenText, tokenText,
-                    TokenKind.BadToken);
+            return addBadTokenToDiagnostics(new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken));
         }
     }
 
@@ -224,7 +225,7 @@ public class Lexer {
                     TokenKind.BarBarToken);
         } else {
             String tokenText = "|";
-            return new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken);
+            return addBadTokenToDiagnostics(new Token(tokenPosition, tokenText, tokenText, TokenKind.BadToken));
         }
     }
 
@@ -312,5 +313,9 @@ public class Lexer {
         if (position != text.length())
             position++;
     }
-}
 
+    private Token addBadTokenToDiagnostics(Token token) {
+        diagnostics.add("Bad token: \"" + token.getTokenText() + "\" at position: " + token.getPosition());
+        return token;
+    }
+}

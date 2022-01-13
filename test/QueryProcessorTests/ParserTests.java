@@ -23,7 +23,7 @@ import static RheaDB.AttributeType.*;
 public class ParserTests {
     @Test
     public void parseEmptyStatement() {
-        Assertions.assertThrows(DBError.class, () -> new Parser("").parse());
+        Assertions.assertDoesNotThrow(() -> new Parser("").parse());
     }
 
     @Test

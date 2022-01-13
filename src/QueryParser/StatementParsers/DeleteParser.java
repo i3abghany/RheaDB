@@ -25,7 +25,8 @@ public class DeleteParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing delete statement.");
+            return null;
         }
 
         String tableName = matcher.group(TABLENAME_GROUP);

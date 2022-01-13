@@ -25,7 +25,8 @@ public class InternalParser extends StatementParser {
         Matcher matcher = pattern.matcher(line);
 
         if (!matcher.find()) {
-            throw new DBError("Error parsing the statement.");
+            diagnostics.add("Error parsing internal statement.");
+            return null;
         }
 
         String statement = matcher.group(STATEMENT_GROUP);

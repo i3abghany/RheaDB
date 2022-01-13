@@ -101,7 +101,7 @@ public class RheaDB {
                 return;
             }
 
-            if (statementStr.isEmpty())
+            if (statementStr.isBlank())
                 continue;
 
             QueryResult queryResult = executeStatement(statementStr);
@@ -117,12 +117,17 @@ public class RheaDB {
     public QueryResult executeStatement(String sql) {
         SQLStatement sqlStatement;
         QueryResult queryResult = null;
+        Parser parser = null;
 
         try {
-            sqlStatement = new Parser(sql).parse();
+            parser = new Parser(sql);
+            sqlStatement = parser.parse();
             queryResult = executeStatement(sqlStatement);
         } catch (DBError dbError) {
-            System.out.println(dbError.getMessage());
+            var diagnostics = parser.getDiagnostics();
+            for (var d : diagnostics) {
+                System.out.println(d);
+            }
         }
 
         return queryResult;
