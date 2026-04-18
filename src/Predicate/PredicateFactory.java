@@ -13,14 +13,11 @@ public class PredicateFactory {
     }
 
     public static Predicate of(String identifierName, TokenKind operatorKind, Object literalValue) {
-        return switch (operatorKind) {
-            case EqualsToken -> new EqualsPredicate(identifierName, literalValue);
-            case NotEqualsToken -> new NotEqualsPredicate(identifierName, literalValue);
-            case GreaterEqualsToken -> new GreaterThanEqualPredicate(identifierName, literalValue);
-            case GreaterToken -> new GreaterThanPredicate(identifierName, literalValue);
-            case LessEqualsToken -> new LessThanEqualPredicate(identifierName, literalValue);
-            case LessToken -> new LessThanPredicate(identifierName, literalValue);
-            default -> null;
-        };
+        Predicate.Operation operation = Predicate.Operation.fromTokenKind(operatorKind);
+        if (operation == null) {
+            return null;
+        }
+
+        return new Predicate(identifierName, literalValue, operation);
     }
 }
