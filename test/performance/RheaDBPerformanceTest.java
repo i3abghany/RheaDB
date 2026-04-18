@@ -16,8 +16,7 @@ import java.sql.Statement;
 public class RheaDBPerformanceTest {
     private static final int INSERT_ROW_COUNT = 10_000;
     private static final int SCAN_ROW_COUNT = 20_000;
-//    private static final int INDEX_ROW_COUNT = 25_000;
-    private static final int INDEX_ROW_COUNT = 2500;
+    private static final int INDEX_ROW_COUNT = 20_000;
     private static final int UPDATE_ROW_COUNT = 12_000;
     private static final int DELETE_ROW_COUNT = 12_000;
     private static final int JDBC_INSERT_ROW_COUNT = 5_000;
