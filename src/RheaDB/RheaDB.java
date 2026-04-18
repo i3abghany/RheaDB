@@ -417,6 +417,11 @@ public class RheaDB {
                 .filter(p -> !table.getAttributeWithName(p.getAttributeName()).getIsIndexed())
                 .collect(Collectors.toCollection(Vector::new));
 
+        if (predicates.isEmpty()) {
+            return result.isEmpty() ? null :
+                    new QueryResult(result, table.getAttributeList(), selectedAttributes);
+        }
+
         result.addAll(selectWithPredicates(table, predicates));
         return result.size() == 0 ? null :
                 new QueryResult(result, table.getAttributeList(),
@@ -428,17 +433,17 @@ public class RheaDB {
 
         for (int i = 1; i <= table.getNumPages(); i++) {
             Page page = bufferPool.getPage(table, i);
-            page.getRecords().parallelStream().forEach(
-                    (r) -> {
-                        boolean ret = false;
-                        for (Predicate p : predicates) {
-                            Attribute attribute = table
-                                    .getAttributeWithName(p.getAttributeName());
-                            ret |= p.doesSatisfy(r.getValueOf(attribute));
-                        }
-                        if (ret) result.add(r);
-                    }
-            );
+            for (RowRecord r : page.getRecords()) {
+                boolean ret = false;
+                for (Predicate p : predicates) {
+                    Attribute attribute = table
+                            .getAttributeWithName(p.getAttributeName());
+                    ret |= p.doesSatisfy(r.getValueOf(attribute));
+                }
+                if (ret) {
+                    result.add(r);
+                }
+            }
         }
         return result;
     }
