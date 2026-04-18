@@ -14,6 +14,26 @@ A simple disk-based DBMS that supports simple SQL-like querying statements.
 * JDBC driver
 * B+Tree indexing
 
+## Performance test suite
+The repository includes a dedicated performance suite in
+`test/performance/RheaDBPerformanceTest.java`.
+
+The suite is intentionally gated behind the JVM system property
+`rheadb.perf=true` so it does not slow down the normal unit-test cycle.
+
+### Running it in IntelliJ
+Create or edit a JUnit run configuration for `RheaDBPerformanceTest` and add:
+
+```text
+-Drheadb.perf=true
+```
+
+The benchmark output is printed to standard output in this form:
+
+```text
+[PERF] benchmark name -> min=... ms avg=... ms p50=... ms p95=... ms samples=[...]
+```
+
 ### JDBC driver loading and usage
 The connection url passed to `DriverManager.getConnection()` must be in the
 format `jdbc:rhea:DIR_PATH`, where `DIR_PATH` is the storage directory for the
