@@ -33,6 +33,7 @@ public class RheaDB {
     private final BufferPool bufferPool;
 
     private boolean isClosed = false;
+    private boolean metadataDirty = false;
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public RheaDB(String rootDirectory) {
@@ -83,7 +84,7 @@ public class RheaDB {
 
     public void close() {
         isClosed = true;
-        saveMetadata();
+        saveMetadata(true);
         if (lazyCommit) {
             commitOnExit();
         }
@@ -242,6 +243,7 @@ public class RheaDB {
 
         bufferPool.deleteIndex(table, attribute);
         attribute.setIsIndexed(false);
+        metadataDirty = true;
         return true;
     }
 
@@ -294,7 +296,7 @@ public class RheaDB {
 
         if (!lazyCommit) {
             bufferPool.commitAllPages();
-            saveMetadata();
+            saveMetadata(false);
         }
 
         return queryResult;
@@ -312,6 +314,7 @@ public class RheaDB {
         bufferPool.commitTable(t);
         DiskManager.compactTable(t);
         bufferPool.updateTablePagesFromDisk(t);
+        metadataDirty = true;
         return null;
     }
 
@@ -344,6 +347,7 @@ public class RheaDB {
         Table newTable = new Table(tableName, attributeList, pageDirectory,
                 maxTuplesPerPage);
         createdTables.put(tableName, newTable);
+        metadataDirty = true;
 
         return true;
     }
@@ -370,6 +374,7 @@ public class RheaDB {
 
     private void deleteTableFromMetadata(String tableName) {
         this.createdTables.remove(tableName);
+        metadataDirty = true;
     }
 
     private QueryResult executeSelectFrom(SelectStatement selectStatement) throws DBError {
@@ -526,6 +531,7 @@ public class RheaDB {
         for (int i = table.getNumPages(); i > 0; i--) {
             Page page = bufferPool.getPage(table, i);
             bufferPool.deletePage(table, i);
+            metadataDirty = true;
             if (!lazyCommit) {
                 bufferPool.updatePage(table, page);
             }
@@ -581,8 +587,10 @@ public class RheaDB {
 
     private void insertInto(Table table, RowRecord record) {
         Page lastPage = bufferPool.getPage(table, table.getNumPages());
-        if (lastPage == null || lastPage.isFull())
+        if (lastPage == null || lastPage.isFull()) {
             lastPage = bufferPool.insertPage(table, table.getNewPage());
+            metadataDirty = true;
+        }
 
         record.setPageId(lastPage.getPageIdx());
         record.setRowId(lastPage.getLastRowIndex());
@@ -614,6 +622,7 @@ public class RheaDB {
 
         bufferPool.saveIndex(table, attribute, bPlusTree);
         attribute.setIsIndexed(true);
+        metadataDirty = true;
         return true;
     }
 
@@ -627,7 +636,16 @@ public class RheaDB {
     }
 
     public void saveMetadata() {
+        saveMetadata(false);
+    }
+
+    public void saveMetadata(boolean force) {
+        if (!force && !metadataDirty) {
+            return;
+        }
+
         DiskManager.saveMetadata(createdTables);
+        metadataDirty = false;
     }
 
     public void setLazyCommit(boolean b) {

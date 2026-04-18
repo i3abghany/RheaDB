@@ -36,8 +36,12 @@ public class BufferPool {
     }
 
     public void commitAllPages() {
-        pageHashMap.forEach((PageIdentifier pi, Page page) -> {
-            flushPage(pi, page);
+        Vector<PageIdentifier> dirtySnapshot = new Vector<>(dirtyPages);
+        dirtySnapshot.forEach(pageIdentifier -> {
+            Page page = pageHashMap.get(pageIdentifier);
+            if (page != null) {
+                flushPage(pageIdentifier, page);
+            }
         });
     }
 
@@ -79,9 +83,13 @@ public class BufferPool {
     }
 
     public void commitTable(Table t) {
-        pageHashMap.forEach((PageIdentifier pi, Page page) -> {
-            if (pi.table == t) {
-                flushPage(pi, page);
+        Vector<PageIdentifier> dirtySnapshot = new Vector<>(dirtyPages);
+        dirtySnapshot.forEach(pageIdentifier -> {
+            if (pageIdentifier.table == t) {
+                Page page = pageHashMap.get(pageIdentifier);
+                if (page != null) {
+                    flushPage(pageIdentifier, page);
+                }
             }
         });
     }
@@ -151,10 +159,8 @@ public class BufferPool {
      */
     public Page getPage(Table table, int pageIdx) {
         PageIdentifier pageIdentifier = new PageIdentifier(table, pageIdx);
-        if (!pageHashMap.containsKey(pageIdentifier))
-            return getPageFromStorage(table, pageIdx);
-        else
-            return pageHashMap.get(pageIdentifier);
+        Page cachedPage = pageHashMap.get(pageIdentifier);
+        return cachedPage != null ? cachedPage : getPageFromStorage(table, pageIdx);
     }
 
     /**
@@ -172,7 +178,8 @@ public class BufferPool {
     public Page insertPage(Table table, Page page) {
         PageIdentifier pageIdentifier = new PageIdentifier(table, page.getPageIdx());
 
-        if (pageHashMap.containsKey(pageIdentifier)) {
+        Page previousPage = pageHashMap.get(pageIdentifier);
+        if (previousPage != null) {
             pageHashMap.put(pageIdentifier, page);
             return page;
         }

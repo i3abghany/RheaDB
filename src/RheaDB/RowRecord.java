@@ -16,7 +16,7 @@ public class RowRecord implements Serializable {
 
     private int pageId, rowId;
 
-    RowRecord(Vector<Attribute> attributeList, Vector<Object> attributeValues) {
+    public RowRecord(Vector<Attribute> attributeList, Vector<Object> attributeValues) {
         this.attributeValues = attributeValues;
         this.attributeList = attributeList;
     }

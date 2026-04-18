@@ -15,7 +15,7 @@ import java.util.Random;
 
 final class PerformanceTestSupport {
     static final int WARMUP_ITERATIONS = 1;
-    static final int MEASUREMENT_ITERATIONS = 1;
+    static final int MEASUREMENT_ITERATIONS = 5;
 
     private PerformanceTestSupport() {
     }

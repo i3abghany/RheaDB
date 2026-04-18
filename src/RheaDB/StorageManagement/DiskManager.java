@@ -2,11 +2,13 @@ package RheaDB.StorageManagement;
 
 import BPlusTree.BPlusTree;
 import BPlusTree.ValueList;
+import RheaDB.AttributeType;
 import RheaDB.Page;
 import RheaDB.RowRecord;
 import RheaDB.Table;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -14,6 +16,8 @@ import java.util.logging.Logger;
 
 public class DiskManager {
     private final static Logger LOGGER = Logger.getLogger(DiskManager.class.getName());
+    private static final int PAGE_FILE_MAGIC = 0x52484541;
+    private static final int PAGE_FILE_VERSION = 1;
 
     private static class IndexSnapshot implements Serializable {
         @Serial
@@ -28,28 +32,28 @@ public class DiskManager {
 
     public static Page getPage(Table table, int idx) {
         String fullPath = getFullPath(table, idx);
-        return deserializePage(fullPath);
+        return deserializePage(table, fullPath);
     }
 
     public static void compactTable(Table table) {
         int numPages = table.getNumPages();
 
         for (int i = numPages; i > 0; i--) {
-            Page p = deserializePage(getFullPath(table, i));
+            Page p = deserializePage(table, getFullPath(table, i));
             if (p.isEmpty()) {
                 deletePage(table, i);
             }
         }
 
-        Page lastPage = deserializePage(getFullPath(table, numPages));
+        Page lastPage = deserializePage(table, getFullPath(table, numPages));
         for (int i = 1; i < numPages; i++) {
-            Page p = deserializePage(getFullPath(table, i));
+            Page p = deserializePage(table, getFullPath(table, i));
             if (!p.isFull()) {
                 mergePages(p, lastPage);
                 savePage(table, p);
                 if (lastPage.isEmpty()) {
                     deletePage(table, numPages);
-                    lastPage = deserializePage(getFullPath(table, i));
+                    lastPage = deserializePage(table, getFullPath(table, i));
                 } else {
                     savePage(table, lastPage);
                 }
@@ -96,36 +100,33 @@ public class DiskManager {
     }
 
     public static void savePage(Table table, Page page) {
-        serializePage(page, getFullPath(table, page.getPageIdx()));
+        serializePage(table, page, getFullPath(table, page.getPageIdx()));
     }
 
-    private static Page deserializePage(String fullPath) {
-        Page page = null;
+    private static Page deserializePage(Table table, String fullPath) {
         try {
             File file = new File(fullPath);
             if (!file.exists()) {
                 return null;
             }
 
-            FileInputStream fis = new FileInputStream(file);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-
-            page = (Page) ois.readObject();
-
-            ois.close();
-            fis.close();
+            try (DataInputStream inputStream = new DataInputStream(
+                    new BufferedInputStream(new FileInputStream(file)))) {
+                int magic = inputStream.readInt();
+                if (magic != PAGE_FILE_MAGIC) {
+                    throw new IOException("Invalid page file format for " + fullPath);
+                }
+                return deserializePageSnapshot(table, inputStream);
+            }
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "An error occurred while serializing a page... Exiting.");
             System.exit(1);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            System.exit(1);
         }
-        return page;
+        return null;
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static void serializePage(Page page, String fullPath) {
+    private static void serializePage(Table table, Page page, String fullPath) {
         try {
             File file = new File(fullPath);
             if (!file.exists()) {
@@ -136,13 +137,24 @@ public class DiskManager {
                     System.exit(1);
                 }
             }
-            FileOutputStream fos = new FileOutputStream(file, false);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            try (DataOutputStream outputStream = new DataOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(file, false)))) {
+                outputStream.writeInt(PAGE_FILE_MAGIC);
+                outputStream.writeInt(PAGE_FILE_VERSION);
+                outputStream.writeInt(page.getPageIdx());
+                outputStream.writeInt(page.getMaxRows());
+                outputStream.writeInt(page.getNumberOfRows());
 
-            oos.writeObject(page);
+                for (RowRecord rowRecord : page.getRecords()) {
+                    outputStream.writeInt(rowRecord.getPageId());
+                    outputStream.writeInt(rowRecord.getRowId());
 
-            oos.close();
-            fos.close();
+                    Vector<Object> values = rowRecord.getAttributeValues();
+                    for (int i = 0; i < table.getAttributeList().size(); i++) {
+                        writeTypedValue(outputStream, table.getAttributeList().get(i).getType(), values.get(i));
+                    }
+                }
+            }
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "An error occurred while serializing a page... Exiting.", e);
             System.exit(1);
@@ -282,5 +294,78 @@ public class DiskManager {
             LOGGER.log(Level.SEVERE, "Could not open metadata file... Exiting", ioException);
             System.exit(1);
         }
+    }
+
+    private static Page deserializePageSnapshot(Table table, DataInputStream inputStream) throws IOException {
+        int version = inputStream.readInt();
+        if (version != PAGE_FILE_VERSION) {
+            throw new IOException("Unsupported page version " + version);
+        }
+
+        int pageIdx = inputStream.readInt();
+        int maxRows = inputStream.readInt();
+        int rowCount = inputStream.readInt();
+        Page page = new Page(table.getName(), maxRows, pageIdx);
+
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+            int pageId = inputStream.readInt();
+            int rowId = inputStream.readInt();
+            Vector<Object> values = new Vector<>();
+
+            for (int attributeIdx = 0; attributeIdx < table.getAttributeList().size(); attributeIdx++) {
+                AttributeType attributeType = table.getAttributeList().get(attributeIdx).getType();
+                values.add(readTypedValue(inputStream, attributeType));
+            }
+
+            RowRecord rowRecord = new RowRecord(table.getAttributeList(), values);
+            rowRecord.setPageId(pageId);
+            rowRecord.setRowId(rowId);
+            page.addRecord(rowRecord);
+        }
+
+        return page;
+    }
+
+    private static void writeTypedValue(DataOutputStream outputStream, AttributeType attributeType, Object value)
+            throws IOException {
+        outputStream.writeBoolean(value == null);
+        if (value == null) {
+            return;
+        }
+
+        switch (attributeType) {
+            case INT -> outputStream.writeInt((Integer) value);
+            case FLOAT -> outputStream.writeFloat((Float) value);
+            case STRING -> writeString(outputStream, (String) value);
+        }
+    }
+
+    private static Object readTypedValue(DataInputStream inputStream, AttributeType attributeType)
+            throws IOException {
+        boolean isNull = inputStream.readBoolean();
+        if (isNull) {
+            return null;
+        }
+
+        return switch (attributeType) {
+            case INT -> inputStream.readInt();
+            case FLOAT -> inputStream.readFloat();
+            case STRING -> readString(inputStream);
+        };
+    }
+
+    private static void writeString(DataOutputStream outputStream, String value) throws IOException {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        outputStream.writeInt(bytes.length);
+        outputStream.write(bytes);
+    }
+
+    private static String readString(DataInputStream inputStream) throws IOException {
+        int length = inputStream.readInt();
+        byte[] bytes = inputStream.readNBytes(length);
+        if (bytes.length != length) {
+            throw new EOFException("Unexpected end of page while reading string value.");
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }
