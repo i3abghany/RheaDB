@@ -43,28 +43,33 @@ database. It must be an existing directory.
 `static` portion of the driver, and (hopefully) successfully connect to a 
 database instance.
 
-
 ```java
-import java.sql.*;
+import java.sql.DriverManager;
 
-public class ExampleProgram {
-    public static void main(String[] args) throws SQLException, ClassNotFoundException {
+public class RheaDBJDBCTest {
+    public static void main(String[] args) throws Exception {
         Class.forName("RheaDB.JDBCDriver.JCDriver");
-        try (
-                Connection conn = DriverManager.getConnection("jdbc:rhea:/home/USER_NAME/dbdata");
-                Statement stmt = conn.createStatement();
-                stmt.executeQuery("CREATE TABLE FancyTable (id INT, name STRING, mass FLOAT);");
-                
-                stmt.executeQuery("INSERT INTO FancyTable VALUES (1, \"Random Name\", 42.69);");
-                stmt.executeQuery("INSERT INTO FancyTable VALUES (2, \"Not Random Name\", 96.24);");
-                stmt.executeQuery("INSERT INTO FancyTable VALUES (3, \"Completely Random Name\", 3.1415);");
-                
-                ResultSet rs = stmt.executeQuery("SELECT * FROM FancyTable;")
-        ) {
-            while (rs.next())
-                System.out.println(rs.getInt(0) + " - " + rs.getString(1) + " - " +
-                        rs.getFloat(2));
+        try (var c = DriverManager.getConnection("jdbc:rhea:./dbdata");
+             var s = c.createStatement()) {
+
+            s.execute("CREATE TABLE Planets (ord INT, name STRING, mass FLOAT);");
+            s.execute("INSERT INTO Planets VALUES (1, \"Mercury\", 0.328);");
+            s.execute("INSERT INTO Planets VALUES (2, \"Venus\", 4.867);");
+            s.execute("INSERT INTO Planets VALUES (3, \"Earth\", 5.972);");
+
+            try (var rs = s.executeQuery("SELECT * FROM Planets;")) {
+                while (rs.next())
+                    System.out.println(rs.getInt(0) + ", " + rs.getString(1) + ", " + rs.getFloat(2));
+            }
         }
     }
 }
+```
+
+This will create a database in the `./dbdata` directory, create a table named `Planets`, insert some data into it, and then select and print that data.
+
+```console
+1, Mercury, 0.328
+2, Venus, 4.867
+3, Earth, 5.972
 ```
