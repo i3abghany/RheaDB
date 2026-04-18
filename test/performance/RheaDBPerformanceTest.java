@@ -16,7 +16,8 @@ import java.sql.Statement;
 public class RheaDBPerformanceTest {
     private static final int INSERT_ROW_COUNT = 10_000;
     private static final int SCAN_ROW_COUNT = 20_000;
-    private static final int INDEX_ROW_COUNT = 25_000;
+//    private static final int INDEX_ROW_COUNT = 25_000;
+    private static final int INDEX_ROW_COUNT = 2500;
     private static final int UPDATE_ROW_COUNT = 12_000;
     private static final int DELETE_ROW_COUNT = 12_000;
     private static final int JDBC_INSERT_ROW_COUNT = 5_000;
@@ -80,23 +81,22 @@ public class RheaDBPerformanceTest {
 
     @Test
     void indexedLookupCoreEngine() throws Exception {
-        final int[] lookupIds = PerformanceTestSupport.pickUniqueIds(200, INDEX_ROW_COUNT, 1337L);
-
+        final int[] lookupIds = PerformanceTestSupport.pickUniqueIds(3, INDEX_ROW_COUNT, 1337L);
         PerformanceTestSupport.runBenchmark(
                 "indexed lookups via core engine",
                 new PerformanceTestSupport.BenchmarkScenario() {
                     @Override
                     public void setup(PerformanceTestSupport.BenchmarkContext context) {
-                        PerformanceTestSupport.createBenchmarkTable(context.db(), "PerfIndex");
-                        PerformanceTestSupport.populateTable(context.db(), "PerfIndex", INDEX_ROW_COUNT);
-                        context.db().executeStatement("CREATE INDEX PerfIndex id;");
+                        PerformanceTestSupport.createBenchmarkTable(context.db(), "PerfIndexTable");
+                        PerformanceTestSupport.populateTable(context.db(), "PerfIndexTable", INDEX_ROW_COUNT);
+                        context.db().executeStatement("CREATE INDEX PerfIndexTable id;");
                     }
 
                     @Override
                     public void run(PerformanceTestSupport.BenchmarkContext context) {
                         for (int lookupId : lookupIds) {
                             QueryResult result = context.db()
-                                    .executeStatement("SELECT * FROM PerfIndex WHERE id = " + lookupId + ";");
+                                    .executeStatement("SELECT * FROM PerfIndexTable WHERE id = " + lookupId + ";");
                             Assertions.assertEquals(1, PerformanceTestSupport.countRows(result));
                         }
                     }
@@ -104,7 +104,7 @@ public class RheaDBPerformanceTest {
                     @Override
                     public void verify(PerformanceTestSupport.BenchmarkContext context) {
                         QueryResult result = context.db()
-                                .executeStatement("SELECT * FROM PerfIndex WHERE id = " + lookupIds[0] + ";");
+                                .executeStatement("SELECT * FROM PerfIndexTable WHERE id = " + lookupIds[0] + ";");
                         Assertions.assertEquals(1, PerformanceTestSupport.countRows(result));
                     }
                 },

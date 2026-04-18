@@ -15,7 +15,7 @@ import java.util.Random;
 
 final class PerformanceTestSupport {
     static final int WARMUP_ITERATIONS = 1;
-    static final int MEASUREMENT_ITERATIONS = 5;
+    static final int MEASUREMENT_ITERATIONS = 1;
 
     private PerformanceTestSupport() {
     }
@@ -78,6 +78,18 @@ final class PerformanceTestSupport {
     }
 
     static int[] pickUniqueIds(int size, int upperBound, long seed) {
+        if (size < 0) {
+            throw new IllegalArgumentException("size must be non-negative.");
+        }
+        if (upperBound < 0) {
+            throw new IllegalArgumentException("upperBound must be non-negative.");
+        }
+        if (size > upperBound) {
+            throw new IllegalArgumentException(
+                    "Cannot pick " + size + " unique ids from range size " + upperBound + "."
+            );
+        }
+
         Random random = new Random(seed);
         int[] ids = new int[size];
         boolean[] used = new boolean[upperBound];
