@@ -1,7 +1,6 @@
 package RheaDB.JDBCDriver;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
@@ -44,10 +43,7 @@ public class JCDriver implements Driver {
 
 
         String dataDir = Arrays.stream(tokens).skip(2).collect(Collectors.joining(":"));
-        Path path = Paths.get(dataDir).toAbsolutePath();
-        if (!Files.isDirectory(path)) {
-            throw new SQLException("\"" + path + "\"" + " is not a valid directory.");
-        }
+        Path path = dataDir.isBlank() ? null : Paths.get(dataDir).toAbsolutePath();
 
         try {
             return new JCConnection(path);

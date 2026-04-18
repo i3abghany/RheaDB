@@ -8,6 +8,8 @@ import java.sql.*;
 
 public class JCStatement implements Statement {
     private final RheaDB rheaDB;
+    private ResultSet currentResultSet;
+    private int currentUpdateCount = -1;
 
     public JCStatement(RheaDB rheaDB) {
         this.rheaDB = rheaDB;
@@ -15,22 +17,17 @@ public class JCStatement implements Statement {
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        QueryResult queryResult = rheaDB.executeStatement(sql);
-        rheaDB.saveMetadata();
-        if (queryResult != null)
-            return new JCResultSet(queryResult.getRows().stream());
-        else
-            return new JCResultSet(null);
+        executeInternal(sql);
+        return currentResultSet != null ? currentResultSet : new JCResultSet(null);
     }
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        QueryResult qr = rheaDB.executeStatement(sql);
-        if (!(qr instanceof UpdateResult updateResult)) {
+        executeInternal(sql);
+        if (currentUpdateCount < 0) {
             throw new SQLException("Expected an UPDATE statement.");
-        } else {
-            return updateResult.getAffectedRows();
         }
+        return currentUpdateCount;
     }
 
     @Override
@@ -95,17 +92,18 @@ public class JCStatement implements Statement {
 
     @Override
     public boolean execute(String sql) throws SQLException {
-        return false;
+        executeInternal(sql);
+        return currentResultSet != null;
     }
 
     @Override
     public ResultSet getResultSet() throws SQLException {
-        return null;
+        return currentResultSet;
     }
 
     @Override
     public int getUpdateCount() throws SQLException {
-        return 0;
+        return currentUpdateCount;
     }
 
     @Override
@@ -241,5 +239,25 @@ public class JCStatement implements Statement {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
+    }
+
+    private void executeInternal(String sql) {
+        QueryResult queryResult = rheaDB.executeStatement(sql);
+        rheaDB.saveMetadata();
+
+        if (queryResult instanceof UpdateResult updateResult) {
+            currentResultSet = null;
+            currentUpdateCount = updateResult.getAffectedRows();
+            return;
+        }
+
+        if (queryResult != null) {
+            currentResultSet = new JCResultSet(queryResult.getRows().stream());
+            currentUpdateCount = -1;
+            return;
+        }
+
+        currentResultSet = null;
+        currentUpdateCount = 0;
     }
 }

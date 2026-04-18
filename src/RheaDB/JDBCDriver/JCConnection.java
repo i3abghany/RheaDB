@@ -13,7 +13,7 @@ public class JCConnection implements Connection {
     private final RheaDB rheaDB;
 
     public JCConnection(Path dataDir) throws IOException {
-        this.rheaDB = new RheaDB(dataDir.toString());
+        this.rheaDB = new RheaDB(dataDir == null ? null : dataDir.toString());
         this.rheaDB.setLazyCommit(false);
     }
 

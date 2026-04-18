@@ -162,9 +162,9 @@ public class DiskManager {
     }
 
     @SuppressWarnings("unchecked")
-    public static HashMap<String, Table> readMetadata() throws IOException {
+    public static HashMap<String, Table> readMetadata(String rootDirectory) throws IOException {
         HashMap<String, Table> map = new HashMap<>();
-        File file = new File("." + File.separator + "data" + File.separator + "metadata.db");
+        File file = new File(rootDirectory + File.separator + "metadata.db");
         if (file.length() == 0)
             return new HashMap<>();
         FileInputStream fis = new FileInputStream(file);
@@ -270,8 +270,8 @@ public class DiskManager {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public static void saveMetadata(HashMap<String, Table> map) {
-        File file = new File("." + File.separator + "data" + File.separator + "metadata.db");
+    public static void saveMetadata(String rootDirectory, HashMap<String, Table> map) {
+        File file = new File(rootDirectory + File.separator + "metadata.db");
         if (!file.exists()) {
             boolean fileCreated = false;
             file.getParentFile().mkdirs();

@@ -37,30 +37,42 @@ public class RheaDB {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public RheaDB(String rootDirectory) {
+
+        if (rootDirectory == null || rootDirectory.isBlank()) {
+            String homeDir = System.getProperty("user.home");
+            String defaultDir = homeDir + File.separator + "RheaDBData";
+            System.out.println("No/Invalid root directory provided. Using default directory: " + defaultDir);
+            rootDirectory = defaultDir;
+        }
+
+        if (!new File(rootDirectory).exists()) {
+            boolean dirCreated = new File(rootDirectory).mkdirs();
+            if (!dirCreated) {
+                System.out.println("Could not create the root directory... Exiting.");
+                System.exit(1);
+            }
+        }
+
         this.rootDirectory = rootDirectory;
-        File file = new File(rootDirectory + File.separator +
-                "metadata.db");
+        File file = new File(rootDirectory + File.separator + "metadata.db");
         if (!file.exists()) {
             file.getParentFile().mkdirs();
             try {
                 boolean fileCreated = file.createNewFile();
                 if (!fileCreated) {
-                    System.out.println("Could not instantiate a metadata file... " +
-                            "Exiting.");
+                    System.out.println("Could not instantiate a metadata file... " + "Exiting.");
                     System.exit(1);
                 }
             } catch (IOException ioException) {
-                System.out.println("Could not instantiate a metadata file... " +
-                        "Exiting.");
+                System.out.println("Could not instantiate a metadata file... " + "Exiting.");
                 System.exit(1);
             }
             createdTables = new HashMap<>();
         } else {
             try {
-                createdTables = DiskManager.readMetadata();
+                createdTables = DiskManager.readMetadata(rootDirectory);
             } catch (IOException ioException) {
-                System.out.println("Could not read metadata file... " +
-                        "Exiting.");
+                System.out.println("Could not read metadata file... " + "Exiting.");
                 System.exit(1);
             }
         }
@@ -71,13 +83,9 @@ public class RheaDB {
     }
 
     public RheaDB() {
-        this("." + File.separator + "data");
+        this(null);
     }
 
-    /*
-     * To support their interface in JDBC, only save the data as if the DB was
-     * really closed.
-     */
     public boolean isClosed() {
         return isClosed;
     }
@@ -98,7 +106,7 @@ public class RheaDB {
         String statementStr;
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            System.out.print("> ");
+            System.out.print("SQL> ");
             statementStr = scanner.nextLine();
 
             if (statementStr.equals("@exit")) {
@@ -644,7 +652,7 @@ public class RheaDB {
             return;
         }
 
-        DiskManager.saveMetadata(createdTables);
+        DiskManager.saveMetadata(rootDirectory, createdTables);
         metadataDirty = false;
     }
 
