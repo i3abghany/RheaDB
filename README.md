@@ -28,12 +28,6 @@ Create or edit a JUnit run configuration for `RheaDBPerformanceTest` and add:
 -Drheadb.perf=true
 ```
 
-The benchmark output is printed to standard output in this form:
-
-```text
-[PERF] benchmark name -> min=... ms avg=... ms p50=... ms p95=... ms samples=[...]
-```
-
 ### JDBC driver loading and usage
 The connection url passed to `DriverManager.getConnection()` must be in the
 format `jdbc:rhea:DIR_PATH`, where `DIR_PATH` is the storage directory for the
