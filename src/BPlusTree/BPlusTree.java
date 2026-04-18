@@ -32,6 +32,20 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         return this.firstLeaf == null;
     }
 
+    public Vector<ValueList<K, V>> getAllValueLists() {
+        Vector<ValueList<K, V>> valueLists = new Vector<>();
+        LeafNode<K, V> leaf = this.firstLeaf;
+
+        while (leaf != null) {
+            for (int i = 0; i < leaf.getNumberOfLists(); i++) {
+                valueLists.add(leaf.getLists()[i]);
+            }
+            leaf = (LeafNode<K, V>) leaf.getRightSibling();
+        }
+
+        return valueLists;
+    }
+
     @SuppressWarnings("unchecked")
     public void insert(Object obj, V val) {
         K key = (K) obj;

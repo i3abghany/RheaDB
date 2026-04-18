@@ -1,17 +1,30 @@
 package RheaDB.StorageManagement;
 
 import BPlusTree.BPlusTree;
+import BPlusTree.ValueList;
 import RheaDB.Page;
 import RheaDB.RowRecord;
 import RheaDB.Table;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DiskManager {
     private final static Logger LOGGER = Logger.getLogger(DiskManager.class.getName());
+
+    private static class IndexSnapshot implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private final Vector<ValueList<?, RowRecord>> valueLists;
+
+        private IndexSnapshot(Vector<ValueList<?, RowRecord>> valueLists) {
+            this.valueLists = valueLists;
+        }
+    }
 
     public static Page getPage(Table table, int idx) {
         String fullPath = getFullPath(table, idx);
@@ -168,8 +181,7 @@ public class DiskManager {
             }
             FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
-
-            oos.writeObject(tree);
+            oos.writeObject(new IndexSnapshot(flattenTree(tree)));
 
             oos.close();
             fos.close();
@@ -194,7 +206,6 @@ public class DiskManager {
 
     @SuppressWarnings("unchecked")
     public static BPlusTree<?, RowRecord> deserializeIndex(String fullPath) {
-        BPlusTree<?, RowRecord> tree = null;
         try {
             File file = new File(fullPath);
             if (!file.exists()) {
@@ -204,10 +215,11 @@ public class DiskManager {
             FileInputStream fis = new FileInputStream(file);
             ObjectInputStream ois = new ObjectInputStream(fis);
 
-            tree = (BPlusTree<?, RowRecord>) ois.readObject();
+            IndexSnapshot snapshot = (IndexSnapshot) ois.readObject();
 
             ois.close();
             fis.close();
+            return rebuildTree(snapshot);
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "An error occurred while deserializing"
                     + " index... Exiting.");
@@ -216,6 +228,32 @@ public class DiskManager {
             e.printStackTrace();
             System.exit(1);
         }
+        return null;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static Vector<ValueList<?, RowRecord>> flattenTree(BPlusTree<?, RowRecord> tree) {
+        Vector<ValueList<?, RowRecord>> flattened = new Vector<>();
+        for (ValueList valueList : tree.getAllValueLists()) {
+            ValueList copy = new ValueList(valueList.getKey(), valueList.getOneValue());
+            for (int i = 1; i < valueList.size(); i++) {
+                copy.add(valueList.get(i));
+            }
+            flattened.add(copy);
+        }
+        return flattened;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static BPlusTree<?, RowRecord> rebuildTree(IndexSnapshot snapshot) {
+        BPlusTree tree = new BPlusTree();
+
+        for (ValueList valueList : snapshot.valueLists) {
+            for (Object rowRecord : valueList) {
+                tree.insert(valueList.getKey(), rowRecord);
+            }
+        }
+
         return tree;
     }
 

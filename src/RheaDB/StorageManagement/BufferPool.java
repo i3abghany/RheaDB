@@ -17,6 +17,7 @@ public class BufferPool {
 
     private final static int maxPagesInCache = 16;
     private final ConcurrentHashMap<PageIdentifier, Page> pageHashMap;
+    private final ConcurrentHashMap<IndexIdentifier, BPlusTree<?, RowRecord>> indexHashMap;
     private final Set<PageIdentifier> dirtyPages;
 
     private record PageIdentifier(Table table, int pageIdx) {
@@ -40,6 +41,9 @@ public class BufferPool {
         });
     }
 
+    private record IndexIdentifier(String tableName, String attributeName) {
+    }
+
     public boolean deleteTable(Table table) {
         for (int i = table.getNumPages(); i > 0; i--) {
             deletePage(table, i);
@@ -52,6 +56,7 @@ public class BufferPool {
 
         String pageDir = table.getPageDirectory();
         File indexDirectory = Paths.get(pageDir + File.separator + "index").toFile();
+        indexHashMap.keySet().removeIf(key -> key.tableName.equals(table.getName()));
         indexDirectory.delete();
         Paths.get(pageDir).toFile().delete();
 
@@ -82,24 +87,38 @@ public class BufferPool {
     }
 
     public BPlusTree<?, RowRecord> getIndex(Table table, Attribute attribute) {
+        IndexIdentifier indexIdentifier = new IndexIdentifier(table.getName(), attribute.getName());
+        BPlusTree<?, RowRecord> cachedIndex = indexHashMap.get(indexIdentifier);
+        if (cachedIndex != null) {
+            return cachedIndex;
+        }
+
         String indexFullPath =
                 table.getPageDirectory() + File.separator + "index" +
                         File.separator + attribute.getName() + ".idx";
 
-        return DiskManager.deserializeIndex(indexFullPath);
+        BPlusTree<?, RowRecord> deserializedIndex = DiskManager.deserializeIndex(indexFullPath);
+        if (deserializedIndex != null) {
+            indexHashMap.put(indexIdentifier, deserializedIndex);
+        }
+        return deserializedIndex;
     }
 
     public void saveIndex(Table table, Attribute attribute, BPlusTree<?, RowRecord> bPlusTree) {
+        IndexIdentifier indexIdentifier = new IndexIdentifier(table.getName(), attribute.getName());
         String fullIndexPath = table.getPageDirectory() + File.separator +
                 "index" + File.separator + attribute.getName() + ".idx";
 
         DiskManager.saveIndex(fullIndexPath, bPlusTree);
+        indexHashMap.put(indexIdentifier, bPlusTree);
     }
 
     public void deleteIndex(Table table, Attribute attribute) {
+        IndexIdentifier indexIdentifier = new IndexIdentifier(table.getName(), attribute.getName());
         String fullIndexPath = table.getPageDirectory() + File.separator +
                 "index" + File.separator + attribute.getName() + ".idx";
 
+        indexHashMap.remove(indexIdentifier);
         DiskManager.deleteIndex(fullIndexPath);
     }
 
@@ -119,6 +138,7 @@ public class BufferPool {
 
     public BufferPool() {
         pageHashMap = new ConcurrentHashMap<>();
+        indexHashMap = new ConcurrentHashMap<>();
         dirtyPages = ConcurrentHashMap.newKeySet();
     }
 
