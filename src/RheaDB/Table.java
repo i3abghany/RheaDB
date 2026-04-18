@@ -56,7 +56,7 @@ public class Table implements Serializable {
     public Attribute getAttributeWithName(String name) {
         return attributeList
                 .stream()
-                .filter(a -> a.getName().equals(name))
+                .filter(a -> a.getName().equalsIgnoreCase(name))
                 .findAny()
                 .orElse(null);
     }

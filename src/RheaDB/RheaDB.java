@@ -127,9 +127,13 @@ public class RheaDB {
             sqlStatement = parser.parse();
             queryResult = executeStatement(sqlStatement);
         } catch (DBError dbError) {
-            var diagnostics = parser.getDiagnostics();
-            for (var d : diagnostics) {
-                System.out.println(d);
+            if (parser != null && !parser.getDiagnostics().isEmpty()) {
+                var diagnostics = parser.getDiagnostics();
+                for (var d : diagnostics) {
+                    System.out.println(d);
+                }
+            } else {
+                System.out.println(dbError.getMessage());
             }
         }
 

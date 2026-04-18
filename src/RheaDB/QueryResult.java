@@ -45,7 +45,13 @@ public class QueryResult {
                     .map(attr -> attr.getName())
                     .collect(Collectors.toCollection(Vector::new));
         } else {
-            this.selectedAttributes = selectedAttributes;
+            this.selectedAttributes = selectedAttributes.stream()
+                    .map(selected -> attributes.stream()
+                            .map(Attribute::getName)
+                            .filter(attributeName -> attributeName.equalsIgnoreCase(selected))
+                            .findFirst()
+                            .orElse(selected))
+                    .collect(Collectors.toCollection(Vector::new));
         }
     }
 
@@ -66,7 +72,7 @@ public class QueryResult {
         for (int i = 0; i < allAttributes.size(); i++) {
             Attribute attribute = allAttributes.get(i);
             String attributeName = attribute.getName();
-            if (selectedAttributes.stream().anyMatch(s -> s.equals(attributeName))) {
+            if (selectedAttributes.stream().anyMatch(s -> s.equalsIgnoreCase(attributeName))) {
                 lengths.set(i, Math.max(lengths.get(i), attributeName.length()));
             }
         }
@@ -82,7 +88,7 @@ public class QueryResult {
         for (int i = 0; i < allAttributes.size(); i++) {
             Attribute attribute = allAttributes.get(i);
             String attributeName = attribute.getName();
-            if (selectedAttributes.stream().anyMatch(s -> s.equals(attributeName))) {
+            if (selectedAttributes.stream().anyMatch(s -> s.equalsIgnoreCase(attributeName))) {
                 builder.append(String.format("%-" + lengths.get(i) + "s ", allAttributes.get(i).getName()));
             }
         }
@@ -92,7 +98,7 @@ public class QueryResult {
             for (int i = 0; i < attributeValues.size(); i++) {
                 int finalIndex = i;
                 if (selectedAttributes.stream()
-                        .anyMatch(s -> s.equals(allAttributes.get(finalIndex).getName()))) {
+                        .anyMatch(s -> s.equalsIgnoreCase(allAttributes.get(finalIndex).getName()))) {
                     Object attributeVal = attributeValues.get(i);
                     builder.append(String.format("%-" + lengths.get(i) + "s ", attributeVal));
                 }

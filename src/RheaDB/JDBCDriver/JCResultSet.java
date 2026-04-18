@@ -143,7 +143,7 @@ public class JCResultSet implements ResultSet {
     public String getString(String columnLabel) throws SQLException {
         Attribute attribute = record.getAttributes()
                 .stream()
-                .filter(a -> a.getName().equals(columnLabel))
+                .filter(a -> a.getName().equalsIgnoreCase(columnLabel))
                 .findAny()
                 .orElse(null);
 
@@ -176,7 +176,7 @@ public class JCResultSet implements ResultSet {
     public int getInt(String columnLabel) throws SQLException {
         Attribute attribute = record.getAttributes()
                 .stream()
-                .filter(a -> a.getName().equals(columnLabel))
+                .filter(a -> a.getName().equalsIgnoreCase(columnLabel))
                 .findAny()
                 .orElse(null);
 
@@ -199,7 +199,7 @@ public class JCResultSet implements ResultSet {
     public float getFloat(String columnLabel) throws SQLException {
         Attribute attribute = record.getAttributes()
                 .stream()
-                .filter(a -> a.getName().equals(columnLabel))
+                .filter(a -> a.getName().equalsIgnoreCase(columnLabel))
                 .findAny()
                 .orElse(null);
 
