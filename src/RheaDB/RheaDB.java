@@ -282,11 +282,18 @@ public class RheaDB {
     }
 
     private QueryResult executeStatement(SQLStatement sqlStatement) throws DBError {
-        return switch (sqlStatement.getKind()) {
+        QueryResult queryResult = switch (sqlStatement.getKind()) {
             case DDL -> executeDDL((DDLStatement) sqlStatement);
             case DML -> executeDML((DMLStatement) sqlStatement);
             case INTERNAL -> executeInternal((InternalStatement) sqlStatement);
         };
+
+        if (!lazyCommit) {
+            bufferPool.commitAllPages();
+            saveMetadata();
+        }
+
+        return queryResult;
     }
 
     private QueryResult executeInternal(InternalStatement sqlStatement) throws DBError {

@@ -9,6 +9,7 @@ import RheaDB.Table;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,6 +17,7 @@ public class BufferPool {
 
     private final static int maxPagesInCache = 16;
     private final ConcurrentHashMap<PageIdentifier, Page> pageHashMap;
+    private final Set<PageIdentifier> dirtyPages;
 
     private record PageIdentifier(Table table, int pageIdx) {
         @Override
@@ -34,7 +36,7 @@ public class BufferPool {
 
     public void commitAllPages() {
         pageHashMap.forEach((PageIdentifier pi, Page page) -> {
-            updatePage(pi.table, page);
+            flushPage(pi, page);
         });
     }
 
@@ -65,6 +67,7 @@ public class BufferPool {
         });
 
         pageHashMap.keySet().removeIf(p -> p.table == t);
+        dirtyPages.removeIf(p -> p.table == t);
         for (int i : pages) {
             getPageFromStorage(t, i);
         }
@@ -73,7 +76,7 @@ public class BufferPool {
     public void commitTable(Table t) {
         pageHashMap.forEach((PageIdentifier pi, Page page) -> {
             if (pi.table == t) {
-                updatePage(pi.table, page);
+                flushPage(pi, page);
             }
         });
     }
@@ -103,17 +106,20 @@ public class BufferPool {
     public void deletePage(Table table, int pageIdx) {
         PageIdentifier pageIdentifier = new PageIdentifier(table, pageIdx);
         pageHashMap.remove(pageIdentifier);
+        dirtyPages.remove(pageIdentifier);
         boolean didDelete = DiskManager.deletePage(table, pageIdx);
         if (!didDelete) table.popPage();
     }
 
     public void updatePage(Table table, Page page) {
-        DiskManager.savePage(table, page);
+        PageIdentifier pageIdentifier = new PageIdentifier(table, page.getPageIdx());
         insertPage(table, page);
+        dirtyPages.add(pageIdentifier);
     }
 
     public BufferPool() {
         pageHashMap = new ConcurrentHashMap<>();
+        dirtyPages = ConcurrentHashMap.newKeySet();
     }
 
     /**
@@ -154,11 +160,20 @@ public class BufferPool {
         if (pageHashMap.size() >= maxPagesInCache) {
             PageIdentifier randKey = (PageIdentifier) pageHashMap.keySet().toArray()[0];
             Page evictedPage = pageHashMap.get(randKey);
-            updatePage(randKey.table, evictedPage);
+            flushPage(randKey, evictedPage);
             pageHashMap.remove(randKey);
         }
 
         pageHashMap.put(pageIdentifier, page);
         return page;
+    }
+
+    private void flushPage(PageIdentifier pageIdentifier, Page page) {
+        if (!dirtyPages.contains(pageIdentifier)) {
+            return;
+        }
+
+        DiskManager.savePage(pageIdentifier.table, page);
+        dirtyPages.remove(pageIdentifier);
     }
 }

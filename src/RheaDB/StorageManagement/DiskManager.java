@@ -115,14 +115,7 @@ public class DiskManager {
     private static void serializePage(Page page, String fullPath) {
         try {
             File file = new File(fullPath);
-
-            if (file.exists()) {
-                boolean wasDeleted = file.delete();
-                if (!wasDeleted) {
-                    LOGGER.log(Level.SEVERE, "Could not access a page for deletion... Exiting.");
-                    System.exit(1);
-                }
-            } else {
+            if (!file.exists()) {
                 file.getParentFile().mkdirs();
                 boolean fileCreated = file.createNewFile();
                 if (!fileCreated) {
@@ -130,7 +123,7 @@ public class DiskManager {
                     System.exit(1);
                 }
             }
-            FileOutputStream fos = new FileOutputStream(file);
+            FileOutputStream fos = new FileOutputStream(file, false);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
 
             oos.writeObject(page);
