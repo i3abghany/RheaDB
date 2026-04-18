@@ -1,4 +1,5 @@
-.idea/*
-out/*
-data/*
+.idea
+out
+data
+dbdata
 improvements.md
