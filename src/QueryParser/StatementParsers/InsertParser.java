@@ -1,49 +1,68 @@
 package QueryParser.StatementParsers;
 
 import QueryParser.DMLStatements.InsertStatement;
-import QueryParser.Lexer;
 import QueryParser.SQLStatement;
 import QueryParser.Token;
-import RheaDB.DBError;
+import QueryParser.TokenKind;
 
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class InsertParser extends StatementParser {
 
-    private final int TABLENAME_GROUP = 1;
-    private final int VALUES_GROUP = 2;
-
-    public InsertParser(String line) {
-        super(line);
-        this.regex = "insert\\s+into\\s+(.*?)\\s*values\\s*\\((.*)\\s*\\);";
+    public InsertParser(Vector<Token> tokens, int position) {
+        super(tokens);
+        this.position = position;
     }
 
-    public SQLStatement parse() throws DBError {
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(line);
-
-        if (!matcher.find()) {
-            diagnostics.add("Error parsing insert statement.");
+    public SQLStatement parse() {
+        if (consumeToken(TokenKind.InsertToken, "Expected INSERT.") == null) {
             return null;
         }
 
-        String tableName = matcher.group(TABLENAME_GROUP);
-        String valuesStrings = matcher.group(VALUES_GROUP);
+        if (consumeToken(TokenKind.IntoToken, "Expected INTO after INSERT.") == null) {
+            return null;
+        }
 
-        Vector<Token> tokens = new Lexer(valuesStrings)
-                .lex()
-                .stream()
-                .filter(Token::isLiteral)
-                .collect(Collectors.toCollection(Vector::new));
+        Token tableNameToken = consumeIdentifier("Expected table name after INTO.");
+        if (tableNameToken == null) {
+            return null;
+        }
 
-        Vector<Object> valueObjects =
-                tokens.stream()
-                        .map(Token::getValue)
-                        .collect(Collectors.toCollection(Vector::new));
+        if (consumeToken(TokenKind.ValuesToken, "Expected VALUES after table name.") == null) {
+            return null;
+        }
 
-        return new InsertStatement(tableName, valueObjects);
+        if (consumeToken(TokenKind.OpenParenToken, "Expected '(' before values.") == null) {
+            return null;
+        }
+
+        Vector<Object> valueObjects = new Vector<>();
+        Token valueToken = consumeLiteral("Expected literal value.");
+        if (valueToken == null) {
+            return null;
+        }
+        valueObjects.add(valueToken.getValue());
+
+        while (matchToken(TokenKind.CommaToken)) {
+            advanceToken();
+            valueToken = consumeLiteral("Expected literal value after ','.");
+            if (valueToken == null) {
+                return null;
+            }
+            valueObjects.add(valueToken.getValue());
+        }
+
+        if (consumeToken(TokenKind.ClosedParenToken, "Expected ')' after values.") == null) {
+            return null;
+        }
+
+        consumeSemicolon();
+        consumeEndOfInput();
+
+        if (!diagnostics.isEmpty()) {
+            return null;
+        }
+
+        return new InsertStatement(tableNameToken.getTokenText(), valueObjects);
     }
 }

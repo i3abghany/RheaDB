@@ -448,7 +448,7 @@ public class RheaDB {
             result.addAll(page.getRecords());
         }
 
-        return result.size() == 0 ? null :
+        return result.isEmpty() ? null :
                 new QueryResult(result, table.getAttributeList(), selectedAttributes);
     }
 

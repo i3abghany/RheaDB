@@ -1,59 +1,43 @@
 package QueryParser.StatementParsers;
 
 import QueryParser.DDLStatements.CreateTableStatement;
-import QueryParser.Lexer;
 import QueryParser.SQLStatement;
 import QueryParser.Token;
 import QueryParser.TokenKind;
 import RheaDB.Attribute;
 import RheaDB.AttributeType;
-import RheaDB.DBError;
 
 import java.util.Locale;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class CreateTableParser extends StatementParser {
 
-    private final int TABLENAME_GROUP = 1;
-    private final int ATTRIBUTES_GROUP = 2;
-
-    public CreateTableParser(String line) {
-        super(line);
-        this.regex = "create\\s+table\\s+(.*?)\\s*\\((.*)\\s*\\);";
+    public CreateTableParser(Vector<Token> tokens, int position) {
+        super(tokens);
+        this.position = position;
     }
 
-    public SQLStatement parse() throws DBError {
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(line);
-
-        if (!matcher.find()) {
-            diagnostics.add("Error parsing create table statement.");
+    public SQLStatement parse() {
+        if (consumeToken(TokenKind.TableToken, "Expected TABLE after CREATE.") == null) {
             return null;
         }
 
-        String tableName = matcher.group(TABLENAME_GROUP);
-        String attributesStrings = matcher.group(ATTRIBUTES_GROUP);
+        Token tableNameToken = consumeIdentifier("Expected table name after TABLE.");
+        if (tableNameToken == null) {
+            return null;
+        }
 
-        Vector<Token> tokens = new Lexer(attributesStrings)
-                .lex()
-                .stream()
-                .filter(t -> t.getKind() == TokenKind.IdentifierToken ||
-                        t.getKind() == TokenKind.DataTypeToken)
-                .collect(Collectors.toCollection(Vector::new));
+        if (consumeToken(TokenKind.OpenParenToken, "Expected '(' before attribute definitions.") == null) {
+            return null;
+        }
 
         Vector<Attribute> attributes = new Vector<>();
+        while (!matchToken(TokenKind.ClosedParenToken)) {
+            Token attributeNameToken = consumeIdentifier("Expected attribute name.");
+            Token attributeTypeToken = consumeToken(TokenKind.DataTypeToken, "Expected attribute type.");
 
-        for (int i = 0; i < tokens.size(); i += 2) {
-            Token attributeNameToken = tokens.get(i);
-            Token attributeTypeToken = tokens.get(i + 1);
-
-            if (attributeTypeToken == null ||
-                    attributeNameToken.getKind() != TokenKind.IdentifierToken ||
-                    attributeTypeToken.getKind() != TokenKind.DataTypeToken) {
-                throw new DBError("Error parsing the statement.");
+            if (attributeNameToken == null || attributeTypeToken == null) {
+                return null;
             }
 
             AttributeType type =
@@ -66,8 +50,25 @@ public class CreateTableParser extends StatementParser {
 
             attributes.add(new Attribute(type,
                     attributeNameToken.getTokenText().toLowerCase(Locale.ROOT)));
+
+            if (!matchToken(TokenKind.CommaToken)) {
+                break;
+            }
+
+            advanceToken();
         }
 
-        return new CreateTableStatement(tableName, attributes);
+        if (consumeToken(TokenKind.ClosedParenToken, "Expected ')' after attribute definitions.") == null) {
+            return null;
+        }
+
+        consumeSemicolon();
+        consumeEndOfInput();
+
+        if (!diagnostics.isEmpty()) {
+            return null;
+        }
+
+        return new CreateTableStatement(tableNameToken.getTokenText(), attributes);
     }
 }

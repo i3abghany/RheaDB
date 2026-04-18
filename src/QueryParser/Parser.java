@@ -53,7 +53,11 @@ public class Parser {
     }
 
     private SQLStatement parseInternalStatement() throws DBError {
-        return new InternalParser(line).parse();
+        var p = new InternalParser(tokenVector, position);
+        var ret = p.parse();
+        position = p.getPosition();
+        diagnostics.addAll(p.getDiagnostics());
+        return ret;
     }
 
     private SQLStatement parseDDL() throws DBError {
@@ -88,15 +92,17 @@ public class Parser {
     }
 
     private SQLStatement parseCreateTable() throws DBError {
-        var p = new CreateTableParser(line);
+        var p = new CreateTableParser(tokenVector, position);
         var ret = p.parse();
+        position = p.getPosition();
         diagnostics.addAll(p.getDiagnostics());
         return ret;
     }
 
     private SQLStatement parseCreateIndex() throws DBError {
-        var p = new CreateIndexParser(line);
+        var p = new CreateIndexParser(tokenVector, position);
         var ret = p.parse();
+        position = p.getPosition();
         diagnostics.addAll(p.getDiagnostics());
         return ret;
     }
@@ -122,8 +128,9 @@ public class Parser {
     }
 
     private SQLStatement parseUpdate() throws DBError {
-        var p = new UpdateParser(line);
+        var p = new UpdateParser(tokenVector, position);
         var ret = p.parse();
+        position = p.getPosition();
         diagnostics.addAll(p.getDiagnostics());
         return ret;
     }
@@ -143,36 +150,41 @@ public class Parser {
     }
 
     private SQLStatement parseDropIndex() throws DBError {
-        var p = new DropIndexParser(line);
+        var p = new DropIndexParser(tokenVector, position);
         var ret = p.parse();
+        position = p.getPosition();
         diagnostics.addAll(p.getDiagnostics());
         return ret;
     }
 
     private SQLStatement parseDropTable() throws DBError {
-        var p = new DropTableParser(line);
+        var p = new DropTableParser(tokenVector, position);
         var ret = p.parse();
+        position = p.getPosition();
         diagnostics.addAll(p.getDiagnostics());
         return ret;
     }
 
     private SQLStatement parseDelete() throws DBError {
-        var p = new DeleteParser(line);
+        var p = new DeleteParser(tokenVector, position);
         var ret = p.parse();
+        position = p.getPosition();
         diagnostics.addAll(p.getDiagnostics());
         return ret;
     }
 
     private SQLStatement parseInsert() throws DBError {
-        var p = new InsertParser(line);
+        var p = new InsertParser(tokenVector, position);
         var ret = p.parse();
+        position = p.getPosition();
         diagnostics.addAll(p.getDiagnostics());
         return ret;
     }
 
     private SQLStatement parseSelect() throws DBError {
-        var p = new SelectParser(line);
+        var p = new SelectParser(tokenVector, position);
         var ret = p.parse();
+        position = p.getPosition();
         diagnostics.addAll(p.getDiagnostics());
         return ret;
     }

@@ -3,52 +3,61 @@ package QueryParser.StatementParsers;
 import Predicate.Predicate;
 import QueryParser.DMLStatements.SelectStatement;
 import QueryParser.SQLStatement;
-import RheaDB.DBError;
+import QueryParser.Token;
+import QueryParser.TokenKind;
 
-import java.util.Arrays;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class SelectParser extends StatementParser {
 
-    private final int ATTRIBUTES_GROUP = 1;
-    private final int TABLENAME_GROUP = 2;
-    private final int PREDICATES_GROUP = 3;
-
-    public SelectParser(String line) {
-        super(line);
-        this.regex = "select\\s+(.*?)\\s*from\\s+(.*?)\\s*(where\\s(.*?)\\s*)?;";
+    public SelectParser(Vector<Token> tokens, int position) {
+        super(tokens);
+        this.position = position;
     }
 
-    public SQLStatement parse() throws DBError {
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(line);
-
-        if (!matcher.find()) {
-            diagnostics.add("Error parsing select statement.");
+    public SQLStatement parse() {
+        if (consumeToken(TokenKind.SelectToken, "Expected SELECT.") == null) {
             return null;
         }
 
-        Vector<String> attributeNames =
-                Arrays.stream(matcher.group(ATTRIBUTES_GROUP).split(","))
-                        .map(String::trim)
-                        .collect(Collectors.toCollection(Vector::new));
-        String tableName = matcher.group(TABLENAME_GROUP);
-        boolean usePredicates = matcher.group(PREDICATES_GROUP) != null;
+        Vector<String> attributeNames = new Vector<>();
+        Token attributeToken = consumeIdentifier("Expected selected attribute.");
+        if (attributeToken == null) {
+            return null;
+        }
+        attributeNames.add(attributeToken.getTokenText());
 
-        if (!usePredicates) {
-            return new SelectStatement(tableName, attributeNames
-                    , new Vector<>());
+        while (matchToken(TokenKind.CommaToken)) {
+            advanceToken();
+            attributeToken = consumeIdentifier("Expected selected attribute after ','.");
+            if (attributeToken == null) {
+                return null;
+            }
+            attributeNames.add(attributeToken.getTokenText());
         }
 
-        String[] predicateStrings = matcher.group(PREDICATES_GROUP).split(",");
-        predicateStrings[0] = predicateStrings[0].split(" ", 2)[1];
+        if (consumeToken(TokenKind.FromToken, "Expected FROM after selected attributes.") == null) {
+            return null;
+        }
 
-        Vector<Predicate> predicates = getPredicates(predicateStrings);
+        Token tableNameToken = consumeIdentifier("Expected table name after FROM.");
+        if (tableNameToken == null) {
+            return null;
+        }
 
-        return new SelectStatement(tableName, attributeNames,
-                predicates);
+        Vector<Predicate> predicates = new Vector<>();
+        if (matchToken(TokenKind.WhereToken)) {
+            advanceToken();
+            predicates = parsePredicateList();
+        }
+
+        consumeSemicolon();
+        consumeEndOfInput();
+
+        if (!diagnostics.isEmpty()) {
+            return null;
+        }
+
+        return new SelectStatement(tableNameToken.getTokenText(), attributeNames, predicates);
     }
 }

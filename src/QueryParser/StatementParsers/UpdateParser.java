@@ -3,54 +3,47 @@ package QueryParser.StatementParsers;
 import Predicate.Predicate;
 import QueryParser.DMLStatements.UpdateStatement;
 import QueryParser.SQLStatement;
-import RheaDB.DBError;
+import QueryParser.Token;
+import QueryParser.TokenKind;
 
-import java.util.Arrays;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class UpdateParser extends StatementParser {
 
-    private final int TABLENAME_GROUP = 1;
-    private final int SET_ATTRIBUTES_GROUP = 2;
-    private final int PREDICATES_GROUP = 3;
-
-    public UpdateParser(String line) {
-        super(line);
-        this.regex = "update\\s+(.*?)\\s*set\\s+(.*?)(\\s+where\\s+(.*)\\s*)?;";
+    public UpdateParser(Vector<Token> tokens, int position) {
+        super(tokens);
+        this.position = position;
     }
 
-    public SQLStatement parse() throws DBError {
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(line);
-
-        if (!matcher.find()) {
-            diagnostics.add("Error parsing update statement.");
+    public SQLStatement parse() {
+        if (consumeToken(TokenKind.UpdateToken, "Expected UPDATE.") == null) {
             return null;
         }
 
-        String tableName = matcher.group(TABLENAME_GROUP);
-        boolean usePredicates = matcher.group(PREDICATES_GROUP) != null;
-
-        String setPredicatesString = matcher.group(SET_ATTRIBUTES_GROUP);
-        Vector<Predicate> setPredicates =
-                getPredicates(setPredicatesString.split(","));
-
-        if (!usePredicates) {
-            return new UpdateStatement(tableName, setPredicates,
-                    new Vector<>());
+        Token tableNameToken = consumeIdentifier("Expected table name after UPDATE.");
+        if (tableNameToken == null) {
+            return null;
         }
 
-        String[] predicateStrings =
-                Arrays.stream(matcher.group(PREDICATES_GROUP).split(","))
-                        .map(String::trim)
-                        .toArray(String[]::new);
-        predicateStrings[0] = predicateStrings[0].split(" ", 2)[1];
+        if (consumeToken(TokenKind.SetTotken, "Expected SET after table name.") == null) {
+            return null;
+        }
 
-        Vector<Predicate> predicates = getPredicates(predicateStrings);
+        Vector<Predicate> setPredicates = parsePredicateList();
+        Vector<Predicate> predicates = new Vector<>();
 
-        return new UpdateStatement(tableName, setPredicates,
-                predicates);
+        if (matchToken(TokenKind.WhereToken)) {
+            advanceToken();
+            predicates = parsePredicateList();
+        }
+
+        consumeSemicolon();
+        consumeEndOfInput();
+
+        if (!diagnostics.isEmpty()) {
+            return null;
+        }
+
+        return new UpdateStatement(tableNameToken.getTokenText(), setPredicates, predicates);
     }
 }

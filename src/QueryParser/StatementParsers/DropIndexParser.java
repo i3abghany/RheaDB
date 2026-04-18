@@ -2,34 +2,37 @@ package QueryParser.StatementParsers;
 
 import QueryParser.DMLStatements.DropIndexStatement;
 import QueryParser.SQLStatement;
-import RheaDB.DBError;
+import QueryParser.Token;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Vector;
 
 public class DropIndexParser extends StatementParser {
 
-    private final int TABLENAME_GROUP = 1;
-    private final int ATTRIBUTE_GROUP = 2;
-
-    public DropIndexParser(String line) {
-        super(line);
-        this.regex = "drop\\s+index\\s+(.*)\\s+(.*)\\s*;";
+    public DropIndexParser(Vector<Token> tokens, int position) {
+        super(tokens);
+        this.position = position;
     }
 
     @Override
-    public SQLStatement parse() throws DBError {
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(line);
-
-        if (!matcher.find()) {
-            diagnostics.add("Error parsing drop index statement.");
+    public SQLStatement parse() {
+        if (consumeToken(QueryParser.TokenKind.IndexToken, "Expected INDEX after DROP.") == null) {
             return null;
         }
 
-        String tableName = matcher.group(TABLENAME_GROUP);
-        String attributeName = matcher.group(ATTRIBUTE_GROUP);
+        Token tableNameToken = consumeIdentifier("Expected table name after INDEX.");
+        Token attributeNameToken = consumeIdentifier("Expected attribute name after table name.");
 
-        return new DropIndexStatement(tableName, attributeName);
+        if (tableNameToken == null || attributeNameToken == null) {
+            return null;
+        }
+
+        consumeSemicolon();
+        consumeEndOfInput();
+
+        if (!diagnostics.isEmpty()) {
+            return null;
+        }
+
+        return new DropIndexStatement(tableNameToken.getTokenText(), attributeNameToken.getTokenText());
     }
 }

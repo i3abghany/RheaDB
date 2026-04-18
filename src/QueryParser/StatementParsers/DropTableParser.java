@@ -2,32 +2,35 @@ package QueryParser.StatementParsers;
 
 import QueryParser.DMLStatements.DropTableStatement;
 import QueryParser.SQLStatement;
-import RheaDB.DBError;
+import QueryParser.Token;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Vector;
 
 public class DropTableParser extends StatementParser {
 
-    private final int TABLENAME_GROUP = 1;
-
-    public DropTableParser(String line) {
-        super(line);
-        this.regex = "drop\\s+table\\s+(.*);";
+    public DropTableParser(Vector<Token> tokens, int position) {
+        super(tokens);
+        this.position = position;
     }
 
     @Override
-    public SQLStatement parse() throws DBError {
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(line);
-
-        if (!matcher.find()) {
-            diagnostics.add("Error parsing drop table statement.");
+    public SQLStatement parse() {
+        if (consumeToken(QueryParser.TokenKind.TableToken, "Expected TABLE after DROP.") == null) {
             return null;
         }
 
-        String tableName = matcher.group(TABLENAME_GROUP);
+        Token tableNameToken = consumeIdentifier("Expected table name after TABLE.");
+        if (tableNameToken == null) {
+            return null;
+        }
 
-        return new DropTableStatement(tableName);
+        consumeSemicolon();
+        consumeEndOfInput();
+
+        if (!diagnostics.isEmpty()) {
+            return null;
+        }
+
+        return new DropTableStatement(tableNameToken.getTokenText());
     }
 }
