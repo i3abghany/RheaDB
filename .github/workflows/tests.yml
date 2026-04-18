@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Download JUnit console launcher
+        run: |
+          curl -L \
+            -o junit-platform-console-standalone-1.8.1.jar \
+            https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.8.1/junit-platform-console-standalone-1.8.1.jar
+
+      - name: Compile sources and tests
+        run: |
+          mkdir -p out/ci
+          javac \
+            -cp junit-platform-console-standalone-1.8.1.jar \
+            -d out/ci \
+            $(find src test -name '*.java')
+
+      - name: Run unit tests
+        run: |
+          java -jar junit-platform-console-standalone-1.8.1.jar \
+            --class-path out/ci \
+            --scan-class-path \
+            --exclude-classname 'performance\..*'
