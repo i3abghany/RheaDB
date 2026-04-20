@@ -31,7 +31,7 @@ Create or edit a JUnit run configuration for `RheaDBPerformanceTest` and add:
 ### JDBC driver loading and usage
 The connection url passed to `DriverManager.getConnection()` must be in the
 format `jdbc:rhea:DIR_PATH`, where `DIR_PATH` is the storage directory for the
-database. It must be an existing directory.
+database. The directory will be created if it does not exist.
 
 `Class.forName("RheaDB.JDBCDriver.JCDriver")` must be used so as to invoke the
 `static` portion of the driver, and (hopefully) successfully connect to a 
