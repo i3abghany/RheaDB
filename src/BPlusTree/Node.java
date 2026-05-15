@@ -13,21 +13,13 @@ public abstract class Node<K extends Comparable<K>> implements Serializable {
     public Node(int order, K[] keys) {
         this.order = order;
         this.keys = keys;
+        validateNumOfKeys();
     }
 
     public abstract K[] getKeys();
 
     public int getNumberOfKeys() {
         return this.numberOfKeys;
-    }
-
-    protected void sortKeys() {
-        Arrays.sort(keys, (o1, o2) -> {
-            if (o2 == o1 && o1 == null) return 0;
-            if (o1 == null) return 1;
-            if (o2 == null) return -1;
-            return o1.compareTo(o2);
-        });
     }
 
     public abstract Node<K>[] getChildren();
@@ -65,42 +57,96 @@ public abstract class Node<K extends Comparable<K>> implements Serializable {
         this.parent = par;
     }
 
+    protected int findKeyIndex(K key) {
+        int low = 0;
+        int high = numberOfKeys - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            int comparison = keys[mid].compareTo(key);
+
+            if (comparison < 0) {
+                low = mid + 1;
+            } else if (comparison > 0) {
+                high = mid - 1;
+            } else {
+                return mid;
+            }
+        }
+
+        return -(low + 1);
+    }
+
+    protected int insertionPoint(K key) {
+        int idx = findKeyIndex(key);
+        return idx >= 0 ? idx : -(idx + 1);
+    }
+
+    protected void insertKeyAt(int idx, K key) {
+        if (keys == null || numberOfKeys >= keys.length) {
+            throw new IllegalStateException("Cannot insert key into a full node.");
+        }
+        if (idx < 0 || idx > numberOfKeys) {
+            throw new IndexOutOfBoundsException("Invalid key index: " + idx);
+        }
+
+        int movedKeys = numberOfKeys - idx;
+        if (movedKeys > 0) {
+            System.arraycopy(keys, idx, keys, idx + 1, movedKeys);
+        }
+
+        keys[idx] = key;
+        numberOfKeys++;
+    }
+
+    @SuppressWarnings("unchecked")
     public K[] splitKeys(int midPoint) {
         K[] retArray = (K[]) new Comparable[this.order];
-        this.keys[midPoint] = null;
-        for (int i = midPoint + 1; i < this.keys.length; i++) {
-            retArray[i - midPoint - 1] = this.keys[i];
-            this.keys[i] = null;
+
+        int rightKeyCount = numberOfKeys - midPoint - 1;
+        if (rightKeyCount > 0) {
+            System.arraycopy(this.keys, midPoint + 1, retArray, 0, rightKeyCount);
         }
-        this.validateNumOfKeys();
+
+        Arrays.fill(this.keys, midPoint, numberOfKeys, null);
+        this.numberOfKeys = midPoint;
         return retArray;
     }
 
     protected void validateNumOfKeys() {
-        if (this.keys == null) this.numberOfKeys = 0;
-        else {
-            this.numberOfKeys = this.order;
-            for (int i = 0; i < this.keys.length; i++) {
-                if (this.keys[i] == null) {
-                    this.numberOfKeys = i;
-                    break;
-                }
-            }
+        this.numberOfKeys = 0;
+        if (this.keys == null) {
+            return;
+        }
+
+        while (this.numberOfKeys < this.keys.length && this.keys[this.numberOfKeys] != null) {
+            this.numberOfKeys++;
         }
     }
 
-    public void setKey(int i, K key) {
-        this.keys[i] = key;
-        this.sortKeys();
-        this.validateNumOfKeys();
+    public void setKey(int idx, K key) {
+        if (idx < 0 || idx >= numberOfKeys) {
+            throw new IndexOutOfBoundsException("Invalid key index: " + idx);
+        }
+
+        this.keys[idx] = key;
     }
 
-    public void removeKey(int i) {
-        this.keys[i] = null;
-        this.sortKeys();
-        this.numberOfKeys--;
-        this.sortKeys();
-        this.validateNumOfKeys();
+    public K removeKey(int idx) {
+        if (idx < 0 || idx >= numberOfKeys) {
+            throw new IndexOutOfBoundsException("Invalid key index: " + idx);
+        }
+
+        K removedKey = this.keys[idx];
+        int movedKeys = numberOfKeys - idx - 1;
+        if (movedKeys > 0) {
+            System.arraycopy(this.keys, idx + 1, this.keys, idx, movedKeys);
+        }
+
+        this.keys[numberOfKeys - 1] = null;
+        numberOfKeys--;
+        return removedKey;
     }
+
 }
 
