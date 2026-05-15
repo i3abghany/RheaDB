@@ -3,11 +3,17 @@ package GUI;
 import RheaDB.QueryResult;
 import RheaDB.RheaDB;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -15,8 +21,13 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.awt.image.BufferedImage;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class RheaDBGui extends JFrame {
     private static final Color BACKGROUND = new Color(0xF6F7F9);
@@ -27,14 +38,30 @@ public final class RheaDBGui extends JFrame {
     private static final Color ACCENT = new Color(0x246BFE);
     private static final Color ACCENT_HOVER = new Color(0x1C59D8);
     private static final Color BUTTON_HOVER = new Color(0xEEF2F7);
+    private static final Color SQL_KEYWORD = new Color(0x1C59D8);
+    private static final Color SQL_STRING = new Color(0x16845B);
+    private static final Color SQL_NUMBER = new Color(0xB45F06);
+    private static final Color SQL_OPERATOR = new Color(0x7A4CC2);
+    private static final Color SQL_COMMENT = new Color(0x8A94A6);
+    private static final String LOGO_RESOURCE = "/GUI/assets/rheadb-logo.png";
+    private static final String LOGO_FILE = "src/GUI/assets/rheadb-logo.png";
     private static final Font UI_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
     private static final Font TITLE_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 20);
     private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 12);
     private static final Font MONO_FONT = preferredMonoFont();
+    private static final Pattern KEYWORD_PATTERN = Pattern.compile(
+            "\\b(SELECT|FROM|WHERE|INSERT|INTO|VALUES|CREATE|TABLE|DROP|DELETE|UPDATE|SET|INDEX|DESCRIBE|COMPACT|AND|OR|NOT|NULL|INT|FLOAT|STRING)\\b",
+            Pattern.CASE_INSENSITIVE
+    );
+    private static final Pattern STRING_PATTERN = Pattern.compile("\"([^\"\\\\]|\\\\.)*\"");
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("\\b\\d+(?:\\.\\d+)?\\b");
+    private static final Pattern OPERATOR_PATTERN = Pattern.compile("[=<>!]+|[(),;*]");
+    private static final Pattern COMMENT_PATTERN = Pattern.compile("--[^\\n]*");
 
     private final JTextField directoryField;
-    private final JTextArea sqlEditor;
+    private final JTextPane sqlEditor;
     private final JTextArea outputArea;
+    private boolean highlightingSql;
     private RheaDB database;
 
     private RheaDBGui() {
@@ -42,7 +69,8 @@ public final class RheaDBGui extends JFrame {
         installTheme();
 
         this.directoryField = new JTextField(defaultDirectory());
-        this.sqlEditor = new JTextArea(sampleSql(), 8, 80);
+        this.sqlEditor = new JTextPane();
+        this.sqlEditor.setText(sampleSql());
         this.outputArea = new JTextArea(16, 80);
 
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -92,10 +120,7 @@ public final class RheaDBGui extends JFrame {
 
         JPanel titleRow = new JPanel(new BorderLayout());
         titleRow.setOpaque(false);
-        JLabel title = new JLabel("RheaDB");
-        title.setFont(TITLE_FONT);
-        title.setForeground(TEXT);
-        titleRow.add(title, BorderLayout.WEST);
+        titleRow.add(logoLabel(), BorderLayout.WEST);
 
         JPanel pathRow = new JPanel(new BorderLayout(10, 0));
         pathRow.setOpaque(false);
@@ -121,9 +146,7 @@ public final class RheaDBGui extends JFrame {
     }
 
     private JSplitPane buildEditorSplit() {
-        styleTextArea(sqlEditor, true);
-        sqlEditor.setLineWrap(true);
-        sqlEditor.setWrapStyleWord(true);
+        styleSqlEditor(sqlEditor);
 
         styleTextArea(outputArea, false);
         outputArea.setEditable(false);
@@ -231,6 +254,73 @@ public final class RheaDBGui extends JFrame {
         return label;
     }
 
+    private static JLabel logoLabel() {
+        JLabel fallback = new JLabel("RheaDB");
+        fallback.setFont(TITLE_FONT);
+        fallback.setForeground(TEXT);
+
+        try {
+            BufferedImage source = cropOuterWhitespace(loadLogoImage());
+            int targetHeight = 76;
+            int targetWidth = Math.max(1, source.getWidth() * targetHeight / source.getHeight());
+            Image scaledLogo = source.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+
+            JLabel label = new JLabel(new ImageIcon(scaledLogo));
+            label.setBorder(new EmptyBorder(0, 0, 2, 0));
+            return label;
+        } catch (IOException exception) {
+            return fallback;
+        }
+    }
+
+    private static BufferedImage loadLogoImage() throws IOException {
+        URL resource = RheaDBGui.class.getResource(LOGO_RESOURCE);
+        if (resource != null) {
+            return ImageIO.read(resource);
+        }
+
+        File logoFile = new File(LOGO_FILE);
+        if (logoFile.exists()) {
+            return ImageIO.read(logoFile);
+        }
+
+        throw new IOException("Logo image not found.");
+    }
+
+    private static BufferedImage cropOuterWhitespace(BufferedImage image) {
+        int minX = image.getWidth();
+        int minY = image.getHeight();
+        int maxX = 0;
+        int maxY = 0;
+
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                if (!isNearWhite(image.getRGB(x, y))) {
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+
+        if (minX > maxX || minY > maxY) {
+            return image;
+        }
+
+        int padding = 28;
+        minX = Math.max(0, minX - padding);
+        minY = Math.max(0, minY - padding);
+        maxX = Math.min(image.getWidth() - 1, maxX + padding);
+        maxY = Math.min(image.getHeight() - 1, maxY + padding);
+        return image.getSubimage(minX, minY, maxX - minX + 1, maxY - minY + 1);
+    }
+
+    private static boolean isNearWhite(int rgb) {
+        Color color = new Color(rgb, true);
+        return color.getRed() > 245 && color.getGreen() > 245 && color.getBlue() > 245;
+    }
+
     private static JButton primaryButton(String text) {
         return flatButton(text, SURFACE, BUTTON_HOVER, Color.BLUE, false);
     }
@@ -302,10 +392,80 @@ public final class RheaDBGui extends JFrame {
         area.setBorder(new EmptyBorder(12, 12, 12, 12));
     }
 
-    private static JPanel panelWithLabel(String title, JTextArea area) {
-        JScrollPane scrollPane = new JScrollPane(area);
+    private void styleSqlEditor(JTextPane editor) {
+        editor.setFont(MONO_FONT);
+        editor.setForeground(TEXT);
+        editor.setBackground(SURFACE);
+        editor.setCaretColor(TEXT);
+        editor.setSelectionColor(new Color(0xDCE8FF));
+        editor.setSelectedTextColor(TEXT);
+        editor.setBorder(new EmptyBorder(12, 12, 12, 12));
+        editor.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                scheduleSqlHighlight();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                scheduleSqlHighlight();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                scheduleSqlHighlight();
+            }
+        });
+        applySqlHighlighting();
+    }
+
+    private void scheduleSqlHighlight() {
+        if (!highlightingSql) {
+            SwingUtilities.invokeLater(this::applySqlHighlighting);
+        }
+    }
+
+    private void applySqlHighlighting() {
+        if (highlightingSql) {
+            return;
+        }
+
+        highlightingSql = true;
+        try {
+            StyledDocument document = sqlEditor.getStyledDocument();
+            String text = sqlEditor.getText();
+            document.setCharacterAttributes(0, text.length(), sqlStyle(TEXT, false, false), true);
+            applyStyle(document, text, KEYWORD_PATTERN, sqlStyle(SQL_KEYWORD, true, false));
+            applyStyle(document, text, NUMBER_PATTERN, sqlStyle(SQL_NUMBER, false, false));
+            applyStyle(document, text, OPERATOR_PATTERN, sqlStyle(SQL_OPERATOR, false, false));
+            applyStyle(document, text, STRING_PATTERN, sqlStyle(SQL_STRING, false, false));
+            applyStyle(document, text, COMMENT_PATTERN, sqlStyle(SQL_COMMENT, false, true));
+        } finally {
+            highlightingSql = false;
+        }
+    }
+
+    private static void applyStyle(StyledDocument document, String text, Pattern pattern, SimpleAttributeSet style) {
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            document.setCharacterAttributes(matcher.start(), matcher.end() - matcher.start(), style, true);
+        }
+    }
+
+    private static SimpleAttributeSet sqlStyle(Color color, boolean bold, boolean italic) {
+        SimpleAttributeSet style = new SimpleAttributeSet();
+        StyleConstants.setForeground(style, color);
+        StyleConstants.setBold(style, bold);
+        StyleConstants.setItalic(style, italic);
+        StyleConstants.setFontFamily(style, MONO_FONT.getFamily());
+        StyleConstants.setFontSize(style, MONO_FONT.getSize());
+        return style;
+    }
+
+    private static JPanel panelWithLabel(String title, JComponent component) {
+        JScrollPane scrollPane = new JScrollPane(component);
         scrollPane.setBorder(new LineBorder(BORDER, 1));
-        scrollPane.getViewport().setBackground(area.getBackground());
+        scrollPane.getViewport().setBackground(component.getBackground());
 
         JLabel label = label(title);
         JPanel panel = new JPanel(new BorderLayout(0, 6));

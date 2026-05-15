@@ -1,4 +1,5 @@
-# RheaDB
+<h1><img src="src/GUI/assets/rheadb-logo.png" alt="Kyoto logo" height="70" valign="middle"> RheaDB</h1>
+
 
 A simple disk-based DBMS that supports simple SQL-like querying statements.
 
