@@ -186,7 +186,7 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     }
 
     public ValueList<K, V> find(K key) {
-        LeafNode<K, V> leaf = this.root == null ? this.firstLeaf : findLeafNode(key);
+        LeafNode<K, V> leaf = findLeafForKey(key);
         return leaf == null ? null : leaf.exists(key);
     }
 
@@ -266,7 +266,7 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
 
     private Vector<V> collectGreaterThan(K key, boolean includeEquals) {
         Vector<V> result = new Vector<>();
-        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
+        LeafNode<K, V> lf = findLeafForKey(key);
         if (lf == null) {
             return result;
         }
@@ -370,226 +370,240 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         printLeafInOrder((LeafNode<K, V>) node);
     }
 
-    private LeafNode<K, V> findLeafNode(K key) {
-        return findLeafNode(this.root, key);
-    }
-
     public boolean delete(K key) {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             return false;
+        }
 
-        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
+        LeafNode<K, V> leaf = findLeafForKey(key);
+        if (leaf == null || !leaf.deleteByKey(key)) {
+            return false;
+        }
 
         if (this.root == null) {
-            boolean ret = lf.deleteByKey(key);
-            if (lf.getNumberOfLists() == 0)
+            if (leaf.getNumberOfLists() == 0) {
                 this.firstLeaf = null;
-            return ret;
-        }
-        InnerNode<K> indexNode = findInnerNode(key);
-
-        if (!lf.deleteByKey(key))
-            return false;
-
-        if (!lf.isUnderFull()) {
-            replaceWithSuccessor(indexNode, key);
+            }
             return true;
         }
 
-        LeafNode<K, V> rightSib = (LeafNode<K, V>) lf.getRightSibling();
-        LeafNode<K, V> leftSib = (LeafNode<K, V>) lf.getLeftSibling();
-        InnerNode<K> par = lf.getParent();
-        int lfIdx = par.indexOfPointer(lf);
-
-        if (leftSib != null &&
-                leftSib.canGiveToSibling() &&
-                leftSib.getParent() == lf.getParent()) {
-            ValueList<K, V> borrowedPair = leftSib.getLists()[leftSib.getNumberOfLists() - 1];
-            lf.insert(borrowedPair);
-            leftSib.deleteByIndex(leftSib.getNumberOfLists() - 1);
-            if (par.getKeys()[lfIdx - 1].compareTo(borrowedPair.getKey()) > 0) {
-                par.setKey(lfIdx - 1, borrowedPair.getKey());
-            }
-            replaceWithSuccessor(indexNode, key);
-        } else if (rightSib != null &&
-                rightSib.canGiveToSibling() &&
-                rightSib.getParent() == lf.getParent()) {
-            ValueList<K, V> borrowedPair = rightSib.getLists()[0];
-            lf.insert(borrowedPair);
-            rightSib.deleteByIndex(0);
-            if (par.getKeys()[lfIdx].compareTo(borrowedPair.getKey()) <= 0) {
-                par.setKey(lfIdx, rightSib.getLists()[0].getKey());
-            }
-            replaceWithSuccessor(indexNode, key);
-        } else if (leftSib != null &&
-                leftSib.canBeMerged() &&
-                leftSib.getParent() == par) {
-            leftSib.merge(lf);
-            par.removePointer(lfIdx);
-            par.removeKey(lfIdx - 1);
-
-            leftSib.setRightSibling(lf.getRightSibling());
-            if (leftSib.getRightSibling() != null)
-                leftSib.getRightSibling().setLeftSibling(leftSib);
-
-            replaceWithSuccessor(indexNode, key);
-
-            if (par.isUnderFull())
-                afterDeleteFix(par);
-
-        } else if (rightSib != null &&
-                rightSib.canBeMerged() &&
-                rightSib.getParent() == par) {
-            rightSib.merge(lf);
-
-            par.removePointer(lfIdx);
-            par.removeKey(lfIdx);
-
-            rightSib.setLeftSibling(lf.getLeftSibling());
-
-            if (rightSib.getLeftSibling() == null)
-                this.firstLeaf = rightSib;
-            else
-                rightSib.getLeftSibling().setRightSibling(rightSib);
-
-            replaceWithSuccessor(indexNode, key);
-
-
-            if (par.isUnderFull())
-                afterDeleteFix(par);
+        if (!leaf.isUnderFull()) {
+            refreshAncestorSeparators(leaf);
+            return true;
         }
 
+        rebalanceLeaf(leaf);
         return true;
     }
 
-    private void replaceWithSuccessor(InnerNode<K> indexNode, K key) {
-        if (indexNode == null)
+    private void rebalanceLeaf(LeafNode<K, V> leaf) {
+        InnerNode<K> parent = leaf.getParent();
+        int leafIdx = parent.indexOfPointer(leaf);
+        LeafNode<K, V> leftSibling = leafIdx > 0 ? leftLeafOf(parent.getChildren()[leafIdx - 1]) : null;
+        LeafNode<K, V> rightSibling = leafIdx < parent.getDegree() - 1 ? leftLeafOf(parent.getChildren()[leafIdx + 1]) : null;
+
+        if (leftSibling != null && leftSibling.canGiveToSibling()) {
+            ValueList<K, V> borrowedList = leftSibling.getLists()[leftSibling.getNumberOfLists() - 1];
+            leftSibling.deleteByIndex(leftSibling.getNumberOfLists() - 1);
+            leaf.insert(borrowedList);
+            parent.setKey(leafIdx - 1, firstKey(leaf));
+            refreshAncestorSeparators(leaf);
             return;
+        }
 
-        int idx = Arrays.binarySearch(
-                indexNode.getKeys(),
-                0,
-                indexNode.getNumberOfKeys(),
-                key
-        );
+        if (rightSibling != null && rightSibling.canGiveToSibling()) {
+            ValueList<K, V> borrowedList = rightSibling.getLists()[0];
+            rightSibling.deleteByIndex(0);
+            leaf.insert(borrowedList);
+            parent.setKey(leafIdx, firstKey(rightSibling));
+            refreshAncestorSeparators(leaf);
+            return;
+        }
 
-        if (idx < 0) return;
+        if (leftSibling != null) {
+            leftSibling.merge(leaf);
+            unlinkNode(leaf);
+            parent.removeKey(leafIdx - 1);
+            parent.removePointer(leafIdx);
+            refreshAncestorSeparators(leftSibling);
+            rebalanceInner(parent);
+            return;
+        }
 
-        K successorKey = getSuccessorKey(indexNode, idx);
-        indexNode.setKey(idx, successorKey);
+        if (rightSibling != null) {
+            leaf.merge(rightSibling);
+            unlinkNode(rightSibling);
+            parent.removeKey(leafIdx);
+            parent.removePointer(leafIdx + 1);
+            refreshAncestorSeparators(leaf);
+            rebalanceInner(parent);
+        }
     }
 
-    private K getSuccessorKey(Node<K> node, int keyIdx) {
+    private void rebalanceInner(InnerNode<K> node) {
         if (node == null) {
-            return null;
+            return;
         }
-
-        if (node instanceof LeafNode) {
-            return node.getKeys()[0];
-        }
-
-        Node<K> nextRightNode = node.getChildren()[keyIdx + 1];
-        return getLeftMost(nextRightNode);
-    }
-
-    private K getLeftMost(Node<K> node) {
-        Node<K> tmp = node;
-        while (tmp instanceof InnerNode) {
-            tmp = tmp.getChildren()[0];
-        }
-        return ((LeafNode<K, V>) tmp).getLists()[0].getKey();
-    }
-
-    private void afterDeleteFix(InnerNode<K> node) {
-        InnerNode<K> leftSib = (InnerNode<K>) node.getLeftSibling();
-        InnerNode<K> rightSib = (InnerNode<K>) node.getRightSibling();
-        InnerNode<K> par = node.getParent();
 
         if (node == this.root) {
-            if (node.getNumberOfKeys() > 0)
-                return;
-            if (node.getChildren()[0] instanceof InnerNode) {
-                this.root = (InnerNode<K>) node.getChildren()[0];
-                this.root.setParent(null);
-                this.root.setLeftSibling(null);
-                this.root.setRightSibling(null);
-            } else if (node.getChildren()[0] instanceof LeafNode)
-                this.root = null;
-        } else if (leftSib != null && leftSib.canGiveToSibling() && leftSib.getParent() == par) {
-            K borrowedKey = leftSib.getKeys()[leftSib.getNumberOfKeys() - 1];
-            Node<K> borrowedPtr = leftSib.getChildren()[leftSib.getDegree() - 1];
-
-            K parentKey = par.getKeys()[par.getNumberOfKeys() - 1];
-            par.removeKey(par.getNumberOfKeys() - 1);
-            node.addKey(parentKey);
-            node.insertAt(borrowedPtr, 0);
-            borrowedPtr.setParent(node);
-
-            par.addKey(borrowedKey);
-            leftSib.removeKey(leftSib.getNumberOfKeys() - 1);
-            leftSib.removePointer(leftSib.getDegree() - 1);
-
-        } else if (rightSib != null && rightSib.canGiveToSibling() && rightSib.getParent() == par) {
-            K borrowedKey = rightSib.getKeys()[0];
-            Node<K> borrowedPtr = rightSib.getChildren()[0];
-
-            K parentKey = par.getKeys()[0];
-            par.removeKey(0);
-            node.addKey(parentKey);
-            node.appendPointer(borrowedPtr);
-            borrowedPtr.setParent(node);
-
-            par.addKey(borrowedKey);
-            rightSib.removeKey(0);
-            rightSib.removePointer(0);
-
-        } else if (leftSib != null && leftSib.canBeMerged() && leftSib.getParent() == par) {
-            leftSib.addKey(par.getKeys()[par.getNumberOfKeys() - 1]);
-            par.removeKey(par.getNumberOfKeys() - 1);
-            par.removePointer(par.indexOfPointer(node));
-            leftSib.merge(node);
-            leftSib.setRightSibling(node.getRightSibling());
-            if (leftSib.getRightSibling() != null)
-                leftSib.getRightSibling().setLeftSibling(leftSib);
-        } else if (rightSib != null && rightSib.canBeMerged() && rightSib.getParent() == par) {
-            node.addKey(par.getKeys()[0]);
-            par.removeKey(0);
-            par.removePointer(par.indexOfPointer(rightSib));
-            node.merge(rightSib);
-            node.setRightSibling(rightSib.getRightSibling());
-            if (node.getRightSibling() != null)
-                node.getRightSibling().setLeftSibling(node);
+            collapseRootIfNeeded();
+            return;
         }
 
-        if (par != null && par.isUnderFull())
-            afterDeleteFix(par);
+        if (!node.isUnderFull()) {
+            refreshAncestorSeparators(node);
+            return;
+        }
+
+        InnerNode<K> parent = node.getParent();
+        int nodeIdx = parent.indexOfPointer(node);
+        InnerNode<K> leftSibling = nodeIdx > 0 ? innerNodeOf(parent.getChildren()[nodeIdx - 1]) : null;
+        InnerNode<K> rightSibling = nodeIdx < parent.getDegree() - 1 ? innerNodeOf(parent.getChildren()[nodeIdx + 1]) : null;
+
+        if (leftSibling != null && leftSibling.canGiveToSibling()) {
+            borrowFromLeftInner(node, leftSibling, parent, nodeIdx);
+            return;
+        }
+
+        if (rightSibling != null && rightSibling.canGiveToSibling()) {
+            borrowFromRightInner(node, rightSibling, parent, nodeIdx);
+            return;
+        }
+
+        if (leftSibling != null) {
+            mergeInnerIntoLeft(node, leftSibling, parent, nodeIdx);
+            return;
+        }
+
+        if (rightSibling != null) {
+            mergeRightInnerIntoNode(node, rightSibling, parent, nodeIdx);
+        }
     }
 
-    private InnerNode<K> findInnerNode(K key) {
-        return findInnerNode(this.root, key);
+    private void borrowFromLeftInner(
+            InnerNode<K> node,
+            InnerNode<K> leftSibling,
+            InnerNode<K> parent,
+            int nodeIdx
+    ) {
+        Node<K> borrowedPointer = leftSibling.getChildren()[leftSibling.getDegree() - 1];
+        K replacementSeparator = leftSibling.getKeys()[leftSibling.getNumberOfKeys() - 1];
+        K parentSeparator = parent.getKeys()[nodeIdx - 1];
+
+        leftSibling.removePointer(leftSibling.getDegree() - 1);
+        leftSibling.removeKey(leftSibling.getNumberOfKeys() - 1);
+        node.insertKeyAt(0, parentSeparator);
+        node.insertAt(borrowedPointer, 0);
+        parent.setKey(nodeIdx - 1, replacementSeparator);
+        refreshAncestorSeparators(node);
     }
 
-    private InnerNode<K> findInnerNode(InnerNode<K> node, K key) {
-        if (node == null)
-            return null;
+    private void borrowFromRightInner(
+            InnerNode<K> node,
+            InnerNode<K> rightSibling,
+            InnerNode<K> parent,
+            int nodeIdx
+    ) {
+        Node<K> borrowedPointer = rightSibling.getChildren()[0];
+        K replacementSeparator = rightSibling.getKeys()[0];
+        K parentSeparator = parent.getKeys()[nodeIdx];
 
-        K[] keys = node.getKeys();
+        rightSibling.removePointer(0);
+        rightSibling.removeKey(0);
+        node.insertKeyAt(node.getNumberOfKeys(), parentSeparator);
+        node.appendPointer(borrowedPointer);
+        parent.setKey(nodeIdx, replacementSeparator);
+        refreshAncestorSeparators(rightSibling);
+    }
 
-        for (int i = 0; i < node.getNumberOfKeys(); i++) {
-            if (keys[i].equals(key)) {
-                return node;
-            }
+    private void mergeInnerIntoLeft(
+            InnerNode<K> node,
+            InnerNode<K> leftSibling,
+            InnerNode<K> parent,
+            int nodeIdx
+    ) {
+        leftSibling.insertKeyAt(leftSibling.getNumberOfKeys(), parent.getKeys()[nodeIdx - 1]);
+        leftSibling.merge(node);
+        unlinkNode(node);
+        parent.removeKey(nodeIdx - 1);
+        parent.removePointer(nodeIdx);
+        refreshAncestorSeparators(leftSibling);
+        rebalanceInner(parent);
+    }
+
+    private void mergeRightInnerIntoNode(
+            InnerNode<K> node,
+            InnerNode<K> rightSibling,
+            InnerNode<K> parent,
+            int nodeIdx
+    ) {
+        node.insertKeyAt(node.getNumberOfKeys(), parent.getKeys()[nodeIdx]);
+        node.merge(rightSibling);
+        unlinkNode(rightSibling);
+        parent.removeKey(nodeIdx);
+        parent.removePointer(nodeIdx + 1);
+        refreshAncestorSeparators(node);
+        rebalanceInner(parent);
+    }
+
+    private void collapseRootIfNeeded() {
+        if (this.root == null || this.root.getNumberOfKeys() > 0) {
+            return;
         }
 
-        if (node.getChildren()[0] instanceof LeafNode)
-            return null;
-
-        int idx = 0;
-        for (; idx < node.getNumberOfKeys(); idx++) {
-            if (keys[idx].compareTo(key) > 0)
-                break;
+        Node<K> onlyChild = this.root.getDegree() > 0 ? this.root.getChildren()[0] : null;
+        if (onlyChild instanceof InnerNode) {
+            this.root = innerNodeOf(onlyChild);
+            this.root.setParent(null);
+            this.root.setLeftSibling(null);
+            this.root.setRightSibling(null);
+            return;
         }
 
-        return findInnerNode((InnerNode<K>) node.getChildren()[idx], key);
+        if (onlyChild instanceof LeafNode) {
+            LeafNode<K, V> leaf = leftLeafOf(onlyChild);
+            leaf.setParent(null);
+            leaf.setLeftSibling(null);
+            leaf.setRightSibling(null);
+            this.firstLeaf = leaf;
+            this.root = null;
+            return;
+        }
+
+        this.firstLeaf = null;
+        this.root = null;
+    }
+
+    private void unlinkNode(Node<K> node) {
+        Node<K> leftSibling = node.getLeftSibling();
+        Node<K> rightSibling = node.getRightSibling();
+
+        if (leftSibling != null) {
+            leftSibling.setRightSibling(rightSibling);
+        } else if (node == this.firstLeaf) {
+            this.firstLeaf = rightLeafOf(rightSibling);
+        }
+
+        if (rightSibling != null) {
+            rightSibling.setLeftSibling(leftSibling);
+        }
+
+        node.setLeftSibling(null);
+        node.setRightSibling(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private InnerNode<K> innerNodeOf(Node<K> node) {
+        return (InnerNode<K>) node;
+    }
+
+    @SuppressWarnings("unchecked")
+    private LeafNode<K, V> leftLeafOf(Node<K> node) {
+        return (LeafNode<K, V>) node;
+    }
+
+    @SuppressWarnings("unchecked")
+    private LeafNode<K, V> rightLeafOf(Node<K> node) {
+        return (LeafNode<K, V>) node;
     }
 }
