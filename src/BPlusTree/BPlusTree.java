@@ -4,8 +4,7 @@ import Predicate.Predicate;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.Vector;
 
@@ -20,6 +19,10 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     private static final int DEFAULT_ORDER = 16;
 
     private BPlusTree(int order) {
+        if (order < 3) {
+            throw new IllegalArgumentException("B+ tree order must be at least 3.");
+        }
+
         this.order = order;
         this.root = null;
     }
@@ -154,24 +157,35 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         return leaf.getNumberOfLists() == 0 ? null : leaf.getLists()[0].getKey();
     }
 
+    @SuppressWarnings("unchecked")
     private LeafNode<K, V> findLeafNode(Node<K> node, K key) {
-        if (node == null)
+        if (node == null) {
             return null;
-
-        K[] ks = node.getKeys();
-
-        int idx = 0;
-        for (; idx < node.getNumberOfKeys(); idx++) {
-            if (ks[idx].compareTo(key) > 0)
-                break;
         }
 
-        Node<K> child = node.getChildren()[idx];
-        if (child instanceof LeafNode) {
-            return (LeafNode<K, V>) child;
-        } else {
-            return findLeafNode(child, key);
+        Node<K> current = node;
+        while (current instanceof InnerNode) {
+            InnerNode<K> innerNode = (InnerNode<K>) current;
+            current = innerNode.getChildren()[childIndex(innerNode, key)];
         }
+
+        return (LeafNode<K, V>) current;
+    }
+
+    private int childIndex(InnerNode<K> node, K key) {
+        int low = 0;
+        int high = node.getNumberOfKeys();
+
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            if (node.getKeys()[mid].compareTo(key) > 0) {
+                high = mid;
+            } else {
+                low = mid + 1;
+            }
+        }
+
+        return low;
     }
 
     private LeafNode<K, V> findLeafForKey(K key) {
@@ -284,16 +298,12 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
 
     @SuppressWarnings("unused")
     public void printDataInOrder() {
-        if (this.root == null) {
-            printLeafInOrder(this.firstLeaf);
-        } else {
-            printDataInOrder(this.root);
-        }
+        printLeafInOrder(this.firstLeaf);
     }
 
     @SuppressWarnings("unused")
     private void printBFS() {
-        Queue<Node<K>> q = new LinkedList<>();
+        Queue<Node<K>> q = new ArrayDeque<>();
         q.add(this.root);
 
         while (!q.isEmpty()) {
@@ -358,16 +368,6 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
             System.out.print("} ");
             lf = (LeafNode<K, V>) lf.getRightSibling();
         }
-    }
-
-    private void printDataInOrder(Node<K> node) {
-        if (node == null)
-            return;
-
-        while (!(node instanceof LeafNode) && node != null) {
-            node = node.getChildren()[0];
-        }
-        printLeafInOrder((LeafNode<K, V>) node);
     }
 
     public boolean delete(K key) {
