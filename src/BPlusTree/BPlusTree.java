@@ -49,111 +49,109 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     @SuppressWarnings("unchecked")
     public void insert(Object obj, V val) {
         K key = (K) obj;
+
         if (isEmpty()) {
-            this.firstLeaf = new LeafNode<K, V>(this.order);
+            this.firstLeaf = new LeafNode<>(this.order);
             this.firstLeaf.insert(key, val);
-        } else {
-            LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
-
-            if (lf.exists(key) != null) {
-                lf.insert(key, val);
-                return;
-            }
-
-            if (lf.isFull()) {
-                lf.insert(key, val);
-                int mid = getMidPoint();
-                ValueList<K, V>[] rightHalf = splitLists(lf, mid);
-
-                if (lf.getParent() == null) {
-                    K[] parentKeys = (K[]) new Comparable[this.order];
-                    parentKeys[0] = rightHalf[0].getKey();
-                    InnerNode<K> parentNode = new InnerNode<>(this.order, parentKeys);
-
-                    lf.setParent(parentNode);
-                    parentNode.appendPointer(lf);
-                } else {
-                    K parentNewKey = rightHalf[0].getKey();
-                    lf.getParent().addKey(parentNewKey);
-                }
-
-                LeafNode<K, V> newNode = new LeafNode<K, V>(this.order, lf.getParent());
-                newNode.setLists(rightHalf, this.order - mid);
-
-                int childIdx = lf.getParent().indexOfPointer(lf);
-                lf.getParent().insertAt(newNode, childIdx + 1);
-
-                correctSiblings(lf, newNode);
-
-                if (this.root == null) this.root = lf.getParent();
-                else {
-                    InnerNode<K> par = lf.getParent();
-                    while (par != null) {
-                        if (par.isOverFull())
-                            splitInternalNode(par);
-                        else break;
-                        par = par.getParent();
-                    }
-                }
-            } else {
-                lf.insert(key, val);
-            }
+            return;
         }
+
+        LeafNode<K, V> leaf = findLeafForKey(key);
+        if (!leaf.isFull() || leaf.exists(key) != null) {
+            leaf.insert(key, val);
+            refreshAncestorSeparators(leaf);
+            return;
+        }
+
+        leaf.insert(key, val);
+        splitLeaf(leaf);
     }
 
-    private void correctSiblings(Node<K> lf, Node<K> newNode) {
-        newNode.setRightSibling(lf.getRightSibling());
-        if (lf.getRightSibling() != null)
-            lf.getRightSibling().setLeftSibling(newNode);
+    private void splitLeaf(LeafNode<K, V> leaf) {
+        int splitIndex = leaf.getNumberOfLists() / 2;
+        int rightListCount = leaf.getNumberOfLists() - splitIndex;
+        ValueList<K, V>[] rightLists = leaf.splitLists(splitIndex);
 
-        lf.setRightSibling(newNode);
-        newNode.setLeftSibling(lf);
+        LeafNode<K, V> rightLeaf = new LeafNode<>(this.order, leaf.getParent());
+        rightLeaf.setLists(rightLists, rightListCount);
+        linkSiblings(leaf, rightLeaf);
+
+        insertIntoParent(leaf, firstKey(rightLeaf), rightLeaf);
+    }
+
+    private void splitInternalNode(InnerNode<K> node) {
+        int promotedKeyIndex = node.getNumberOfKeys() / 2;
+        K promotedKey = node.getKeys()[promotedKeyIndex];
+
+        K[] rightKeys = node.splitKeys(promotedKeyIndex);
+        Node<K>[] rightPointers = node.splitPointers(promotedKeyIndex);
+        InnerNode<K> rightNode = new InnerNode<>(this.order, rightKeys, rightPointers);
+
+        for (int i = 0; i < rightNode.getDegree(); i++) {
+            rightNode.getChildren()[i].setParent(rightNode);
+        }
+
+        linkSiblings(node, rightNode);
+        insertIntoParent(node, promotedKey, rightNode);
     }
 
     @SuppressWarnings("unchecked")
-    private void splitInternalNode(InnerNode<K> node) {
-        InnerNode<K> parent = node.getParent();
-        int midPoint = getMidPoint();
-
-        K parentNewKey = node.getKeys()[midPoint];
-
-        K[] halfKeys = node.splitKeys(midPoint);
-        Node<K>[] halfPointers = node.splitPointers(midPoint);
-
-        InnerNode<K> sib = new InnerNode<K>(this.order, halfKeys, halfPointers);
-
-        for (var ch : halfPointers) {
-            if (ch != null) ch.setParent(sib);
-        }
-
-        correctSiblings(node, sib);
-
+    private void insertIntoParent(Node<K> leftChild, K separatorKey, Node<K> rightChild) {
+        InnerNode<K> parent = leftChild.getParent();
         if (parent != null) {
-            parent.addKey(parentNewKey);
-            int childIdx = parent.indexOfPointer(node);
-            parent.insertAt(sib, childIdx + 1);
-            sib.setParent(parent);
-        } else {
-            K[] keys = (K[]) new Comparable[this.order];
-            keys[0] = parentNewKey;
-            InnerNode<K> newParent = new InnerNode<>(this.order, keys);
+            parent.insertChildAfter(leftChild, separatorKey, rightChild);
+            if (parent.isOverFull()) {
+                splitInternalNode(parent);
+            }
+            return;
+        }
 
-            newParent.appendPointer(node);
-            newParent.appendPointer(sib);
+        K[] rootKeys = (K[]) new Comparable[this.order];
+        InnerNode<K> newRoot = new InnerNode<>(this.order, rootKeys);
+        newRoot.insertKeyAt(0, separatorKey);
+        newRoot.appendPointer(leftChild);
+        newRoot.appendPointer(rightChild);
+        this.root = newRoot;
+    }
 
-            node.setParent(newParent);
-            sib.setParent(newParent);
+    private void linkSiblings(Node<K> leftNode, Node<K> rightNode) {
+        rightNode.setRightSibling(leftNode.getRightSibling());
+        if (leftNode.getRightSibling() != null) {
+            leftNode.getRightSibling().setLeftSibling(rightNode);
+        }
 
-            this.root = newParent;
+        leftNode.setRightSibling(rightNode);
+        rightNode.setLeftSibling(leftNode);
+    }
+
+    private void refreshAncestorSeparators(Node<K> node) {
+        Node<K> current = node;
+        while (current != null && current.getParent() != null) {
+            InnerNode<K> parent = current.getParent();
+            int childIdx = parent.indexOfPointer(current);
+            if (childIdx < 0) {
+                return;
+            }
+            if (childIdx > 0) {
+                K firstKey = firstKey(current);
+                if (firstKey != null) {
+                    parent.setKey(childIdx - 1, firstKey);
+                }
+                return;
+            }
+            current = parent;
         }
     }
 
-    private ValueList<K, V>[] splitLists(LeafNode<K, V> lf, int mid) {
-        return lf.splitLists(mid);
-    }
+    @SuppressWarnings("unchecked")
+    private K firstKey(Node<K> node) {
+        Node<K> current = node;
+        while (current instanceof InnerNode) {
+            current = ((InnerNode<K>) current).getChildren()[0];
+        }
 
-    private int getMidPoint() {
-        return (int) Math.ceil((this.order + 1) / 2.0) - 1;
+        LeafNode<K, V> leaf = (LeafNode<K, V>) current;
+        return leaf.getNumberOfLists() == 0 ? null : leaf.getLists()[0].getKey();
     }
 
     private LeafNode<K, V> findLeafNode(Node<K> node, K key) {
@@ -174,6 +172,17 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         } else {
             return findLeafNode(child, key);
         }
+    }
+
+    private LeafNode<K, V> findLeafForKey(K key) {
+        if (this.firstLeaf == null) {
+            return null;
+        }
+        if (this.root == null) {
+            return this.firstLeaf;
+        }
+
+        return findLeafNode(this.root, key);
     }
 
     public ValueList<K, V> find(K key) {
