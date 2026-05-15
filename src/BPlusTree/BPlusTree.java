@@ -177,34 +177,30 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     }
 
     public ValueList<K, V> find(K key) {
-        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
-        if (lf == null) {
-            return null;
-        }
-
-        ValueList<K, V>[] lists = lf.getLists();
-
-        int idx = Arrays.binarySearch(
-                lists,
-                0,
-                lf.getNumberOfLists(),
-                new ValueList<K, V>(key, null)
-        );
-
-        if (idx >= 0) return lists[idx];
-        else return null;
+        LeafNode<K, V> leaf = this.root == null ? this.firstLeaf : findLeafNode(key);
+        return leaf == null ? null : leaf.exists(key);
     }
 
     @SuppressWarnings("unchecked")
     public Vector<V> findWithPredicate(Predicate predicate) {
+        K key = (K) predicate.getValue();
         return switch (predicate.getOperation()) {
-            case EQUALS -> find((K) predicate.getValue());
-            case LESS_THAN -> findLessThan((K) predicate.getValue());
-            case LESS_THAN_EQUAL -> findLessEquals((K) predicate.getValue());
-            case GREATER_THAN -> findGreaterThan((K) predicate.getValue());
-            case GREATER_THAN_EQUAL -> findGreaterEquals((K) predicate.getValue());
-            case NOT_EQUALS -> findNotEquals((K) predicate.getValue());
+            case EQUALS -> findEquals(key);
+            case LESS_THAN -> findLessThan(key);
+            case LESS_THAN_EQUAL -> findLessEquals(key);
+            case GREATER_THAN -> findGreaterThan(key);
+            case GREATER_THAN_EQUAL -> findGreaterEquals(key);
+            case NOT_EQUALS -> findNotEquals(key);
         };
+    }
+
+    private Vector<V> findEquals(K key) {
+        Vector<V> result = new Vector<>();
+        ValueList<K, V> valueList = find(key);
+        if (valueList != null) {
+            result.addAll(valueList);
+        }
+        return result;
     }
 
     private Vector<V> findNotEquals(K key) {
@@ -225,31 +221,33 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
     }
 
     public Vector<V> findLessThan(K key) {
-        LeafNode<K, V> lf = firstLeaf;
-        Vector<V> allRecords = new Vector<>();
-
-        loop:
-        while (lf != null) {
-            for (int i = 0; i < lf.getNumberOfLists(); i++) {
-                ValueList<K, V> valueList = lf.getLists()[i];
-                if (valueList.getKey().compareTo(key) >= 0)
-                    break loop;
-                allRecords.addAll(valueList);
-            }
-            lf = (LeafNode<K, V>) lf.getRightSibling();
-        }
-        return allRecords;
+        return collectLessThan(key, false);
     }
 
     public Vector<V> findGreaterThan(K key) {
+        return collectGreaterThan(key, false);
+    }
+
+    public Vector<V> findGreaterEquals(K key) {
+        return collectGreaterThan(key, true);
+    }
+
+    public Vector<V> findLessEquals(K key) {
+        return collectLessThan(key, true);
+    }
+
+    private Vector<V> collectLessThan(K key, boolean includeEquals) {
+        LeafNode<K, V> lf = firstLeaf;
         Vector<V> result = new Vector<>();
-        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
 
         while (lf != null) {
             for (int i = 0; i < lf.getNumberOfLists(); i++) {
                 ValueList<K, V> valueList = lf.getLists()[i];
-                if (valueList.getKey().compareTo(key) > 0)
-                    result.addAll(valueList);
+                int comparison = valueList.getKey().compareTo(key);
+                if (comparison > 0 || (!includeEquals && comparison == 0)) {
+                    return result;
+                }
+                result.addAll(valueList);
             }
             lf = (LeafNode<K, V>) lf.getRightSibling();
         }
@@ -257,22 +255,21 @@ public class BPlusTree<K extends Comparable<K>, V> implements Serializable {
         return result;
     }
 
-    public Vector<V> findGreaterEquals(K key) {
-        Vector<V> result = findGreaterThan(key);
-        ValueList<K, V> equalsResult = find(key);
+    private Vector<V> collectGreaterThan(K key, boolean includeEquals) {
+        Vector<V> result = new Vector<>();
+        LeafNode<K, V> lf = this.root == null ? this.firstLeaf : findLeafNode(key);
+        if (lf == null) {
+            return result;
+        }
 
-        if (equalsResult != null)
-            result.addAll(equalsResult);
-
-        return result;
-    }
-
-    public Vector<V> findLessEquals(K key) {
-        Vector<V> result = findLessThan(key);
-        ValueList<K, V> equalsResult = find(key);
-
-        if (equalsResult != null)
-            result.addAll(equalsResult);
+        int startIdx = includeEquals ? lf.firstGreaterOrEqualIndex(key) : lf.firstGreaterThanIndex(key);
+        while (lf != null) {
+            for (int i = startIdx; i < lf.getNumberOfLists(); i++) {
+                result.addAll(lf.getLists()[i]);
+            }
+            lf = (LeafNode<K, V>) lf.getRightSibling();
+            startIdx = 0;
+        }
         return result;
     }
 
