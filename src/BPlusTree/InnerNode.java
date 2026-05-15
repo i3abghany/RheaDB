@@ -1,5 +1,7 @@
 package BPlusTree;
 
+import java.util.Arrays;
+
 public class InnerNode<K extends Comparable<K>> extends Node<K> {
     private final int minDegree;
     private int degree;
@@ -8,16 +10,11 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
 
     @SuppressWarnings("unchecked")
     public InnerNode(int order, K[] keys) {
-        super(order, keys);
+        super(order, keys != null ? keys : (K[]) new Comparable[order]);
         this.minDegree = (int) Math.ceil(this.order / 2.0);
         this.children = new Node[this.order + 1];
         this.degree = 0;
         this.validateNumOfKeys();
-    }
-
-    @Override
-    public K[] getKeys() {
-        return this.keys;
     }
 
     public InnerNode(int order, K[] keys, Node<K>[] ptrs) {
@@ -32,27 +29,45 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
     }
 
     @Override
+    public K[] getKeys() {
+        return this.keys;
+    }
+
+    @Override
     public Node<K>[] getChildren() {
         return children;
     }
 
-    public void appendPointer(Node<K> lf) {
-        children[this.degree] = lf;
-        this.degree++;
+    public void appendPointer(Node<K> node) {
+        insertAt(node, this.degree);
+    }
+
+    public void insertChildAfter(Node<K> leftChild, K separatorKey, Node<K> rightChild) {
+        int childIdx = indexOfPointer(leftChild);
+        if (childIdx < 0) {
+            throw new IllegalArgumentException("Left child is not attached to this parent.");
+        }
+
+        insertKeyAt(childIdx, separatorKey);
+        insertAt(rightChild, childIdx + 1);
     }
 
     public void removePointer(int idx) {
-        this.children[idx] = null;
-        if (this.degree - (idx + 1) >= 0)
-            System.arraycopy(this.children, idx + 1, this.children, idx + 1 - 1, this.degree - (idx + 1));
+        if (idx < 0 || idx >= this.degree) {
+            throw new IndexOutOfBoundsException("Invalid pointer index: " + idx);
+        }
+
+        int movedPointers = this.degree - idx - 1;
+        if (movedPointers > 0) {
+            System.arraycopy(this.children, idx + 1, this.children, idx, movedPointers);
+        }
+
         this.children[this.degree - 1] = null;
         this.degree--;
     }
 
     public void addKey(K newKey) {
-        this.keys[this.degree - 1] = newKey;
-        this.sortKeys();
-        this.validateNumOfKeys();
+        insertKeyAt(insertionPoint(newKey), newKey);
     }
 
     public int getDegree() {
@@ -60,60 +75,71 @@ public class InnerNode<K extends Comparable<K>> extends Node<K> {
     }
 
     public int indexOfPointer(Node<K> nd) {
-        for (int i = 0; i < children.length; i++) {
-            if (nd == children[i])
+        for (int i = 0; i < degree; i++) {
+            if (nd == children[i]) {
                 return i;
+            }
         }
 
         return -1;
     }
 
     public void insertAt(Node<K> newNode, int idx) {
-        assert this.degree - idx >= 0;
-        if (this.degree - idx >= 0)
-            System.arraycopy(children, idx, children, idx + 1, this.degree - idx);
+        if (idx < 0 || idx > this.degree) {
+            throw new IndexOutOfBoundsException("Invalid pointer index: " + idx);
+        }
+        if (this.degree >= this.children.length) {
+            throw new IllegalStateException("Cannot insert pointer into a full inner node.");
+        }
+
+        int movedPointers = this.degree - idx;
+        if (movedPointers > 0) {
+            System.arraycopy(children, idx, children, idx + 1, movedPointers);
+        }
 
         this.children[idx] = newNode;
         this.degree++;
+        if (newNode != null) {
+            newNode.setParent(this);
+        }
     }
 
     public boolean isOverFull() {
-        return this.degree == this.order + 1;
+        return this.degree > this.order;
     }
 
+    @SuppressWarnings("unchecked")
     public Node<K>[] splitPointers(int midPoint) {
         Node<K>[] retArr = new Node[this.order + 1];
+        int rightPointerStart = midPoint + 1;
+        int rightPointerCount = this.degree - rightPointerStart;
 
-        for (int i = midPoint + 1; i < this.children.length; i++) {
-            retArr[i - midPoint - 1] = this.children[i];
-            this.children[i] = null;
+        if (rightPointerCount > 0) {
+            System.arraycopy(this.children, rightPointerStart, retArr, 0, rightPointerCount);
+            Arrays.fill(this.children, rightPointerStart, this.degree, null);
         }
-        this.validateDegree();
+
+        this.degree = rightPointerStart;
         return retArr;
     }
 
     public void validateDegree() {
         this.degree = 0;
-        for (int i = 0; i < this.children.length; i++) {
-            if (this.children[i] == null) {
-                this.degree = i;
-                return;
-            }
+        while (this.degree < this.children.length && this.children[this.degree] != null) {
+            this.degree++;
         }
-
-        assert false;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void merge(Node<K> node) {
-        for (int i = 0; i < node.getNumberOfKeys(); i++) {
-            this.keys[this.numberOfKeys] = node.getKeys()[i];
-            this.numberOfKeys++;
+        InnerNode<K> innerNode = (InnerNode<K>) node;
+
+        for (int i = 0; i < innerNode.getNumberOfKeys(); i++) {
+            insertKeyAt(this.numberOfKeys, innerNode.getKeys()[i]);
         }
-        for (int i = 0; i < ((InnerNode<K>) node).getDegree(); i++) {
-            this.children[this.degree] = node.getChildren()[i];
-            node.getChildren()[i].setParent(this);
-            this.degree++;
+        for (int i = 0; i < innerNode.getDegree(); i++) {
+            appendPointer(innerNode.getChildren()[i]);
         }
     }
 
