@@ -68,6 +68,17 @@ public final class RheaDBGui extends JFrame {
         super("RheaDB");
         installTheme();
 
+        try {
+            BufferedImage raw = loadLogoImage();
+            BufferedImage cropped = cropOuterWhitespace(raw);
+            BufferedImage iconSource = cropIconArea(cropped);
+            int iconSize = 48;
+            Image scaledIcon = iconSource.getScaledInstance(iconSize, iconSize, Image.SCALE_SMOOTH);
+            setIconImage(scaledIcon);
+        } catch (IOException ignored) {
+            // If the logo isn't available, just continue without an icon.
+        }
+
         this.directoryField = new JTextField(defaultDirectory());
         this.sqlEditor = new JTextPane();
         this.sqlEditor.setText(sampleSql());
@@ -118,10 +129,6 @@ public final class RheaDBGui extends JFrame {
         JButton clearButton = secondaryButton("Clear");
         clearButton.addActionListener(e -> outputArea.setText(""));
 
-        JPanel titleRow = new JPanel(new BorderLayout());
-        titleRow.setOpaque(false);
-        titleRow.add(logoLabel(), BorderLayout.WEST);
-
         JPanel pathRow = new JPanel(new BorderLayout(10, 0));
         pathRow.setOpaque(false);
         JLabel pathLabel = label("Data");
@@ -136,12 +143,24 @@ public final class RheaDBGui extends JFrame {
 
         pathRow.add(pathLabel, BorderLayout.WEST);
         pathRow.add(directoryField, BorderLayout.CENTER);
-        pathRow.add(buttons, BorderLayout.EAST);
 
-        JPanel toolbar = new JPanel(new BorderLayout(0, 12));
+        JPanel controls = new JPanel(new GridBagLayout());
+        controls.setOpaque(false);
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        controls.add(pathRow, constraints);
+
+        constraints.gridy = 1;
+        constraints.insets = new Insets(8, 0, 0, 0);
+        controls.add(buttons, constraints);
+
+        JPanel toolbar = new JPanel(new BorderLayout(18, 0));
         toolbar.setOpaque(false);
-        toolbar.add(titleRow, BorderLayout.NORTH);
-        toolbar.add(pathRow, BorderLayout.SOUTH);
+        toolbar.add(logoLabel(), BorderLayout.WEST);
+        toolbar.add(controls, BorderLayout.CENTER);
         return toolbar;
     }
 
@@ -314,6 +333,23 @@ public final class RheaDBGui extends JFrame {
         maxX = Math.min(image.getWidth() - 1, maxX + padding);
         maxY = Math.min(image.getHeight() - 1, maxY + padding);
         return image.getSubimage(minX, minY, maxX - minX + 1, maxY - minY + 1);
+    }
+
+    private static BufferedImage cropIconArea(BufferedImage image) {
+        int w = image.getWidth();
+        int h = image.getHeight();
+
+        if (w <= 0 || h <= 0) return image;
+
+        int side = Math.min(w, Math.max(1, (int) (h * 0.8)));
+        int x = 0;
+        int y = 40; // take the top portion where the mark sits
+
+        try {
+            return image.getSubimage(x, y, side, side);
+        } catch (java.awt.image.RasterFormatException e) {
+            return image;
+        }
     }
 
     private static boolean isNearWhite(int rgb) {
